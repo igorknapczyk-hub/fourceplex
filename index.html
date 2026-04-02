@@ -58,10 +58,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 
 /* ── MAIN ── */
 .main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
-/* Padding wewnątrz, bez scrolla głównego — wszystko mieści się na ekranie */
-.main-scroll{flex:1;overflow:hidden;padding:16px 20px}
+.main-scroll{flex:1;overflow:hidden;padding:14px 18px}
 
-/* ── WIDGET GRID — 3 kolumny, widgets dopasowane do ekranu ── */
+/* ── WIDGET GRID — 3 kol × 2 rzędy, mieści się na ekranie ── */
 .widgets-grid{
   display:grid;
   grid-template-columns:1fr 1fr 1fr;
@@ -72,78 +71,76 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 
 /* ── WIDGET CARD ── */
 .widget{background:var(--bg2);border:1px solid var(--border);border-radius:10px;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-.widget-header{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.widget-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 9px;border-bottom:1px solid var(--border);flex-shrink:0}
 .widget-title{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3)}
+.widget-badges{display:flex;gap:5px;align-items:center}
 .widget-badge{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
 .badge-lime  {background:rgba(200,240,96,.12); color:var(--accent)}
 .badge-purple{background:rgba(167,139,250,.12);color:var(--purple)}
 .badge-teal  {background:rgba(52,211,153,.12); color:var(--teal)}
 .badge-amber {background:rgba(251,191,36,.12); color:var(--amber)}
-/* widget-body scrolluje wewnątrz, nie "wycieka" na zewnątrz */
-.widget-body{padding:12px 14px;flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.badge-red   {background:rgba(248,113,113,.12);color:var(--red)}
+.widget-body{padding:10px 12px;flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
 
-/* ── WIDGET POZYCJE w gridzie ── */
-/* Jaszczurze sprawy: col 1, wiersze 1-2 (pełna wysokość) */
-.widget-todo   {grid-column:1;grid-row:1/3}
-/* Watchlist: col 2, wiersz 1 */
-.widget-wl     {grid-column:2;grid-row:1}
-/* Ticketing: col 3, wiersz 1 */
-.widget-tk     {grid-column:3;grid-row:1}
-/* Pogadaj z Beatą: col 2-3, wiersz 2 */
-.widget-chat   {grid-column:2/4;grid-row:2}
+/* ── POZYCJE w gridzie ── */
+.widget-todo{grid-column:1;grid-row:1/3}
+.widget-wl  {grid-column:2;grid-row:1}
+.widget-tk  {grid-column:3;grid-row:1}
+.widget-chat{grid-column:2/4;grid-row:2}
 
-/* ── TODO ("Jaszczurze sprawy") ── */
-.todo-add-area{flex-shrink:0;margin-bottom:10px}
+/* ── TODO ── */
+.todo-add-area{flex-shrink:0;margin-bottom:8px}
 .todo-input-row{display:flex;gap:6px;margin-bottom:6px}
 .todo-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:6px 10px;outline:none;transition:border-color .15s}
 .todo-input:focus{border-color:rgba(200,240,96,.4)}
 .todo-input::placeholder{color:var(--text3)}
-/* Adresat */
-.todo-assignee-row{display:flex;gap:5px;flex-wrap:wrap}
-.assignee-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:2px 9px;font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;transition:all .12s;white-space:nowrap}
+.todo-assignee-row{display:flex;gap:4px;flex-wrap:wrap}
+.assignee-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:2px 8px;font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;transition:all .12s;white-space:nowrap}
 .assignee-btn:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
 .assignee-btn.selected{color:#0e0e11;border-color:transparent}
 .btn{background:var(--accent);color:#0e0e11;border:none;border-radius:6px;padding:6px 12px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
 .btn:hover{opacity:.85}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;font-family:var(--sans);font-size:12px;cursor:pointer;transition:color .15s,border-color .15s;text-decoration:none;display:inline-block}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-family:var(--sans);font-size:11px;cursor:pointer;transition:color .15s,border-color .15s;text-decoration:none;display:inline-block}
 .btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
-/* Lista zadań — scroll wewnątrz widgetu */
-.todo-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:0}
-.todo-item{display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:6px;background:var(--bg3);border:1px solid transparent;transition:border-color .12s;flex-shrink:0}
+.todo-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;min-height:0}
+.todo-item{display:flex;align-items:flex-start;gap:7px;padding:6px 8px;border-radius:6px;background:var(--bg3);border:1px solid transparent;transition:border-color .12s;flex-shrink:0}
 .todo-item:hover{border-color:var(--border2)}
-.todo-checkbox{width:15px;height:15px;border:1.5px solid var(--text3);border-radius:4px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,background .15s;margin-top:1px}
+.todo-checkbox{width:14px;height:14px;border:1.5px solid var(--text3);border-radius:3px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,background .15s;margin-top:2px}
 .todo-checkbox.done{border-color:var(--accent);background:rgba(200,240,96,.15)}
-.todo-checkbox.done::after{content:'';width:7px;height:4px;border-left:1.5px solid var(--accent);border-bottom:1.5px solid var(--accent);transform:rotate(-45deg) translateY(-1px);display:block}
+.todo-checkbox.done::after{content:'';width:6px;height:4px;border-left:1.5px solid var(--accent);border-bottom:1.5px solid var(--accent);transform:rotate(-45deg) translateY(-1px);display:block}
 .todo-meta{flex:1;min-width:0}
-.todo-text{font-size:12px;color:var(--text);line-height:1.4;word-break:break-word}
+.todo-text{font-size:12px;color:var(--text);line-height:1.35;word-break:break-word}
 .todo-text.done{text-decoration:line-through;color:var(--text3)}
-.todo-sub{display:flex;align-items:center;gap:6px;margin-top:3px}
-.todo-assignee-tag{font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:3px;color:#0e0e11;font-weight:500}
+.todo-sub{display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap}
+.todo-assignee-tag{font-family:var(--mono);font-size:9px;padding:1px 5px;border-radius:3px;font-weight:500}
 .todo-author-tag{font-family:var(--mono);font-size:9px;color:var(--text3)}
-.todo-delete{width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:var(--text3);cursor:pointer;border-radius:3px;font-size:12px;transition:color .15s,background .15s;flex-shrink:0;margin-top:1px}
+.todo-delete{width:15px;height:15px;display:flex;align-items:center;justify-content:center;color:var(--text3);cursor:pointer;border-radius:3px;font-size:11px;transition:color .15s,background .15s;flex-shrink:0;margin-top:2px}
 .todo-delete:hover{color:var(--red);background:rgba(248,113,113,.1)}
-.empty-state{text-align:center;color:var(--text3);font-size:12px;font-family:var(--mono);padding:20px 0}
+.empty-state{text-align:center;color:var(--text3);font-size:11px;font-family:var(--mono);padding:16px 0}
 
 /* ── STAT BOX ── */
-.stat-row{display:flex;gap:10px;margin-bottom:12px}
-.stat-box{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center}
-.stat-num{font-family:var(--mono);font-size:22px;font-weight:300;color:var(--text);line-height:1}
-.stat-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-top:3px}
+.stat-row{display:flex;gap:8px;margin-bottom:10px}
+.stat-box{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;text-align:center}
+.stat-num{font-family:var(--mono);font-size:20px;font-weight:300;color:var(--text);line-height:1}
+.stat-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin-top:3px}
 
-/* ── MINI WATCHLIST ── */
-.top-label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
-.top-artists{display:flex;flex-direction:column;gap:5px}
-.artist-row{display:flex;align-items:center;padding:6px 9px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)}
-.artist-rank{font-family:var(--mono);font-size:10px;color:var(--text3);width:16px;flex-shrink:0}
-.artist-name{flex:1;font-size:12px;font-weight:500;padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.artist-val{font-family:var(--mono);font-size:11px;color:var(--purple);font-weight:500}
+/* ── WATCHLIST — dwie kolumny ── */
+.wl-lists{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;overflow:hidden;min-height:0}
+.wl-col{display:flex;flex-direction:column;min-height:0}
+.wl-col-label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:5px;flex-shrink:0}
+.wl-col-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:3px;min-height:0}
+.artist-row{display:flex;align-items:center;padding:5px 8px;background:var(--bg3);border-radius:5px;border:1px solid var(--border);gap:4px}
+.artist-rank{font-family:var(--mono);font-size:9px;color:var(--text3);width:16px;flex-shrink:0}
+.artist-name{flex:1;font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.artist-val{font-family:var(--mono);font-size:10px;color:var(--purple);font-weight:500;flex-shrink:0}
+.artist-date{font-family:var(--mono);font-size:9px;color:var(--text3);flex-shrink:0}
 
-/* ── MINI TICKETING ── */
-.ticket-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px}
+/* ── TICKETING ── */
+.ticket-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:10px}
 
-/* ── CHAT (Pogadaj z Beatą) ── */
-.chat-messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px 0;margin-bottom:10px;min-height:0}
+/* ── CHAT ── */
+.chat-messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;padding:2px 0;margin-bottom:8px;min-height:0}
 .chat-msg{display:flex;flex-direction:column;max-width:78%;animation:msgIn .2s ease}
 @keyframes msgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 .chat-msg.user  {align-self:flex-end; align-items:flex-end}
@@ -153,7 +150,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .chat-msg.beata .msg-bubble{background:var(--bg3);border:1px solid var(--border2);color:var(--text)}
 .msg-sender{font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:2px;letter-spacing:.06em}
 .chat-input-row{display:flex;gap:7px;flex-shrink:0}
-.chat-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:7px 11px;outline:none;resize:none;transition:border-color .15s;min-height:36px;max-height:80px}
+.chat-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:7px 11px;outline:none;resize:none;transition:border-color .15s;min-height:34px;max-height:72px}
 .chat-input:focus{border-color:rgba(200,240,96,.3)}
 .chat-input::placeholder{color:var(--text3)}
 .chat-spinner{display:flex;align-items:center;gap:5px;padding:5px 0}
@@ -225,68 +222,82 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 <div class="main-scroll">
 <div class="widgets-grid">
 
-  <!-- ── WIDGET: JASZCZURZE SPRAWY (col 1, full height) ── -->
+  <!-- ── JASZCZURZE SPRAWY ── -->
   <div class="widget widget-todo">
     <div class="widget-header">
       <span class="widget-title">Jaszczurze sprawy</span>
-      <span class="widget-badge badge-lime" id="todo-badge">0 zadań</span>
+      <div class="widget-badges">
+        <span class="widget-badge badge-lime" id="todo-badge">0 zadań</span>
+      </div>
     </div>
     <div class="widget-body">
-      <!-- Pole dodawania -->
       <div class="todo-add-area">
         <div class="todo-input-row">
           <input class="todo-input" id="todo-input" placeholder="Nowe zadanie…" maxlength="200">
           <button class="btn" onclick="addTodo()">+</button>
         </div>
-        <!-- Adresat -->
-        <div class="todo-assignee-row" id="assignee-row">
-          <!-- renderowane przez JS -->
-        </div>
+        <div class="todo-assignee-row" id="assignee-row"></div>
       </div>
-      <!-- Lista -->
       <div class="todo-list" id="todo-list">
         <div class="empty-state">Brak zadań</div>
       </div>
     </div>
   </div>
 
-  <!-- ── WIDGET: MINI WATCHLIST (col 2, row 1) ── -->
+  <!-- ── MINI WATCHLIST ── -->
   <div class="widget widget-wl">
     <div class="widget-header">
       <span class="widget-title">Watchlist</span>
-      <span class="widget-badge badge-purple" id="wl-badge">–</span>
+      <div class="widget-badges">
+        <span class="widget-badge badge-purple" id="wl-badge-total">–</span>
+        <span class="widget-badge badge-amber" id="wl-badge-reminder" title="Reminder">–</span>
+      </div>
     </div>
     <div class="widget-body">
-      <div class="stat-row">
+      <!-- Statystyki -->
+      <div class="stat-row" style="margin-bottom:8px">
         <div class="stat-box">
           <div class="stat-num" id="wl-total">–</div>
           <div class="stat-lbl">Artystów</div>
         </div>
+        <div class="stat-box">
+          <div class="stat-num" id="wl-reminder" style="color:var(--amber)">–</div>
+          <div class="stat-lbl">Reminder</div>
+        </div>
       </div>
-      <div class="top-label">TOP 3 / predMax</div>
-      <div class="top-artists" id="wl-top3">
-        <div class="empty-state">Ładowanie…</div>
+      <!-- Dwie listy -->
+      <div class="wl-lists">
+        <div class="wl-col">
+          <div class="wl-col-label">TOP 8 predMax</div>
+          <div class="wl-col-list" id="wl-top8"></div>
+        </div>
+        <div class="wl-col">
+          <div class="wl-col-label">Najnowsze</div>
+          <div class="wl-col-list" id="wl-newest8"></div>
+        </div>
       </div>
-      <div style="margin-top:10px">
+      <div style="margin-top:8px;flex-shrink:0">
         <a href="watchlist.html" class="btn-ghost">Otwórz Watchlist →</a>
       </div>
     </div>
   </div>
 
-  <!-- ── WIDGET: MINI TICKETING (col 3, row 1) ── -->
+  <!-- ── MINI TICKETING ── -->
   <div class="widget widget-tk">
     <div class="widget-header">
       <span class="widget-title">Ticketing</span>
-      <span class="widget-badge badge-teal" id="tk-badge">–</span>
+      <div class="widget-badges">
+        <span class="widget-badge badge-teal" id="tk-badge">–</span>
+      </div>
     </div>
     <div class="widget-body">
       <div class="ticket-stats">
         <div class="stat-box">
           <div class="stat-num" id="tk-shows">–</div>
-          <div class="stat-lbl">Showów</div>
+          <div class="stat-lbl">Eventów</div>
         </div>
         <div class="stat-box">
-          <div class="stat-num" id="tk-sales" style="font-size:17px">–</div>
+          <div class="stat-num" id="tk-sales" style="font-size:16px">–</div>
           <div class="stat-lbl">Sprzedaż</div>
         </div>
         <div class="stat-box">
@@ -298,11 +309,13 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     </div>
   </div>
 
-  <!-- ── WIDGET: POGADAJ Z BEATĄ (col 2-3, row 2) ── -->
+  <!-- ── POGADAJ Z BEATĄ ── -->
   <div class="widget widget-chat">
     <div class="widget-header">
       <span class="widget-title">Pogadaj z Beatą</span>
-      <span class="widget-badge badge-amber">AI</span>
+      <div class="widget-badges">
+        <span class="widget-badge badge-amber">AI</span>
+      </div>
     </div>
     <div class="widget-body">
       <div class="chat-messages" id="chat-messages">
@@ -337,14 +350,16 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 </div>
 
 <script>
-/* ── FIREBASE ── */
+/* ──────────────────────────────────────────────────
+   FIREBASE — ten sam config co watchlist/ticketing
+   ────────────────────────────────────────────────── */
 const firebaseConfig = {
-  apiKey: "AIzaSyCRPvHBMuBtqoUoSHBjmKVPYLSoqcEO7YE",
+  apiKey: "AIzaSyCUsvjkzYG3AVROysZh9BtN2_vagSSyMww",
   authDomain: "fourceplex-market.firebaseapp.com",
   projectId: "fourceplex-market",
-  storageBucket: "fourceplex-market.appspot.com",
-  messagingSenderId: "764737878461",
-  appId: "1:764737878461:web:placeholder"
+  storageBucket: "fourceplex-market.firebasestorage.app",
+  messagingSenderId: "300062366060",
+  appId: "1:300062366060:web:0cf7bd4128bea35cc63b49"
 };
 let db;
 try { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); }
@@ -401,32 +416,32 @@ function addUser() {
   renderUserList(); input.value = '';
 }
 function initUser() {
+  const sess = sessionStorage.getItem(SESSION_KEY);
   const users = getUsers();
-  const sess  = sessionStorage.getItem(SESSION_KEY);
   if (sess && users.includes(sess)) { currentUser = sess; updateBadge(sess); }
   else openModal();
 }
 
-/* ── ADRESACI ZADAŃ ── */
+/* ──────────────────────────────────────────────────
+   WIDGET: JASZCZURZE SPRAWY
+   ────────────────────────────────────────────────── */
 const ASSIGNEES = ['Monika','Igor','Mariusz','Radek'];
-// Kolory adresatów (stałe, niezależne od listy userów)
-const ASSIGNEE_COLORS = {'Monika':'#a78bfa','Igor':'#34d399','Mariusz':'#fbbf24','Radek':'#60a5fa'};
+const ASSIGNEE_COLORS = {Monika:'#a78bfa',Igor:'#34d399',Mariusz:'#fbbf24',Radek:'#60a5fa'};
 let selectedAssignee = null;
 
 function renderAssigneeButtons() {
   const row = document.getElementById('assignee-row');
   row.innerHTML = '';
-  // przycisk "brak adresata"
   const none = document.createElement('span');
   none.className = 'assignee-btn' + (selectedAssignee === null ? ' selected' : '');
+  if (selectedAssignee === null) none.style.cssText = 'background:rgba(255,255,255,.06);color:var(--text2);border-color:var(--border2)';
   none.textContent = 'ogólne';
-  none.style.cssText = selectedAssignee === null ? `background:${ASSIGNEE_COLORS['Monika']}22;color:var(--text2);border-color:var(--border2)` : '';
   none.onclick = () => { selectedAssignee = null; renderAssigneeButtons(); };
   row.appendChild(none);
 
   ASSIGNEES.forEach(name => {
-    const btn = document.createElement('span');
     const color = ASSIGNEE_COLORS[name] || '#888';
+    const btn = document.createElement('span');
     btn.className = 'assignee-btn' + (selectedAssignee === name ? ' selected' : '');
     if (selectedAssignee === name) btn.style.background = color;
     btn.textContent = name;
@@ -435,7 +450,6 @@ function renderAssigneeButtons() {
   });
 }
 
-/* ── WIDGET: JASZCZURZE SPRAWY ── */
 function addTodo() {
   const input = document.getElementById('todo-input');
   const text  = input.value.trim();
@@ -446,8 +460,7 @@ function addTodo() {
     addedBy:  currentUser,
     assignee: selectedAssignee || null,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(() => { input.value = ''; })
-    .catch(e => console.error('Todo add:', e));
+  }).then(() => { input.value = ''; }).catch(e => console.error('Todo add:', e));
 }
 document.getElementById('todo-input').addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
 function toggleTodo(id, done) { if (db) db.collection('todos').doc(id).update({ done: !done }).catch(console.error); }
@@ -460,21 +473,17 @@ function renderTodos(todos) {
   const pending = todos.filter(t => !t.done).length;
   if (badge)  badge.textContent = `${pending} zadań`;
   if (topCnt) topCnt.textContent = pending;
-
   if (!todos.length) { list.innerHTML = '<div class="empty-state">Brak zadań</div>'; return; }
 
-  // Sortowanie: chronologicznie, najnowsze u góry (niezależnie od done)
+  // Sortowanie chronologiczne — najnowsze u góry; odznaczenie nie zmienia pozycji
   const sorted = [...todos].sort((a,b) =>
     (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)
-  );
-  // Wyświetl max 10
-  const visible = sorted.slice(0, 10);
+  ).slice(0, 10);
 
   list.innerHTML = '';
-  visible.forEach(todo => {
+  sorted.forEach(todo => {
     const authorColor   = getUserColor(todo.addedBy || '');
     const assigneeColor = todo.assignee ? (ASSIGNEE_COLORS[todo.assignee] || '#888') : null;
-
     const el = document.createElement('div');
     el.className = 'todo-item';
     el.innerHTML = `
@@ -498,52 +507,102 @@ if (db) {
   );
 }
 
-/* ── WIDGET: MINI WATCHLIST ── */
-function renderWatchlist(artists) {
-  const total = artists.length;
-  document.getElementById('wl-total').textContent = total;
-  document.getElementById('wl-badge').textContent = `${total} artystów`;
-  const top3 = [...artists].filter(a => a.predMax != null)
-    .sort((a,b) => (b.predMax||0)-(a.predMax||0)).slice(0,3);
-  const el = document.getElementById('wl-top3');
-  if (!top3.length) { el.innerHTML = '<div class="empty-state">Brak danych</div>'; return; }
-  el.innerHTML = '';
-  top3.forEach((a,i) => {
-    const row = document.createElement('div');
-    row.className = 'artist-row';
-    row.innerHTML = `<span class="artist-rank">#${i+1}</span><span class="artist-name">${escHtml(a.name||'–')}</span><span class="artist-val">${fmtK(a.predMax)}</span>`;
-    el.appendChild(row);
-  });
+/* ──────────────────────────────────────────────────
+   WIDGET: MINI WATCHLIST
+   Kolekcja: 'artists'
+   Pola: predMax, dateAdded (ISO string), status ('reminder'|'check'|'sent'), name
+   ────────────────────────────────────────────────── */
+function fmtDateShort(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    return `${d.getDate().toString().padStart(2,'0')}.${(d.getMonth()+1).toString().padStart(2,'0')}`;
+  } catch { return ''; }
 }
+
+function renderWatchlist(artists) {
+  const total    = artists.length;
+  const reminder = artists.filter(a => a.status === 'reminder').length;
+
+  document.getElementById('wl-total').textContent    = total;
+  document.getElementById('wl-reminder').textContent = reminder;
+  document.getElementById('wl-badge-total').textContent   = `${total} artystów`;
+  document.getElementById('wl-badge-reminder').textContent = `${reminder} rem.`;
+
+  // TOP 8 wg predMax malejąco
+  const top8 = [...artists]
+    .filter(a => a.predMax != null)
+    .sort((a,b) => (b.predMax||0) - (a.predMax||0))
+    .slice(0, 8);
+
+  // TOP 8 najnowszych wg dateAdded malejąco
+  const newest8 = [...artists]
+    .filter(a => a.dateAdded)
+    .sort((a,b) => new Date(b.dateAdded) - new Date(a.dateAdded))
+    .slice(0, 8);
+
+  function renderList(containerId, items, valueKey, valueFn) {
+    const el = document.getElementById(containerId);
+    if (!items.length) { el.innerHTML = '<div class="empty-state">Brak danych</div>'; return; }
+    el.innerHTML = '';
+    items.forEach((a, i) => {
+      const row = document.createElement('div');
+      row.className = 'artist-row';
+      row.innerHTML = `
+        <span class="artist-rank">#${i+1}</span>
+        <span class="artist-name">${escHtml(a.name||'–')}</span>
+        <span class="${valueKey === 'predMax' ? 'artist-val' : 'artist-date'}">${valueFn(a)}</span>`;
+      el.appendChild(row);
+    });
+  }
+
+  renderList('wl-top8',   top8,   'predMax',   a => fmtK(a.predMax));
+  renderList('wl-newest8', newest8, 'dateAdded', a => fmtDateShort(a.dateAdded));
+}
+
 if (db) {
   db.collection('artists').onSnapshot(
     snap => renderWatchlist(snap.docs.map(d => ({id:d.id,...d.data()}))),
-    e => { console.error('Artists:', e); document.getElementById('wl-top3').innerHTML = '<div class="empty-state">Błąd ładowania</div>'; }
+    e => {
+      console.error('Artists:', e);
+      ['wl-top8','wl-newest8'].forEach(id => { document.getElementById(id).innerHTML = '<div class="empty-state">Błąd</div>'; });
+    }
   );
 }
 
-/* ── WIDGET: MINI TICKETING ── */
-function renderTicketing(shows) {
-  const active = shows.filter(s => s.active !== false);
+/* ──────────────────────────────────────────────────
+   WIDGET: MINI TICKETING
+   Kolekcja: 'ticketing_events' (nie 'shows'!)
+   Pola: tm, eb, other, cap, date (YYYY-MM-DD string)
+   "Aktywne" = data >= dziś
+   ────────────────────────────────────────────────── */
+function renderTicketing(events) {
+  const today = new Date().toISOString().slice(0,10);
+  const active = events.filter(e => (e.date || '') >= today);
   let totalSales = 0, breakEvenCount = 0;
-  shows.forEach(s => {
-    const sold = (s.tm||0)+(s.eb||0)+(s.other||0);
+
+  events.forEach(e => {
+    const sold = (e.tm||0) + (e.eb||0) + (e.other||0);
     totalSales += sold;
-    if ((s.cap||0) > 0 && sold/s.cap >= 0.5) breakEvenCount++;
+    if ((e.cap||0) > 0 && sold / e.cap >= 0.5) breakEvenCount++;
   });
+
   document.getElementById('tk-shows').textContent = active.length;
   document.getElementById('tk-sales').textContent = fmtK(totalSales);
   document.getElementById('tk-be').textContent    = breakEvenCount;
-  document.getElementById('tk-badge').textContent = `${active.length} aktywnych`;
+  document.getElementById('tk-badge').textContent = `${active.length} nadchodzących`;
 }
+
 if (db) {
-  db.collection('shows').onSnapshot(
+  db.collection('ticketing_events').onSnapshot(
     snap => renderTicketing(snap.docs.map(d => ({id:d.id,...d.data()}))),
-    e => console.error('Shows:', e)
+    e => console.error('Ticketing events:', e)
   );
 }
 
-/* ── WIDGET: POGADAJ Z BEATĄ ── */
+/* ──────────────────────────────────────────────────
+   WIDGET: POGADAJ Z BEATĄ
+   ────────────────────────────────────────────────── */
 const chatHistory   = [];
 const CLAUDE_SYSTEM = 'Jesteś Beatą — wirtualną office managerką agencji koncertowej FOURCE. Rozmawiasz po polsku, jesteś pomocna, konkretna i przyjazna. Pomagasz zespołowi (Monika, Igor, Mariusz) w planowaniu tras koncertowych, analizie artystów i zarządzaniu sprzedażą biletów. Wypowiadasz się jako kobieta. Odpowiadaj zwięźle i konkretnie.';
 
@@ -551,8 +610,7 @@ function appendMsg(role, text) {
   const c = document.getElementById('chat-messages');
   const m = document.createElement('div');
   m.className = `chat-msg ${role}`;
-  const sender = role === 'user' ? (currentUser || 'Ty') : 'Beata';
-  m.innerHTML = `<div class="msg-sender">${escHtml(sender)}</div><div class="msg-bubble">${escHtml(text)}</div>`;
+  m.innerHTML = `<div class="msg-sender">${escHtml(role==='user'?(currentUser||'Ty'):'Beata')}</div><div class="msg-bubble">${escHtml(text)}</div>`;
   c.appendChild(m); c.scrollTop = c.scrollHeight;
 }
 function showSpinner() {
@@ -587,7 +645,7 @@ async function sendChat() {
 }
 document.getElementById('chat-input').addEventListener('keydown', function(e) {
   if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
-  setTimeout(() => { this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,80)+'px'; }, 0);
+  setTimeout(() => { this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,72)+'px'; }, 0);
 });
 
 /* ── HELPERS ── */
