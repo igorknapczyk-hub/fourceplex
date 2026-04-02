@@ -82,8 +82,8 @@ button:disabled{opacity:.35;cursor:not-allowed}
 
 /* ── 2-PANEL LAYOUT ── */
 .content-area{flex:1;display:flex;overflow:hidden;min-height:0}
-.list-panel{width:340px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.detail-panel{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.list-panel{width:40%;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.detail-panel{width:60%;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
 .detail-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-family:var(--mono);font-size:11px;letter-spacing:.08em;gap:10px}
 .detail-empty svg{width:32px;height:32px;opacity:.25}
 
@@ -173,6 +173,13 @@ select.form-input{cursor:pointer}
 .tl-label.late{color:var(--red)}
 .tl-label.future{color:var(--text3)}
 .tl-period{font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:auto}
+
+/* ── CHART ── */
+.chart-wrap{position:relative;width:100%;height:160px}
+.chart-wrap svg{width:100%;height:100%;overflow:visible}
+.chart-legend{display:flex;gap:14px;margin-top:8px}
+.chart-legend-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--text3)}
+.chart-legend-dot{width:8px;height:2px;border-radius:1px;flex-shrink:0}
 
 /* ── META ADS PLACEHOLDER ── */
 .meta-placeholder{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:10px}
@@ -397,6 +404,7 @@ window._fs={collection,doc,addDoc,setDoc,updateDoc,deleteDoc,getDocs,query,order
 
 const showsCol=collection(db,'marketing_shows');
 const costsCol=collection(db,'marketing_costs');
+const tkEvCol=collection(db,'ticketing_events');
 
 // Listen shows
 onSnapshot(query(showsCol,orderBy('date','asc')),snap=>{
@@ -411,6 +419,11 @@ onSnapshot(query(showsCol,orderBy('date','asc')),snap=>{
 onSnapshot(query(costsCol,orderBy('createdAt','asc')),snap=>{
   window._costs=snap.docs.map(d=>({id:d.id,...d.data()}));
   if(window._selectedShowId)renderDetail(window._selectedShowId);
+});
+
+// Load ticketing events for chart cross-reference
+onSnapshot(tkEvCol,snap=>{
+  window._tkEvents=snap.docs.map(d=>({id:d.id,...d.data()}));
 });
 
 window._showsLoaded=false;
@@ -587,12 +600,13 @@ function renderDetail(id){
       <div class="sec-body">
         ${costs.length?`
         <table class="cost-table">
-          <thead><tr><th>Kategoria</th><th>Opis</th><th>Kwota</th><th>Dodał</th><th></th></tr></thead>
+          <thead><tr><th>Kategoria</th><th>Opis</th><th>Data</th><th>Kwota</th><th>Dodał</th><th></th></tr></thead>
           <tbody>
           ${costs.map(c=>`
             <tr>
               <td><span class="cost-cat">${esc(c.category||'–')}</span></td>
               <td style="color:var(--text)">${esc(c.description||'–')}</td>
+              <td style="font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap">${c.costDate||fmtCostDate(c.createdAt)}</td>
               <td class="cost-amount">${fmtPLN(c.amount)} zł</td>
               <td>${esc(c.addedBy||'–')}</td>
               <td><span class="cost-delete" onclick="deleteCost('${c.id}')" title="Usuń">×</span></td>
@@ -618,17 +632,38 @@ function renderDetail(id){
               <option value="Inne">Inne</option>
             </select>
           </div>
-          <div style="flex:1;min-width:100px">
+          <div style="flex:1;min-width:90px">
             <div class="form-label">Opis</div>
             <input class="form-input" style="width:100%" type="text" id="cf-desc-${id}" placeholder="Kampania główna...">
           </div>
-          <div style="width:90px">
+          <div style="width:110px">
+            <div class="form-label">Data wydatku</div>
+            <input class="form-input" style="width:100%" type="date" id="cf-date-${id}" value="${new Date().toISOString().slice(0,10)}">
+          </div>
+          <div style="width:80px">
             <div class="form-label">Kwota (zł)</div>
             <input class="form-input" style="width:100%" type="number" id="cf-amt-${id}" placeholder="0" min="0">
           </div>
           <div style="padding-top:18px">
             <button class="btn btn-teal btn-sm" onclick="addCost('${id}')">+ Dodaj</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WYKRES: Koszty & Sprzedaż biletów -->
+    <div class="sec-card">
+      <div class="sec-head">
+        <span class="sec-title">Koszty vs. Sprzedaż biletów (tygodniowo)</span>
+        <span id="chart-status-${id}" style="font-family:var(--mono);font-size:9px;color:var(--text3)">ładowanie…</span>
+      </div>
+      <div class="sec-body">
+        <div class="chart-wrap" id="chart-wrap-${id}">
+          <svg id="chart-svg-${id}" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="chart-legend">
+          <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--accent)"></div>Koszty marketingowe (zł)</div>
+          <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--purple)"></div>Sprzedaż biletów (szt.)</div>
         </div>
       </div>
     </div>
@@ -664,6 +699,7 @@ function renderDetail(id){
 
   renderCheckpoints(show);
   renderTimeline(show);
+  renderChart(show);
 }
 
 function renderCheckpoints(show){
@@ -742,6 +778,7 @@ async function addCost(showId){
   if(!window._db||!window._fs)return;
   const cat=document.getElementById(`cf-cat-${showId}`)?.value;
   const desc=document.getElementById(`cf-desc-${showId}`)?.value?.trim();
+  const costDate=document.getElementById(`cf-date-${showId}`)?.value||new Date().toISOString().slice(0,10);
   const amt=parseFloat(document.getElementById(`cf-amt-${showId}`)?.value)||0;
   if(!cat||!desc||!amt)return;
   const show=(window._shows||[]).find(s=>s.id===showId);
@@ -749,7 +786,7 @@ async function addCost(showId){
   try{
     await addDoc(collection(window._db,'marketing_costs'),{
       showId,artistName:show?.artistName||'',category:cat,description:desc,amount:amt,
-      addedBy:curUser||'–',createdAt:serverTimestamp()
+      costDate,addedBy:curUser||'–',createdAt:serverTimestamp()
     });
     document.getElementById(`cf-desc-${showId}`).value='';
     document.getElementById(`cf-amt-${showId}`).value='';
@@ -790,6 +827,169 @@ async function saveShow(){
     ['f-artist','f-date','f-venue','f-budget'].forEach(id=>{document.getElementById(id).value='';});
     closeAddPanel();
   }catch(e){console.error(e);alert('Błąd zapisu: '+e.message);}
+}
+
+/* ────────────────────────────────────────────────
+   CHART: Koszty vs. Sprzedaż biletów (tygodniowo)
+   ──────────────────────────────────────────────── */
+function fmtCostDate(ts){
+  if(!ts)return'–';
+  try{const d=new Date(ts.seconds*1000);return d.toLocaleDateString('pl-PL');}catch{return'–';}
+}
+
+async function renderChart(show){
+  const svgEl=document.getElementById(`chart-svg-${show.id}`);
+  const statusEl=document.getElementById(`chart-status-${show.id}`);
+  if(!svgEl)return;
+
+  // ── 1. Build weekly cost buckets ──
+  const costs=showCosts(show.id);
+  // Get show date as anchor; go back up to 12 weeks or to earliest cost
+  const showDate=new Date(show.date);
+  const today=new Date();today.setHours(0,0,0,0);
+
+  // Find earliest cost date
+  let earliest=new Date(today);
+  costs.forEach(c=>{
+    const d=c.costDate?new Date(c.costDate):(c.createdAt?new Date(c.createdAt.seconds*1000):today);
+    if(d<earliest)earliest=d;
+  });
+  // Snap earliest to Monday of that week
+  const mondayOf=d=>{const r=new Date(d);const day=r.getDay();r.setDate(r.getDate()-(day===0?6:day-1));r.setHours(0,0,0,0);return r;};
+  const startWeek=mondayOf(earliest<today?earliest:today);
+  // Collect Tuesdays from ticketing_snapshots for this artist
+  // end at show date or today, whichever is sooner
+  const endDate=showDate<today?showDate:today;
+
+  // Build array of week start dates (Mondays) from startWeek up to endDate
+  const weeks=[];
+  const cur=new Date(startWeek);
+  while(cur<=endDate){
+    weeks.push(new Date(cur));
+    cur.setDate(cur.getDate()+7);
+  }
+  // Always include at least one data point
+  if(weeks.length===0)weeks.push(new Date(startWeek));
+
+  // Map week label → cumulative costs up to that week end
+  const weekLabels=weeks.map(w=>{
+    const end=new Date(w);end.setDate(end.getDate()+6);
+    return{start:new Date(w),end};
+  });
+
+  // Cumulative cost per week
+  const cumCosts=weekLabels.map(({end})=>{
+    return costs.reduce((s,c)=>{
+      const d=c.costDate?new Date(c.costDate):(c.createdAt?new Date(c.createdAt.seconds*1000):null);
+      if(d&&d<=end)return s+(c.amount||0);
+      return s;
+    },0);
+  });
+
+  // ── 2. Pull ticketing snapshots for this artist ──
+  let ticketData=[]; // {weekStart, sold}
+  if(window._db&&window._fs){
+    try{
+      const {collection,getDocs,query,orderBy}=window._fs;
+      const snapsCol=collection(window._db,'ticketing_snapshots');
+      const snap=await getDocs(query(snapsCol,orderBy('ts','asc')));
+      // Find matching show in ticketing_events by artist name
+      const tkEvents=(window._tkEvents)||[];
+      const matchedEvt=tkEvents.find(e=>(e.name||'').toLowerCase().trim()===(show.artistName||'').toLowerCase().trim());
+      const matchedId=matchedEvt?.id;
+
+      snap.forEach(d=>{
+        const s=d.data();
+        if(matchedId&&s.eventId!==matchedId)return;
+        if(!matchedId&&(s.artistName||'').toLowerCase().trim()!==(show.artistName||'').toLowerCase().trim())return;
+        const ts=s.ts?new Date(s.ts.seconds*1000):null;
+        if(!ts)return;
+        const sold=(s.tm||0)+(s.eb||0)+(s.other||0);
+        ticketData.push({ts,sold});
+      });
+    }catch(e){console.warn('Snapshots error:',e);}
+  }
+
+  // Assign ticket snapshots to weeks (last snapshot in that week)
+  const weekTickets=weekLabels.map(({start,end})=>{
+    const inWeek=ticketData.filter(t=>t.ts>=start&&t.ts<=end);
+    if(!inWeek.length)return null;
+    return inWeek[inWeek.length-1].sold;
+  });
+
+  // Fill nulls with last known value (forward fill)
+  let lastKnown=0;
+  const filledTickets=weekTickets.map(v=>{if(v!==null){lastKnown=v;return v;}return lastKnown;});
+
+  // ── 3. Draw SVG ──
+  const W=600,H=140,PL=10,PR=10,PT=10,PB=28;
+  const chartW=W-PL-PR,chartH=H-PT-PB;
+  const n=weeks.length;
+
+  const maxCost=Math.max(...cumCosts,1);
+  const maxTickets=Math.max(...filledTickets,1);
+
+  const xPos=i=>PL+(n===1?chartW/2:i*(chartW/(n-1)));
+  const yC=v=>PT+chartH-(v/maxCost)*chartH;
+  const yT=v=>PT+chartH-(v/maxTickets)*chartH;
+
+  const pathLine=(pts)=>`M${pts.map(([x,y])=>`${x},${y}`).join('L')}`;
+
+  const costPts=cumCosts.map((v,i)=>[xPos(i),yC(v)]);
+  const tickPts=filledTickets.map((v,i)=>[xPos(i),yT(v)]);
+
+  // Area fill for costs (lime)
+  const costArea=`M${xPos(0)},${PT+chartH} L${costPts.map(([x,y])=>`${x},${y}`).join('L')} L${xPos(n-1)},${PT+chartH}Z`;
+  // Area fill for tickets (purple)
+  const tickArea=`M${xPos(0)},${PT+chartH} L${tickPts.map(([x,y])=>`${x},${y}`).join('L')} L${xPos(n-1)},${PT+chartH}Z`;
+
+  // X axis labels (show every Nth week)
+  const labelStep=Math.ceil(n/5);
+  const xLabels=weeks.map((w,i)=>{
+    if(i%labelStep!==0&&i!==n-1)return'';
+    return`${w.getDate().toString().padStart(2,'0')}.${(w.getMonth()+1).toString().padStart(2,'0')}`;
+  });
+
+  // Y axis gridlines (3 lines)
+  const gridLines=[0.25,0.5,0.75,1].map(p=>{
+    const y=PT+chartH-(p*chartH);
+    return`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    <text x="${PL}" y="${y-2}" font-size="7" fill="#5c5b6e" font-family="monospace">${Math.round(maxCost*p).toLocaleString('pl-PL')}</text>`;
+  }).join('');
+
+  const xAxisLabels=xLabels.map((l,i)=>l?`<text x="${xPos(i)}" y="${H-8}" text-anchor="middle" font-size="7.5" fill="#5c5b6e" font-family="monospace">${l}</text>`:'').join('');
+
+  // Dots on lines
+  const costDots=costPts.map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="2.5" fill="#c8f060" opacity="0.9"/>`).join('');
+  const tickDots=tickPts.map(([x,y],i)=>filledTickets[i]>0?`<circle cx="${x}" cy="${y}" r="2.5" fill="#a78bfa" opacity="0.9"/>`:'').join('');
+
+  svgEl.innerHTML=`
+    <defs>
+      <linearGradient id="gradCost-${show.id}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#c8f060" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="#c8f060" stop-opacity="0.02"/>
+      </linearGradient>
+      <linearGradient id="gradTick-${show.id}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+    ${gridLines}
+    <path d="${tickArea}" fill="url(#gradTick-${show.id})"/>
+    <path d="${pathLine(tickPts)}" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="${costArea}" fill="url(#gradCost-${show.id})"/>
+    <path d="${pathLine(costPts)}" fill="none" stroke="#c8f060" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+    ${tickDots}
+    ${costDots}
+    ${xAxisLabels}
+    <line x1="${PL}" y1="${PT+chartH}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  `;
+
+  const hasTickets=filledTickets.some(v=>v>0);
+  if(statusEl){
+    statusEl.textContent=hasTickets?`max ${maxTickets} sprzedanych`:'brak danych z Ticketingu';
+    statusEl.style.color=hasTickets?'var(--teal)':'var(--text3)';
+  }
 }
 
 /* ────────────────────────────────────────────────
