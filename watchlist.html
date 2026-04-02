@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fource.Plex — Watchlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0e11;--bg2:#16161a;--bg3:#1e1e24;--bg4:#26262e;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0eff4;--text2:#9998a8;--text3:#5c5b6e;
+  --accent:#c8f060;--accent2:#9de84a;
+  --purple:#a78bfa;--teal:#34d399;--amber:#fbbf24;--red:#f87171;--blue:#60a5fa;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:54px 1fr;height:100vh;overflow:hidden}
+
+/* TOPBAR */
+.topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.fource-brand{font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:.2em;color:var(--text3);text-transform:uppercase;border-right:1px solid var(--border2);padding-right:16px}
+.fource-brand span{color:var(--accent)}
+.brand-logo{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--text);letter-spacing:.06em}
+.brand-tag{font-size:10px;color:var(--text3);font-family:var(--mono);border:1px solid var(--border2);padding:2px 7px;border-radius:4px;margin-left:8px}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar-stat{font-family:var(--mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
+.topbar-stat strong{color:var(--accent)}
+.user-badge{background:var(--bg3);border:1px solid var(--border2);padding:4px 10px;border-radius:6px;font-size:12px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px}
+.user-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0}
+.refresh-status{font-family:var(--mono);font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px}
+.refresh-dot{width:5px;height:5px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.refresh-dot.active{background:var(--amber);animation:pulse 1.2s infinite}
+
+/* SIDEBAR */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:18px 0;display:flex;flex-direction:column;gap:1px;overflow:hidden}
+.nav-label{font-family:var(--mono);font-size:9px;font-weight:500;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;padding:12px 18px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 18px;font-size:13px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all .15s}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--accent);background:rgba(200,240,96,.06);border-left-color:var(--accent)}
+.nav-item.disabled{opacity:.28;cursor:not-allowed;pointer-events:none}
+.nav-icon{width:14px;height:14px;flex-shrink:0;opacity:.6}
+.nav-item.active .nav-icon,.nav-item:hover .nav-icon{opacity:1}
+.sidebar-footer{margin-top:auto;padding:14px 18px;border-top:1px solid var(--border)}
+.sidebar-footer-logo{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.18em;color:var(--text3);text-transform:uppercase;margin-bottom:3px}
+.sidebar-footer-logo span{color:var(--accent)}
+.sidebar-footer-text{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.main-fixed{flex-shrink:0}
+
+/* STATS */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)}
+.stat-block{padding:14px 20px;border-right:1px solid var(--border)}
+.stat-block:last-child{border-right:none}
+.stat-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.09em;text-transform:uppercase;margin-bottom:3px}
+.stat-value{font-family:var(--mono);font-size:24px;font-weight:300;color:var(--text)}
+.stat-value span{font-size:11px;color:var(--text3);margin-left:3px}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.stat-sub.up{color:var(--teal)}
+.stat-sub.warn{color:var(--amber)}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:160px}
+.search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3)}
+.search-wrap input{width:100%;padding:6px 10px 6px 29px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;transition:border-color .15s}
+.search-wrap input::placeholder{color:var(--text3)}
+.search-wrap input:focus{border-color:var(--accent)}
+select.filter{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-family:var(--sans);font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;outline:none}
+select.filter:focus{border-color:var(--accent)}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:6px 13px;border-radius:6px;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--bg4);color:var(--text)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-del{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:5px;border:1px solid rgba(248,113,113,.25);background:rgba(248,113,113,.08);color:var(--red);cursor:pointer;transition:all .15s;flex-shrink:0;padding:0}
+.btn-del:hover{background:rgba(248,113,113,.22);border-color:rgba(248,113,113,.5)}
+.btn-accent{background:var(--accent);border-color:var(--accent);color:#0e0e11;font-weight:500}
+.btn-accent:hover{background:var(--accent2);border-color:var(--accent2);color:#0e0e11}
+.btn-purple{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.3);color:var(--purple)}
+.btn-purple:hover{background:rgba(167,139,250,.22)}
+.btn-teal{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--teal)}
+.btn-teal:hover{background:rgba(52,211,153,.18)}
+.btn-amber{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.3);color:var(--amber)}
+.btn-amber:hover{background:rgba(251,191,36,.18)}
+.legend{display:flex;gap:10px;align-items:center;margin-left:auto}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);font-family:var(--mono)}
+.l-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* SCROLL AREA */
+.scroll-area{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative}
+
+/* OVERLAY PANELS */
+.overlay-panel{display:none;position:absolute;top:0;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border2);z-index:50;overflow-y:auto;max-height:100%;animation:sd .18s ease}
+.overlay-panel.open{display:block}
+@keyframes sd{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.panel-inner{padding:20px 22px}
+.panel-title{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.panel-title-left{display:flex;align-items:center;gap:8px}
+.panel-title-left::before{content:'';display:block;width:3px;height:13px;background:var(--accent);border-radius:2px}
+.panel-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:0 4px}
+.panel-close:hover{color:var(--text)}
+
+/* TABLE */
+.table-scroll{flex:1;overflow-y:auto;overflow-x:auto}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead th{font-family:var(--mono);font-size:9px;font-weight:500;color:var(--text3);letter-spacing:.09em;text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--bg2);text-align:left;cursor:pointer;user-select:none;white-space:nowrap;position:sticky;top:0;z-index:10}
+thead th:hover{color:var(--text2)}
+thead th.sort-asc::after{content:' ↑';color:var(--accent)}
+thead th.sort-desc::after{content:' ↓';color:var(--accent)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:hover>td{background:var(--bg3)}
+tbody tr.row-ai{border-left:2px solid rgba(167,139,250,.5)}
+tbody tr.row-manual{border-left:2px solid rgba(52,211,153,.4)}
+tbody tr.row-reminder{border-left:2px solid rgba(251,191,36,.7);background:rgba(251,191,36,.015)}
+tbody tr.selected{background:rgba(200,240,96,.05)!important;border-left-color:var(--accent)!important}
+td{padding:8px 12px;font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+td.name-cell{color:var(--text);font-weight:500;font-size:13px}
+td.notes-cell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:var(--text3);max-width:280px}
+input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--accent)}
+
+/* SPOTIFY */
+.spotify-link{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(29,185,84,.15);border:1px solid rgba(29,185,84,.25);color:#1db954;text-decoration:none;transition:all .15s;flex-shrink:0}
+.spotify-link:hover{background:rgba(29,185,84,.3)}
+.spotify-link svg{width:11px;height:11px}
+.no-spotify{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid var(--border);opacity:.2}
+.no-spotify svg{width:11px;height:11px;color:var(--text3)}
+
+/* STATUS */
+.status-select{font-family:var(--mono);font-size:10px;padding:3px 7px;border-radius:4px;cursor:pointer;outline:none;border:1px solid transparent;background:transparent;transition:all .15s;max-width:100%}
+.s-check{color:var(--text3);border-color:var(--border);background:rgba(92,91,110,.25)}
+.s-sent{color:var(--teal);border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.1)}
+.s-reminder{color:var(--amber);border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.1)}
+.status-select option{background:var(--bg3);color:var(--text);font-family:var(--mono)}
+
+/* BADGES */
+.badge{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:500;padding:1px 6px;border-radius:3px;white-space:nowrap;vertical-align:middle}
+.b-ai{background:rgba(167,139,250,.15);color:var(--purple)}
+
+/* PL SHOW */
+.pl-no{font-family:var(--mono);font-size:10px;color:var(--text3);background:rgba(92,91,110,.2);border:1px solid var(--border);padding:2px 7px;border-radius:4px;white-space:nowrap}
+.pl-yes{font-family:var(--mono);font-size:10px;color:var(--teal);background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);padding:2px 7px;border-radius:4px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;display:inline-block}
+.pl-loading{font-family:var(--mono);font-size:10px;color:var(--text3);display:inline-flex;align-items:center;gap:4px}
+.sp-xs{width:10px;height:10px;border:1.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+
+/* PREDICT + TREND */
+.predict-wrap{display:flex;align-items:center;gap:5px;flex-wrap:nowrap}
+.predict-track{width:32px;height:3px;background:var(--bg4);border-radius:2px;flex-shrink:0}
+.predict-fill{height:3px;border-radius:2px;background:var(--accent)}
+.predict-num{font-family:var(--mono);font-size:10px;color:var(--text2);white-space:nowrap}
+.venue-tag{font-family:var(--mono);font-size:9px;color:var(--blue);background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);padding:1px 5px;border-radius:3px;white-space:nowrap}
+.trend-up{color:var(--teal);font-size:13px;flex-shrink:0}
+.trend-down{color:var(--red);font-size:13px;flex-shrink:0}
+.trend-flat{color:var(--text3);font-size:12px;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:620px}
+.form-full{grid-column:1/-1}
+.add-name-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:14px;max-width:620px}
+.add-name-row .ff{flex:1}
+.form-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:13px;padding:7px 11px;border-radius:6px;outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--text3)}
+.form-input.ai-filled{border-color:rgba(167,139,250,.4)}
+textarea.form-input{resize:vertical;min-height:60px}
+select.form-input{cursor:pointer}
+.form-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end;max-width:620px}
+.fill-ind{font-family:var(--mono);font-size:11px;color:var(--purple);display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.sp-sm{width:12px;height:12px;border:1.5px solid rgba(167,139,250,.3);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite}
+.info-tip{font-family:var(--mono);font-size:9px;color:var(--text3);border:1px solid var(--border2);border-radius:3px;padding:0 4px;cursor:help;position:relative;display:inline-block}
+.info-tip:hover .tip-box{display:block}
+.tip-box{display:none;position:absolute;bottom:calc(100%+6px);left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);color:var(--text2);font-size:11px;padding:8px 12px;border-radius:6px;white-space:normal;z-index:300;width:240px;line-height:1.5;font-family:var(--sans);font-weight:400;letter-spacing:0}
+
+/* AI DISCOVER */
+.ai-search-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:4px}
+.ai-field{flex:1;min-width:130px}
+.ai-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);margin-bottom:8px;margin-top:10px;transition:border-color .15s}
+.ai-row:hover{border-color:var(--border2)}
+.ai-info{flex:1}
+.ai-name{font-size:13px;font-weight:500;color:var(--text)}
+.ai-meta{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.ai-note{font-size:11px;color:var(--text3);margin-top:3px;font-style:italic}
+.ai-pred{font-family:var(--mono);font-size:11px;color:var(--accent);white-space:nowrap;margin-right:4px;text-align:right;min-width:100px}
+.ai-pred small{display:block;font-size:9px;color:var(--blue)}
+.load-row{display:flex;align-items:center;gap:8px;padding:14px 0;font-family:var(--mono);font-size:12px;color:var(--text3)}
+.sp{width:14px;height:14px;border:1.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+
+/* COMPARE */
+.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:14px}
+.cmp-card{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:16px}
+.cmp-card.cmp-winner{border-color:var(--accent);background:rgba(200,240,96,.04)}
+.cmp-name{font-size:14px;font-weight:500;color:var(--text);margin-bottom:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--border);gap:8px}
+.cmp-row:last-child{border-bottom:none}
+.cmp-key{color:var(--text3);font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.cmp-val{color:var(--text2);font-family:var(--mono);font-size:10px;text-align:right;white-space:normal}
+.cmp-win{color:var(--accent);font-family:var(--mono);font-size:10px;font-weight:500;text-align:right;white-space:normal}
+.cmp-verdict{background:rgba(200,240,96,.07);border:1px solid rgba(200,240,96,.18);border-radius:8px;padding:14px;margin-top:14px;font-size:13px;color:var(--text);line-height:1.65}
+.cmp-verdict strong{color:var(--accent)}
+
+/* IMPORT */
+.drop-zone{border:1.5px dashed var(--border2);border-radius:10px;padding:24px 20px;text-align:center;cursor:pointer;transition:all .2s;max-width:500px;margin-bottom:12px}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(200,240,96,.03)}
+.drop-zone-text{font-family:var(--mono);font-size:12px;color:var(--text3);margin-top:6px}
+.progress-bar-wrap{background:var(--bg3);border-radius:4px;height:5px;margin-top:8px;overflow:hidden;max-width:500px}
+.progress-bar-fill{height:5px;border-radius:4px;background:var(--accent);transition:width .3s}
+.progress-text{font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:5px}
+
+/* USER MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px;min-width:320px}
+.modal-title{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text);margin-bottom:20px;letter-spacing:.05em}
+.user-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.user-opt{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;transition:all .15s;font-size:13px;color:var(--text2)}
+.user-opt:hover{border-color:var(--border2);color:var(--text)}
+.user-opt.selected-user{border-color:var(--accent);color:var(--accent);background:rgba(200,240,96,.06)}
+.user-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;flex-shrink:0}
+.new-user-row{display:flex;gap:8px}
+
+/* NOTIF */
+.notif{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:12px;padding:10px 18px;border-radius:8px;animation:ni .2s ease;z-index:999;max-width:340px}
+.notif.err{border-color:var(--red);color:var(--red)}
+.notif.info{border-color:var(--blue);color:var(--blue)}
+@keyframes ni{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <div class="modal-title">Kto jesteś?</div>
+    <div class="user-list" id="userList"></div>
+    <div class="new-user-row">
+      <input class="form-input" type="text" id="newUserInput" placeholder="Dodaj nową osobę..." style="flex:1">
+      <button class="btn btn-accent" onclick="addNewUser()">Dodaj</button>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="fource-brand"><span>F</span>OURCE</div>
+    <div><span class="brand-logo">WATCHLIST</span><span class="brand-tag">Fource.Plex</span></div>
+  </div>
+  <div class="topbar-right">
+    <div class="refresh-status" id="refreshStatus"><div class="refresh-dot" id="refreshDot"></div><span id="refreshLabel">inicjalizacja...</span></div>
+    <div class="topbar-stat"><div class="live-dot"></div>&nbsp;<strong id="topCount">0</strong> artystów</div>
+    <div class="user-badge" onclick="openUserModal()"><div class="user-dot"></div><span id="currentUserLabel">Wybierz użytkownika</span></div>
+  </div>
+</div>
+
+<div class="sidebar">
+  <div class="nav-label">Moduły</div>
+  <div class="nav-item" onclick="location.href='index.html'">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M1 6h14M5 6v8"/></svg>
+    Terrarium
+  </div>
+  <div class="nav-item active" onclick="closeAllPanels()">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="5" r="2.5"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+    Watchlist
+  </div>
+  <div class="nav-item" onclick="location.href='ticketing.html'">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="4" width="14" height="10" rx="1.5"/><path d="M5 4V2M11 4V2"/><path d="M1 8h14"/></svg>
+    Ticketing
+  </div>
+  <div class="nav-label">Watchlist</div>
+  <div class="nav-item" onclick="togglePanel('addPanel')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
+    Dodaj artystę
+  </div>
+  <div class="nav-item" onclick="togglePanel('aiPanel')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2L10 6H14L11 9L12 13L8 10L4 13L5 9L2 6H6Z"/></svg>
+    Odkryj z AI
+  </div>
+  <div class="nav-item" onclick="togglePanel('importPanel')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2v8M5 7l3 3 3-3"/><path d="M2 12v2h12v-2"/></svg>
+    Import XLS
+  </div>
+  <div class="nav-item disabled" id="sideCompare" onclick="togglePanel('comparePanel')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 2L1 8L5 14M11 2L15 8L11 14"/></svg>
+    Porównaj
+  </div>
+  <div class="nav-item" onclick="refreshAllTrends()">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M13 8A5 5 0 112 8" stroke-linecap="round"/><path d="M13 4v4h-4"/></svg>
+    Odśwież trendy
+  </div>
+  <div class="sidebar-footer">
+    <div class="sidebar-footer-logo"><span>F</span>OURCE</div>
+    <div class="sidebar-footer-text">Agency Hub © 2026</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="main-fixed">
+    <div class="stats-bar" id="statsBar"></div>
+    <div id="fbConnecting" style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:rgba(251,191,36,.08);border-bottom:1px solid rgba(251,191,36,.2);font-family:var(--mono);font-size:11px;color:var(--amber)">
+      <div style="width:10px;height:10px;border:1.5px solid rgba(251,191,36,.3);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></div>
+      Łączę z bazą danych — synchronizacja w czasie rzeczywistym...
+    </div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="6.5" cy="6.5" r="4"/><path d="M10 10l3 3" stroke-linecap="round"/></svg>
+        <input type="text" id="searchInput" placeholder="Szukaj artysty, gatunku..." oninput="renderTable()">
+      </div>
+      <select class="filter" id="filterStatus" onchange="renderTable()">
+        <option value="">Wszystkie statusy</option>
+        <option value="check">Do sprawdzenia</option>
+        <option value="sent">Napisano do agenta</option>
+        <option value="reminder">Reminder</option>
+      </select>
+      <select class="filter" id="filterSource" onchange="renderTable()">
+        <option value="">Wszystkie źródła</option>
+        <option value="ai">AI</option>
+        <option value="manual">Ręczny</option>
+      </select>
+      <select class="filter" id="filterPL" onchange="renderTable()">
+        <option value="">PL Show: wszystkie</option>
+        <option value="no">Nie grał w Polsce</option>
+        <option value="yes">Grał w Polsce</option>
+      </select>
+      <button class="btn btn-teal" id="cmpBtn" disabled onclick="togglePanel('comparePanel')">Porównaj (0/4)</button>
+      <button class="btn btn-accent" onclick="togglePanel('addPanel')">+ Dodaj</button>
+      <div class="legend">
+        <span class="legend-item"><span class="l-dot" style="background:var(--purple)"></span>AI</span>
+        <span class="legend-item"><span class="l-dot" style="background:var(--teal)"></span>Ręczny</span>
+        <span class="legend-item"><span class="l-dot" style="background:var(--amber)"></span>Reminder</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-area">
+
+    <!-- ADD/EDIT PANEL -->
+    <div class="overlay-panel" id="addPanel">
+      <div class="panel-inner">
+        <div class="panel-title">
+          <div class="panel-title-left" id="formTitle">Dodaj artystę</div>
+          <button class="panel-close" onclick="closePanel('addPanel')">×</button>
+        </div>
+        <div class="add-name-row">
+          <div class="ff">
+            <div class="form-label">Nazwa artysty *</div>
+            <input class="form-input" type="text" id="fName" placeholder="np. Mk.gee" oninput="onNameInput()">
+          </div>
+          <button class="btn btn-purple" id="autoFillBtn" onclick="autoFill()" style="opacity:.5;flex-shrink:0">Wyszukaj dane ↗</button>
+        </div>
+        <div id="fillInd" style="display:none" class="fill-ind"><div class="sp-sm"></div>Przeszukuję sieć...</div>
+        <div class="form-grid">
+          <div><div class="form-label">Gatunek</div><input class="form-input" type="text" id="fGenre" placeholder="auto"></div>
+          <div><div class="form-label">Monthly Reach <span class="info-tip">?<span class="tip-box">Przybliżony zasięg z publicznych źródeł.</span></span></div><input class="form-input" type="text" id="fListeners" placeholder="auto"></div>
+          <div><div class="form-label">Link Spotify</div><input class="form-input" type="text" id="fSpotify" placeholder="https://open.spotify.com/artist/..."></div>
+          <div><div class="form-label">PL Show</div><input class="form-input" type="text" id="fPlShow" placeholder="auto (NIE / miejsce + data)"></div>
+          <div><div class="form-label">Market Predict — min</div><input class="form-input" type="number" id="fPredMin" placeholder="bilety"></div>
+          <div><div class="form-label">Market Predict — max</div><input class="form-input" type="number" id="fPredMax" placeholder="bilety"></div>
+          <div><div class="form-label">Status</div><select class="form-input" id="fStatus"><option value="check">Do sprawdzenia</option><option value="sent">Napisano do agenta</option></select></div>
+          <div><div class="form-label">Źródło tropu</div><input class="form-input" type="text" id="fSourceTip" placeholder="np. Spotify Radar"></div>
+          <div class="form-full"><div class="form-label">Notatki</div><textarea class="form-input" id="fNotes" placeholder="Obserwacje, potencjał w Polsce..."></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn" onclick="closePanel('addPanel')">Anuluj</button>
+          <button class="btn btn-accent" onclick="saveArtist()">Zapisz artystę</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI DISCOVER -->
+    <div class="overlay-panel" id="aiPanel">
+      <div class="panel-inner">
+        <div class="panel-title">
+          <div class="panel-title-left">Odkryj nowych artystów z AI</div>
+          <button class="panel-close" onclick="closePanel('aiPanel')">×</button>
+        </div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Funkcja wymaga połączenia z serwerem — działa po wdrożeniu na hosting.</p>
+        <div class="ai-search-row">
+          <div class="ai-field"><div class="form-label">Gatunek / styl</div><input class="form-input" type="text" id="aiGenre" placeholder="np. Indie, Electronic"></div>
+          <div class="ai-field"><div class="form-label">Region</div><input class="form-input" type="text" id="aiRegion" placeholder="np. UK, skandynawia"></div>
+          <div class="ai-field"><div class="form-label">Poziom hype</div>
+            <select class="form-input" id="aiHype">
+              <option value="rising">Wschodzący</option>
+              <option value="mid">Rozpoznawalny</option>
+              <option value="established">Ugruntowany</option>
+            </select>
+          </div>
+          <button class="btn btn-purple" onclick="runAiSearch()" style="align-self:flex-end">Szukaj ↗</button>
+        </div>
+        <div id="aiResult"></div>
+      </div>
+    </div>
+
+    <!-- IMPORT -->
+    <div class="overlay-panel" id="importPanel">
+      <div class="panel-inner">
+        <div class="panel-title">
+          <div class="panel-title-left">Import artystów z XLS / XLSX / CSV</div>
+          <button class="panel-close" onclick="closePanel('importPanel')">×</button>
+        </div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:14px;max-width:500px">Nazwy artystów w kolumnie A. System automatycznie uzupełni dane każdego artysty przez AI (wymaga hostingu).</p>
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('xlsInput').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
+          <div style="font-size:24px;opacity:.3">📄</div>
+          <div class="drop-zone-text">Kliknij lub przeciągnij plik .xls / .xlsx / .csv</div>
+        </div>
+        <input type="file" id="xlsInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileInput(event)">
+        <div id="importProgress" style="display:none">
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+          <div class="progress-text" id="progressText">Przygotowanie...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPARE -->
+    <div class="overlay-panel" id="comparePanel">
+      <div class="panel-inner">
+        <div class="panel-title">
+          <div class="panel-title-left">Porównanie artystów — analiza AI</div>
+          <button class="panel-close" onclick="closePanel('comparePanel')">×</button>
+        </div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Głęboka analiza AI z danymi z sieci — działa po wdrożeniu na hosting.</p>
+        <div id="compareLoading" style="display:none" class="load-row"><div class="sp"></div>Claude analizuje artystów i pobiera aktualne dane z sieci...</div>
+        <div class="compare-grid" id="compareGrid"></div>
+        <div id="compareVerdict" class="cmp-verdict" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-scroll">
+      <table>
+        <colgroup>
+          <col style="width:34px">
+          <col style="width:175px">
+          <col style="width:30px">
+          <col style="width:165px">
+          <col style="width:175px">
+          <col style="width:108px">
+          <col style="width:108px">
+          <col style="width:155px">
+          <col style="width:80px">
+          <col style="width:100px">
+          <col style="width:280px">
+          <col style="width:80px">
+        </colgroup>
+        <thead><tr>
+          <th></th>
+          <th id="th-name" onclick="sortBy('name')">Artysta</th>
+          <th></th>
+          <th>Status</th>
+          <th id="th-predict" onclick="sortBy('predict')">Market Predict</th>
+          <th id="th-genre" onclick="sortBy('genre')">Gatunek</th>
+          <th id="th-listeners" onclick="sortBy('listeners')">Monthly Reach</th>
+          <th id="th-plShow" onclick="sortBy('plShow')">PL Show</th>
+          <th id="th-addedBy" onclick="sortBy('addedBy')">Dodał</th>
+          <th id="th-dateAdded" onclick="sortBy('dateAdded')">Data dodania</th>
+          <th>Notatki</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCUsvjkzYG3AVROysZh9BtN2_vagSSyMww",
+  authDomain: "fourceplex-market.firebaseapp.com",
+  projectId: "fourceplex-market",
+  storageBucket: "fourceplex-market.firebasestorage.app",
+  messagingSenderId: "300062366060",
+  appId: "1:300062366060:web:0cf7bd4128bea35cc63b49"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+const artistsCol = collection(db, 'artists');
+const usersCol = collection(db, 'users');
+
+window._db = db;
+window._artistsCol = artistsCol;
+window._usersCol = usersCol;
+window._fbReady = true;
+window._setDoc = setDoc;
+window._deleteDoc = deleteDoc;
+window._doc = doc;
+window._getDocs = getDocs;
+window._onSnapshot = onSnapshot;
+
+window.dispatchEvent(new Event('firebase-ready'));
+</script>
+<script>
+const SK='fourceplex_market_v1';
+const USERS_KEY='buzzek_users_v2';
+const SESSION_USER_KEY='fourceplex_current_user';
+const THREE_M=90*24*3600*1000;
+const ONE_WEEK=7*24*3600*1000;
+
+function venueForPredict(max){
+  if(!max||max<100)return null;
+  if(max<200)return'Chmury';if(max<400)return'Hydrozagadka';
+  if(max<700)return'Niebo';if(max<1000)return'Proxima';
+  if(max<1800)return'Palladium';return'Arena';
+}
+
+const USER_COLORS=['#a78bfa','#34d399','#fbbf24','#60a5fa','#f87171','#fb923c','#e879f9','#2dd4bf'];
+let users=[],currentUser='';
+function loadUsers(){
+  try{users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]');}catch(e){users=[];}
+  if(!users.length)users=['Monika','Igor','Mariusz'];
+  const saved=sessionStorage.getItem(SESSION_USER_KEY);
+  if(saved&&users.includes(saved)){selectUser(saved);}else{openUserModal();}
+}
+function saveUsers(){localStorage.setItem(USERS_KEY,JSON.stringify(users));}
+function userColor(name){if(!name||name==='AI')return'#a78bfa';const i=users.indexOf(name);return USER_COLORS[i<0?0:i%USER_COLORS.length];}
+function openUserModal(){const list=document.getElementById('userList');list.innerHTML=users.map(u=>`<div class="user-opt ${u===currentUser?'selected-user':''}" onclick="selectUser('${u}')"><div class="user-avatar" style="background:${userColor(u)}22;color:${userColor(u)}">${u[0].toUpperCase()}</div>${u}</div>`).join('');document.getElementById('userModal').classList.add('open');}
+function selectUser(name){currentUser=name;sessionStorage.setItem(SESSION_USER_KEY,name);document.getElementById('currentUserLabel').textContent=name;document.getElementById('userModal').classList.remove('open');}
+function addNewUser(){const v=document.getElementById('newUserInput').value.trim();if(!v)return;if(!users.includes(v))users.push(v);saveUsers();document.getElementById('newUserInput').value='';selectUser(v);}
+
+let artists=[],sortCol='dateAdded',sortDir=-1,selected=[],editId=null;
+
+function randDate(from,to){return new Date(from+Math.random()*(to-from)).toISOString();}
+const D_FROM=new Date('2024-03-01').getTime();
+const D_TO=new Date('2026-03-15').getTime();
+
+/* Spotify URLs here are intentionally left blank or verified.
+   Fill them in via the edit function or auto-fill after hosting deployment. */
+const STARTER=[
+  {name:'Mk.gee',genre:'Indie / Dream Pop',listeners:'3.2M',predMin:800,predMax:1400,notes:'Coachella 2025, album "Two Star". Bowery Ballroom NYC.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'up'},
+  {name:'Saya Gray',genre:'Alt R&B / Experimental',listeners:'1.8M',predMin:500,predMax:900,notes:'SXSW 2024 buzz, porównywana do Solange.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'up'},
+  {name:'Arooj Aftab',genre:'Neo-Classical / South Asian',listeners:'2.1M',predMin:350,predMax:650,notes:'Grammy 2022. Niebo/Hydrozagadka capacity.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Ethel Cain',genre:'Art Pop / Southern Gothic',listeners:'5.8M',predMin:1200,predMax:2200,notes:'Pitchfork AOTY 2022. Brixton Academy level.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'up'},
+  {name:'Waxahatchee',genre:'Indie Folk / Americana',listeners:'2.6M',predMin:700,predMax:1200,notes:'"Tigers Blood" — Paradiso Amsterdam.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Amaarae',genre:'Afropop / R&B',listeners:'4.5M',predMin:900,predMax:1600,notes:'"Sad Girlz Luv Money" viral. Scala London.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'up'},
+  {name:'Bon Iver',genre:'Indie Folk',listeners:'12M',predMin:3000,predMax:5500,notes:'Ikona indie. Torwar-level demand.',spotifyUrl:'',plShow:'Open\'er Festival 2023',src:'ai',by:'AI',trend:'flat'},
+  {name:'JPEGMAFIA',genre:'Experimental Hip-Hop',listeners:'3.6M',predMin:600,predMax:1100,notes:'Kolaboracja z Danny Brown. Kultowy.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Snail Mail',genre:'Indie Rock',listeners:'4.1M',predMin:700,predMax:1300,notes:'"Valentine" — świetne recenzje.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Indigo De Souza',genre:'Indie Pop / Emo',listeners:'2.9M',predMin:500,predMax:950,notes:'Emocjonalny indie. Rośnie na TikTok.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'up'},
+  {name:'Samia',genre:'Indie Rock',listeners:'1.4M',predMin:400,predMax:750,notes:'Alt-country crossover, dobry timing na PL.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Wednesday',genre:'Indie Rock / Shoegaze',listeners:'1.2M',predMin:350,predMax:700,notes:'Hype shoegaze revival 2024.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'up'},
+  {name:'Bladee',genre:'Cloud Rap / Drain',listeners:'3.8M',predMin:800,predMax:1500,notes:'Kultowy w Polsce. Drain Gang.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Yung Lean',genre:'Cloud Rap',listeners:'6.2M',predMin:1200,predMax:2500,notes:'Ikoniczny w Polsce. Palladium realny.',spotifyUrl:'',plShow:'Proxima Warszawa 2019',src:'ai',by:'AI',trend:'down'},
+  {name:'Sofia Kourtesis',genre:'Electronic / Afro House',listeners:'1.6M',predMin:600,predMax:1100,notes:'Fabric London rezydent.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'up'},
+  {name:'Floating Points',genre:'Electronic / Jazz',listeners:'2.3M',predMin:700,predMax:1400,notes:'"Promises" z Pharoah Sanders.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Kelly Lee Owens',genre:'Electronic / Techno-Pop',listeners:'1.1M',predMin:400,predMax:800,notes:'Welska elektronika, rośnie Europa.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Aldous Harding',genre:'Art Folk',listeners:'1.8M',predMin:500,predMax:950,notes:'Nowozelandzka. "Designer" — kultowa.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Perfume Genius',genre:'Art Pop / Chamber Pop',listeners:'2.7M',predMin:600,predMax:1100,notes:'Critically acclaimed. Niebo/Proxima.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Arca',genre:'Electronic / Experimental',listeners:'1.5M',predMin:500,predMax:950,notes:'Awangarda, kultowa w Polsce.',spotifyUrl:'',plShow:'Unsound Festival Kraków 2022',src:'ai',by:'AI',trend:'flat'},
+  {name:'Overmono',genre:'Electronic / Techno',listeners:'1.4M',predMin:700,predMax:1300,notes:'Bliźniacy. Rośnie rave Europa.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'up'},
+  {name:'Kelela',genre:'R&B / Electronic',listeners:'2.2M',predMin:600,predMax:1100,notes:'"Raven" — Pitchfork 8.5.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Tirzah',genre:'Experimental Pop',listeners:'700K',predMin:250,predMax:500,notes:'Minimalistyczna. Hydrozagadka.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Wiki',genre:'Hip-Hop / Rap',listeners:'800K',predMin:300,predMax:600,notes:'NYC underground rap.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'Lil Silva',genre:'Grime / Electronic',listeners:'900K',predMin:350,predMax:700,notes:'UK. "Yesterday Is Heavy".',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
+  {name:'James Blake',genre:'Electronic / Soul',listeners:'8.4M',predMin:2000,predMax:3500,notes:'Booker polecił. Był na festiwalu — solo nie.',spotifyUrl:'',plShow:'Open\'er Festival 2018',src:'manual',by:'Monika',trend:'flat'},
+  {name:'Hiatus Kaiyote',genre:'Neo-Soul / Jazz Fusion',listeners:'3.1M',predMin:800,predMax:1500,notes:'Australia. Nile Rodgers collab.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Igor',trend:'up'},
+  {name:'Loyle Carner',genre:'Hip-Hop / Soul',listeners:'3.4M',predMin:900,predMax:1700,notes:'UK. "hugo" — 8.1 Pitchfork.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Mariusz',trend:'up'},
+  {name:'FKJ',genre:'Indie / Jazz-Pop',listeners:'5.6M',predMin:1200,predMax:2000,notes:'Francuz. Znany w Polsce.',spotifyUrl:'',plShow:'Audioriver Festival 2022',src:'manual',by:'Monika',trend:'flat'},
+  {name:'Parcels',genre:'Indie Pop / Funk',listeners:'4.8M',predMin:1000,predMax:1800,notes:'Australijczycy. Daft Punk collab.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Igor',trend:'flat'},
+  {name:'Glass Animals',genre:'Indie Pop / Psychedelic',listeners:'15M',predMin:3500,predMax:6000,notes:'"Heat Waves" viral. Arena target.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Mariusz',trend:'up'},
+  {name:'Jungle',genre:'Funk / Neo-Soul',listeners:'6.1M',predMin:1800,predMax:3000,notes:'UK. Ogromny fanbase w PL.',spotifyUrl:'',plShow:'Open\'er Festival 2023',src:'manual',by:'Monika',trend:'flat'},
+  {name:"L'Impératrice",genre:'French Pop / Electronic',listeners:'3.2M',predMin:800,predMax:1500,notes:'Francja. Rośnie Europa.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Igor',trend:'up'},
+  {name:'Amyl and the Sniffers',genre:'Punk Rock',listeners:'2.1M',predMin:600,predMax:1100,notes:'Australia. Energia! Proxima.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Mariusz',trend:'up'},
+  {name:'Black Country New Road',genre:'Post-Rock / Chamber Pop',listeners:'2.8M',predMin:700,predMax:1300,notes:'UK. Pitchfork darling.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Monika',trend:'flat'},
+  {name:'Squid',genre:'Post-Punk / Experimental',listeners:'1.4M',predMin:400,predMax:800,notes:'UK art-punk. Hydrozagadka/Niebo.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Igor',trend:'flat'},
+  {name:'Fontaines D.C.',genre:'Post-Punk',listeners:'5.2M',predMin:1500,predMax:2800,notes:'Irlandia. AOTY buzz.',spotifyUrl:'',plShow:'Fest Festival Kraków 2023',src:'manual',by:'Mariusz',trend:'up'},
+  {name:'IDLES',genre:'Post-Punk / Art Punk',listeners:'4.3M',predMin:1200,predMax:2200,notes:'Bristol. Polityczny punk.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Monika',trend:'flat'},
+  {name:'PinkPantheress',genre:'Bedroom Pop / Drum & Bass',listeners:'9.1M',predMin:2000,predMax:3500,notes:'UK. TikTok viral. Torwar.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Igor',trend:'up'},
+  {name:'Barry Can\'t Swim',genre:'Electronic / Dance',listeners:'2.4M',predMin:700,predMax:1300,notes:'UK. Rośnie Europa.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Mariusz',trend:'up'},
+  {name:'The Blaze',genre:'Electronic / French House',listeners:'4.7M',predMin:1500,predMax:2800,notes:'Francja. Emocjonalne sety.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Monika',trend:'flat'},
+  {name:'Cleo Sol',genre:'Neo-Soul',listeners:'3.8M',predMin:900,predMax:1600,notes:'SAULT collab. Rośnie Europa.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Igor',trend:'up'},
+  {name:'Khruangbin',genre:'Psychedelic Funk / World',listeners:'9.8M',predMin:2500,predMax:4500,notes:'Texas. Ogromny w Europie.',spotifyUrl:'',plShow:'Open\'er Festival 2022',src:'manual',by:'Mariusz',trend:'flat'},
+  {name:'Men I Trust',genre:'Dream Pop / Shoegaze',listeners:'3.5M',predMin:700,predMax:1300,notes:'Kanada. Szum TikTok.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Monika',trend:'up'},
+  {name:'Koffee',genre:'Reggae / Dancehall',listeners:'4.2M',predMin:800,predMax:1500,notes:'Jamajka. Grammy winner.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Igor',trend:'flat'},
+  {name:'Nick Hakim',genre:'Neo-Soul / R&B',listeners:'1.2M',predMin:400,predMax:750,notes:'NY. Psychedelic R&B.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Mariusz',trend:'flat'},
+  {name:'Franc Moody',genre:'Funk / Disco',listeners:'2.1M',predMin:600,predMax:1100,notes:'UK Disco revival.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Monika',trend:'flat'},
+  {name:'Injury Reserve',genre:'Experimental Hip-Hop',listeners:'1.1M',predMin:300,predMax:600,notes:'AZ. Tribute energy.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Igor',trend:'down'},
+  {name:'Yard Act',genre:'Post-Punk / Art Rock',listeners:'1.1M',predMin:350,predMax:700,notes:'Leeds. BBC Sound 2022.',spotifyUrl:'',plShow:'NIE',src:'manual',by:'Mariusz',trend:'flat'},
+];
+
+function buildSample(){
+  const now=Date.now();
+  return STARTER.map((s,i)=>{
+    const status=i%7===0?'sent':i%11===0?'reminder':'check';
+    const sentDate=status!=='check'?new Date(now-(i%3+1)*25*24*3600*1000).toISOString():null;
+    const dateAdded=randDate(D_FROM,D_TO);
+    return{id:i+1,name:s.name,genre:s.genre,listeners:s.listeners,spotifyUrl:s.spotifyUrl||'',
+      plShow:s.plShow||'NIE',plChecked:true,
+      predMin:s.predMin,predMax:s.predMax,notes:s.notes,sourceTip:'',
+      source:s.src,addedBy:s.by,status,sentDate,dateAdded,ts:new Date(dateAdded).getTime(),
+      trend:s.trend||'flat',trendUpdated:new Date(now-(i%8+1)*24*3600*1000).toISOString(),predHistory:[s.predMax]};
+  });
+}
+
+let _unsubscribe=null;
+let _fbInitialized=false;
+
+async function loadData(){
+  if(window._fbReady){await initFirebase();}
+  else{window.addEventListener('firebase-ready',async()=>{await initFirebase();},{once:true});setTimeout(()=>{if(!_fbInitialized)fallbackLoad();},5000);}
+}
+
+function fallbackLoad(){
+  _fbInitialized=true;
+  try{const d=localStorage.getItem(SK);artists=d?JSON.parse(d):buildSample();}catch(e){artists=buildSample();}
+  checkReminders();scheduleWeeklyRefresh();render();
+  notify('Tryb offline — zmiany nie będą synchronizowane','err');
+}
+
+async function initFirebase(){
+  if(_fbInitialized)return;
+  _fbInitialized=true;
+  setRefreshStatus('pending','Łączę z bazą...');
+  try{
+    const snap=await window._getDocs(window._artistsCol);
+    if(snap.empty){
+      notify('Pierwsze uruchomienie — ładuję dane startowe...','info');
+      const sample=buildSample();
+      for(const a of sample){
+        await window._setDoc(window._doc(window._artistsCol,String(a.id)),a);
+        await new Promise(r=>setTimeout(r,60));
+      }
+    }
+    _unsubscribe=window._onSnapshot(window._artistsCol,(snapshot)=>{
+      artists=snapshot.docs.map(d=>d.data());
+      checkReminders();renderStats();renderTable();
+      document.getElementById('topCount').textContent=artists.length;
+      const banner=document.getElementById('fbConnecting');if(banner)banner.style.display='none';
+    });
+    scheduleWeeklyRefresh();
+  }catch(e){
+    console.error('Firebase error:',e);fallbackLoad();
+  }
+}
+
+async function saveArtistToDb(a){
+  if(!window._fbReady)return;
+  try{await window._setDoc(window._doc(window._artistsCol,String(a.id)),a);}
+  catch(e){console.error('Save error:',e);}
+}
+
+async function deleteArtistFromDb(id){
+  if(!window._fbReady)return;
+  try{await window._deleteDoc(window._doc(window._artistsCol,String(id)));}
+  catch(e){console.error('Delete error:',e);}
+}
+
+function saveData(){
+  if(!window._fbReady){try{localStorage.setItem(SK,JSON.stringify(artists));}catch(e){}}
+}
+function checkReminders(){artists.forEach(a=>{if(a.status==='sent'&&a.sentDate&&Date.now()-new Date(a.sentDate).getTime()>THREE_M)a.status='reminder';});}
+
+/* ── WEEKLY TREND REFRESH ── */
+let refreshQueue=[],refreshing=false;
+function scheduleWeeklyRefresh(){
+  const stale=artists.filter(a=>!a.trendUpdated||Date.now()-new Date(a.trendUpdated).getTime()>ONE_WEEK);
+  if(!stale.length){setRefreshStatus('idle');return;}
+  setRefreshStatus('pending',`${stale.length} artystów czeka na aktualizację trendu`);
+  refreshQueue=[...stale.map(a=>a.id)];
+  if(!refreshing)processRefreshQueue();
+}
+function setRefreshStatus(state,label){
+  const dot=document.getElementById('refreshDot'),lbl=document.getElementById('refreshLabel');
+  if(state==='active'){dot.classList.add('active');lbl.textContent=label||'odświeżam trendy...';}
+  else if(state==='pending'){dot.classList.remove('active');lbl.textContent=label||'trendy nieaktualne';}
+  else{dot.classList.remove('active');lbl.textContent='trendy aktualne';}
+}
+async function processRefreshQueue(){
+  if(!refreshQueue.length){refreshing=false;setRefreshStatus('idle');saveData();render();return;}
+  refreshing=true;
+  const id=refreshQueue.shift();
+  const a=artists.find(x=>x.id===id);
+  if(!a){processRefreshQueue();return;}
+  setRefreshStatus('active',`Sprawdzam: ${a.name}`);
+  await refreshArtistTrend(a);
+  await new Promise(r=>setTimeout(r,1000));
+  processRefreshQueue();
+}
+async function refreshArtistTrend(a){
+  const prompt=`Artysta: "${a.name}". Oceń aktualny trend popularności (hype) 2025-2026.
+TYLKO JSON: {"trend":"up|down|flat","predMin":N,"predMax":N,"note":"1 zdanie co się zmieniło"}
+Predict solo headliner Warszawa: Chmury<200, Hydrozagadka 200-400, Niebo 400-700, Proxima 700-1000, Palladium 1000-1800, Arena 1800+`;
+  try{
+    const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
+    let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else return;}
+    a.trend=p.trend||'flat';
+    if(p.predMin)a.predMin=p.predMin;if(p.predMax)a.predMax=p.predMax;
+    if(!a.predHistory)a.predHistory=[];a.predHistory.push(p.predMax||a.predMax);if(a.predHistory.length>10)a.predHistory=a.predHistory.slice(-10);
+    a.trendUpdated=new Date().toISOString();
+    if(p.note)a.notes=(a.notes?a.notes+' | ':'')+`[${new Date().toLocaleDateString('pl')}] ${p.note}`;
+    saveArtistToDb(a);renderTable();
+  }catch(e){}
+}
+async function refreshAllTrends(){refreshQueue=artists.map(a=>a.id);refreshing=false;notify('Odświeżam trendy dla wszystkich artystów...','info');processRefreshQueue();}
+
+function render(){renderStats();renderTable();}
+function renderStats(){
+  const t=artists.length,ai=artists.filter(a=>a.source==='ai').length;
+  const sent=artists.filter(a=>a.status==='sent'||a.status==='reminder').length;
+  const rem=artists.filter(a=>a.status==='reminder').length;
+  document.getElementById('topCount').textContent=t;
+  document.getElementById('statsBar').innerHTML=`
+    <div class="stat-block"><div class="stat-label">Artystów</div><div class="stat-value">${t}</div><div class="stat-sub">na liście Market</div></div>
+    <div class="stat-block"><div class="stat-label">AI-sourced</div><div class="stat-value">${ai}<span>/${t}</span></div><div class="stat-sub up">auto-odkryte</div></div>
+    <div class="stat-block"><div class="stat-label">Kontaktów</div><div class="stat-value">${sent}</div><div class="stat-sub">napisano do agenta</div></div>
+    <div class="stat-block"><div class="stat-label">Remindery</div><div class="stat-value" style="color:${rem>0?'var(--amber)':'inherit'}">${rem}</div><div class="stat-sub ${rem>0?'warn':''}">wymagają follow-up</div></div>`;
+}
+
+function updateSortHeaders(){
+  ['name','predict','genre','listeners','plShow','addedBy','dateAdded'].forEach(col=>{
+    const th=document.getElementById('th-'+col);if(!th)return;
+    th.classList.remove('sort-asc','sort-desc');
+    if(sortCol===col)th.classList.add(sortDir===1?'sort-asc':'sort-desc');
+  });
+}
+
+function getFiltered(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const fs=document.getElementById('filterStatus').value;
+  const fsrc=document.getElementById('filterSource').value;
+  const fpl=document.getElementById('filterPL').value;
+  return artists.filter(a=>{
+    if(q&&![a.name,a.genre,a.notes,a.addedBy,a.plShow].some(v=>(v||'').toLowerCase().includes(q)))return false;
+    if(fs&&a.status!==fs)return false;
+    if(fsrc&&a.source!==fsrc)return false;
+    if(fpl==='no'&&a.plShow&&a.plShow!=='NIE')return false;
+    if(fpl==='yes'&&(!a.plShow||a.plShow==='NIE'))return false;
+    return true;
+  }).sort((a,b)=>{
+    if(sortCol==='predict')return sortDir*((b.predMax||0)-(a.predMax||0));
+    if(sortCol==='listeners'){const pa=parseFloat((a.listeners||'0').replace(/[^0-9.]/g,'')||0),pb=parseFloat((b.listeners||'0').replace(/[^0-9.]/g,'')||0);return sortDir*(pb-pa);}
+    if(sortCol==='dateAdded')return sortDir*(new Date(b.dateAdded||0).getTime()-new Date(a.dateAdded||0).getTime());
+    if(sortCol==='trend'){const o={up:2,flat:1,down:0};return sortDir*((o[b.trend]||1)-(o[a.trend]||1));}
+    if(sortCol==='plShow'){const av=a.plShow==='NIE'?0:1,bv=b.plShow==='NIE'?0:1;return sortDir*(bv-av);}
+    return sortDir*String(a[sortCol]||'').localeCompare(String(b[sortCol]||''));
+  });
+}
+
+function statusSel(a){
+  const cls=a.status==='reminder'?'s-reminder':a.status==='sent'?'s-sent':'s-check';
+  const sentLabel=a.status==='sent'&&a.sentDate?` (${new Date(a.sentDate).toLocaleDateString('pl')})`:'';
+  return`<select class="status-select ${cls}" onchange="changeStatus(${a.id},this.value)" onclick="event.stopPropagation()">
+    <option value="check" ${a.status==='check'?'selected':''}>Do sprawdzenia</option>
+    <option value="sent" ${(a.status==='sent'||a.status==='reminder')?'selected':''}>Napisano${sentLabel}</option>
+    <option value="reminder" ${a.status==='reminder'?'selected':''}>Reminder ⚠</option>
+  </select>`;
+}
+function changeStatus(id,val){
+  const a=artists.find(x=>x.id===id);if(!a)return;
+  const prev=a.status;a.status=val;
+  if(val==='sent'&&prev!=='sent'&&prev!=='reminder')a.sentDate=new Date().toISOString();
+  if(val==='check')a.sentDate=null;
+  saveArtistToDb(a);render();
+}
+
+function trendIcon(a){
+  if(a.trend==='up')return`<span class="trend-up" title="Trend rosnący">↑</span>`;
+  if(a.trend==='down')return`<span class="trend-down" title="Trend spadkowy">↓</span>`;
+  return`<span class="trend-flat" title="Trend stabilny">→</span>`;
+}
+function predictCell(a){
+  if(!a.predMax&&!a.predMin)return'<span style="color:var(--text3)">—</span>';
+  const pct=Math.min(100,Math.round((a.predMax||0)/5000*100));
+  const venue=venueForPredict(a.predMax);
+  return`<div class="predict-wrap">${trendIcon(a)}<div class="predict-track"><div class="predict-fill" style="width:${pct}%"></div></div><span class="predict-num">${(a.predMin||0).toLocaleString()}–${(a.predMax||0).toLocaleString()}</span>${venue?`<span class="venue-tag">${venue}</span>`:''}</div>`;
+}
+function spotifyCell(a){
+  const svg=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>`;
+  if(a.spotifyUrl)return`<a href="${a.spotifyUrl}" class="spotify-link" target="_blank" title="Otwórz w Spotify" onclick="event.stopPropagation()">${svg}</a>`;
+  return`<span class="no-spotify" title="Brak linku Spotify">${svg}</span>`;
+}
+function plShowCell(a){
+  if(!a.plShow||a.plShow==='NIE')return`<span class="pl-no">NIE</span>`;
+  return`<span class="pl-yes" title="${a.plShow}">${a.plShow}</span>`;
+}
+function addedByCell(a){
+  if(!a.addedBy||a.addedBy==='AI')return`<span class="badge b-ai">AI</span>`;
+  const c=userColor(a.addedBy);
+  return`<span style="font-family:var(--mono);font-size:10px;display:inline-flex;align-items:center;gap:4px"><span style="width:7px;height:7px;border-radius:50%;background:${c};flex-shrink:0;display:inline-block"></span><span style="color:${c}">${a.addedBy}</span></span>`;
+}
+function formatDate(iso){if(!iso)return'—';const d=new Date(iso);return d.toLocaleDateString('pl',{day:'2-digit',month:'2-digit',year:'numeric'});}
+
+function renderTable(){
+  updateSortHeaders();
+  const rows=getFiltered(),tbody=document.getElementById('tbody');
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="12"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;color:var(--text3)"><div style="font-size:32px;opacity:.12;margin-bottom:10px">◎</div><div>Brak artystów</div></div></td></tr>`;return;}
+  tbody.innerHTML=rows.map(a=>{
+    const sel=selected.includes(a.id);
+    let rc=a.status==='reminder'?'row-reminder':a.source==='ai'?'row-ai':'row-manual';
+    if(sel)rc+=' selected';
+    return`<tr class="${rc}">
+      <td><input type="checkbox" ${sel?'checked':''} onchange="toggleSel(${a.id})"></td>
+      <td class="name-cell">${a.name}</td>
+      <td>${spotifyCell(a)}</td>
+      <td>${statusSel(a)}</td>
+      <td>${predictCell(a)}</td>
+      <td>${a.genre||'—'}</td>
+      <td style="font-family:var(--mono);font-size:11px">${a.listeners||'—'}</td>
+      <td>${plShowCell(a)}</td>
+      <td>${addedByCell(a)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${formatDate(a.dateAdded)}</td>
+      <td class="notes-cell">${a.notes||''}</td>
+      <td style="display:flex;gap:4px;align-items:center"><button class="btn" style="font-size:10px;padding:3px 7px" onclick="editArtist(${a.id})">edit</button><button class="btn-del" onclick="deleteArtist(${a.id})" title="Usuń artystę"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h12M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4"/></svg></button></td>
+    </tr>`;
+  }).join('');
+}
+
+function sortBy(col){sortDir=(sortCol===col)?-sortDir:1;sortCol=col;renderTable();}
+function toggleSel(id){
+  if(selected.includes(id))selected=selected.filter(x=>x!==id);
+  else if(selected.length<4)selected.push(id);
+  else{notify('Maksymalnie 4 artystów do porównania','err');return;}
+  const btn=document.getElementById('cmpBtn');
+  btn.textContent=`Porównaj (${selected.length}/4)`;btn.disabled=selected.length<2;
+  const sd=document.getElementById('sideCompare');
+  selected.length>=2?sd.classList.remove('disabled'):sd.classList.add('disabled');
+  if(selected.length<2)closePanel('comparePanel');
+  renderTable();
+}
+
+/* ── PANELS ── */
+const PANELS=['addPanel','aiPanel','importPanel','comparePanel'];
+function closeAllPanels(){PANELS.forEach(p=>closePanel(p));}
+function closePanel(id){document.getElementById(id).classList.remove('open');}
+function togglePanel(id){
+  const isOpen=document.getElementById(id).classList.contains('open');
+  PANELS.forEach(p=>closePanel(p));
+  if(!isOpen){
+    document.getElementById(id).classList.add('open');
+    if(id==='comparePanel'&&selected.length>=2)runAiCompare();
+  }
+}
+
+/* ── ADD FORM ── */
+function onNameInput(){document.getElementById('autoFillBtn').style.opacity=document.getElementById('fName').value.trim()?'1':'.5';}
+function clearFields(){['fGenre','fListeners','fSpotify','fPlShow','fNotes','fPredMin','fPredMax','fSourceTip'].forEach(id=>{const el=document.getElementById(id);el.value='';el.classList.remove('ai-filled');});}
+
+function editArtist(id){
+  const a=artists.find(x=>x.id===id);if(!a)return;
+  editId=id;
+  document.getElementById('formTitle').textContent='Edytuj artystę';
+  document.getElementById('fName').value=a.name||'';
+  document.getElementById('fGenre').value=a.genre||'';
+  document.getElementById('fListeners').value=a.listeners||'';
+  document.getElementById('fSpotify').value=a.spotifyUrl||'';
+  document.getElementById('fPlShow').value=a.plShow||'';
+  document.getElementById('fNotes').value=a.notes||'';
+  document.getElementById('fPredMin').value=a.predMin||'';
+  document.getElementById('fPredMax').value=a.predMax||'';
+  document.getElementById('fSourceTip').value=a.sourceTip||'';
+  document.getElementById('fStatus').value=a.status==='reminder'?'sent':a.status;
+  document.getElementById('fillInd').style.display='none';
+  document.getElementById('autoFillBtn').style.opacity='1';
+  PANELS.forEach(p=>closePanel(p));
+  document.getElementById('addPanel').classList.add('open');
+}
+function closeForm(){closePanel('addPanel');editId=null;}
+
+async function autoFill(){
+  const name=document.getElementById('fName').value.trim();
+  if(!name){alert('Wpisz najpierw nazwę artysty.');return;}
+  document.getElementById('fillInd').style.display='flex';
+  document.getElementById('autoFillBtn').disabled=true;
+  const prompt=`Ekspert bookingu. Artysta: "${name}". TYLKO JSON bez markdown:
+{"genre":"po polsku","listeners":"np. 3.2M","spotifyUrl":"pełny URL spotify lub ''","plShow":"NIE lub np. 'Open'er Festival 2023' jeśli grał w Polsce","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania buzz"}
+Dla plShow: sprawdź czy artysta grał kiedykolwiek w Polsce (koncert, festival). Jeśli nie — wpisz 'NIE'. Jeśli tak — podaj nazwę miejsca/festiwalu i rok.
+Predict solo headliner Warszawa: Chmury<200, Hydrozagadka 200-400, Niebo 400-700, Proxima 700-1000, Palladium 1000-1800, Arena 1800+`;
+  try{
+    const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
+    let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}
+    [['fGenre',p.genre||''],['fListeners',p.listeners||''],['fSpotify',p.spotifyUrl||''],['fPlShow',p.plShow||'NIE'],['fPredMin',p.predMin||''],['fPredMax',p.predMax||'']].forEach(([id,v])=>{const el=document.getElementById(id);el.value=v;el.classList.add('ai-filled');});
+    const fn=document.getElementById('fNotes');fn.value=[p.notes||'',p.predictReasoning?`\nPredict: ${p.predictReasoning}`:''].join('').trim();fn.classList.add('ai-filled');
+    notify(`Dane dla "${name}" znalezione ✓`);
+  }catch(e){notify('Błąd — wypełnij ręcznie lub sprawdź hosting','err');}
+  finally{document.getElementById('fillInd').style.display='none';document.getElementById('autoFillBtn').disabled=false;}
+}
+
+function saveArtist(){
+  const name=document.getElementById('fName').value.trim();
+  if(!name){alert('Nazwa artysty jest wymagana.');return;}
+  if(!currentUser){openUserModal();return;}
+  const status=document.getElementById('fStatus').value;
+  if(editId){
+    const a=artists.find(x=>x.id===editId),prev=a.status;
+    Object.assign(a,{name,genre:document.getElementById('fGenre').value.trim(),listeners:document.getElementById('fListeners').value.trim(),spotifyUrl:document.getElementById('fSpotify').value.trim(),plShow:document.getElementById('fPlShow').value.trim()||'NIE',plChecked:true,notes:document.getElementById('fNotes').value.trim(),predMin:parseInt(document.getElementById('fPredMin').value)||0,predMax:parseInt(document.getElementById('fPredMax').value)||0,sourceTip:document.getElementById('fSourceTip').value.trim(),status});
+    if(status==='sent'&&prev!=='sent'&&prev!=='reminder')a.sentDate=new Date().toISOString();
+    if(status==='check')a.sentDate=null;
+  }else{
+    const now=new Date().toISOString();
+    artists.push({id:Date.now(),name,genre:document.getElementById('fGenre').value.trim(),listeners:document.getElementById('fListeners').value.trim(),spotifyUrl:document.getElementById('fSpotify').value.trim(),plShow:document.getElementById('fPlShow').value.trim()||'NIE',plChecked:true,notes:document.getElementById('fNotes').value.trim(),predMin:parseInt(document.getElementById('fPredMin').value)||0,predMax:parseInt(document.getElementById('fPredMax').value)||0,sourceTip:document.getElementById('fSourceTip').value.trim(),status,sentDate:status==='sent'?now:null,source:'manual',addedBy:currentUser,dateAdded:now,ts:Date.now(),trend:'flat',predHistory:[]});
+  }
+  const _saved=editId?artists.find(x=>x.id===editId):artists[artists.length-1];saveArtistToDb(_saved);closePanel('addPanel');editId=null;render();notify('Artysta zapisany ✓');
+}
+
+/* ── AI DISCOVER ── */
+async function runAiSearch(){
+  const genre=document.getElementById('aiGenre').value.trim();
+  const region=document.getElementById('aiRegion').value.trim();
+  const hype=document.getElementById('aiHype').value;
+  const hypeMap={rising:'wschodzący (niszowy, duży potencjał)',mid:'rozpoznawalny mid-tier',established:'ugruntowany'};
+  const res=document.getElementById('aiResult');
+  res.innerHTML=`<div class="load-row"><div class="sp"></div>Szukam propozycji...</div>`;
+  const existing=artists.map(a=>a.name).join(', ');
+  const prompt=`5 artystów NIE GRALI headliner solo w Polsce. Gatunek: "${genre||'dowolny'}", region: "${region||'globalny'}", poziom: ${hypeMap[hype]}. Pomiń: ${existing||'brak'}.
+TYLKO JSON: {"artists":[{"name":"","genre":"","listeners":"XM","spotifyUrl":"URL lub ''","plShow":"NIE lub info","predMin":N,"predMax":N,"notes":"1 zdanie + sala"}]}
+Skale: Chmury<200, Hydrozagadka 200-400, Niebo 400-700, Proxima 700-1000, Palladium 1000-1800, Arena 1800+`;
+  try{
+    const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
+    let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}
+    window._aiRes=p.artists||[];
+    res.innerHTML=window._aiRes.map((a,i)=>{const venue=venueForPredict(a.predMax);return`<div class="ai-row"><div class="ai-info"><div class="ai-name">${a.name}</div><div class="ai-meta">${a.genre} · ${a.listeners}${a.plShow&&a.plShow!=='NIE'?` · PL: ${a.plShow}`:''}</div>${a.notes?`<div class="ai-note">${a.notes}</div>`:''}</div><div class="ai-pred">${(a.predMin||0).toLocaleString()}–${(a.predMax||0).toLocaleString()} biletów${venue?`<small>${venue}</small>`:''}</div><button class="btn btn-purple" id="aibtn${i}" onclick="addFromAi(${i})">+ Dodaj</button></div>`;}).join('');
+  }catch(e){res.innerHTML=`<div class="load-row" style="color:var(--red)">Błąd. Sprawdź hosting lub spróbuj ponownie.</div>`;}
+}
+
+function addFromAi(i){
+  const a=window._aiRes[i];if(!a)return;
+  const now=new Date().toISOString();
+  artists.push({id:Date.now()+i,name:a.name,genre:a.genre||'',listeners:a.listeners||'',spotifyUrl:a.spotifyUrl||'',plShow:a.plShow||'NIE',plChecked:true,notes:a.notes||'',predMin:a.predMin||0,predMax:a.predMax||0,sourceTip:'AI discover',status:'check',sentDate:null,source:'ai',addedBy:'AI',dateAdded:now,ts:Date.now(),trend:'flat',predHistory:[]});
+  saveArtistToDb(artists[artists.length-1]);render();
+  const btn=document.getElementById('aibtn'+i);if(btn){btn.textContent='Dodano ✓';btn.disabled=true;btn.style.opacity='.5';}
+  notify(`${a.name} dodany ✓`);
+}
+
+/* ── AI COMPARE ── */
+async function runAiCompare(){
+  if(selected.length<2)return;
+  const sel=selected.map(id=>artists.find(a=>a.id===id)).filter(Boolean);
+  document.getElementById('compareGrid').innerHTML='';
+  document.getElementById('compareVerdict').style.display='none';
+  document.getElementById('compareLoading').style.display='flex';
+  const details=sel.map(a=>`${a.name}: ${a.genre}, ${a.listeners} listeners, Predict ${a.predMin}-${a.predMax} biletów, trend: ${a.trend||'nieznany'}, PL Show: ${a.plShow||'NIE'}`).join('\n');
+  const prompt=`Ekspert bookingu FOURCE. Porównaj tych artystów pod kątem potencjału koncertowego w Polsce:
+${details}
+Wyszukaj aktualne informacje.
+TYLKO JSON: {"artists":[${sel.map(a=>`{"name":"${a.name}","currentBuzz":"opis","recentActivity":"ostatnie wydawnictwa/trasy","polishPotential":"ocena","predictUpdated":{"min":N,"max":N},"venue":"sala Warszawa","growthOutlook":"rosnący/stabilny/malejący"}`).join(',')}],"winner":"imię artysty z największym potencjałem","verdict":"2-3 zdania po polsku — kto wygrywa i dlaczego"}`;
+  try{
+    const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
+    let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}
+    document.getElementById('compareLoading').style.display='none';
+    const aiArtists=p.artists||[];
+    document.getElementById('compareGrid').innerHTML=aiArtists.map(ai=>{
+      const isWinner=p.winner&&ai.name.toLowerCase().includes(p.winner.toLowerCase());
+      return`<div class="cmp-card ${isWinner?'cmp-winner':''}">
+        ${isWinner?`<div style="font-family:var(--mono);font-size:9px;color:var(--accent);margin-bottom:8px;letter-spacing:.08em">★ REKOMENDACJA MARKET</div>`:''}
+        <div class="cmp-name">${ai.name}</div>
+        <div class="cmp-row"><span class="cmp-key">Aktualny buzz</span><span class="cmp-val" style="white-space:normal;font-size:10px">${ai.currentBuzz||'—'}</span></div>
+        <div class="cmp-row"><span class="cmp-key">Ostatnia aktywność</span><span class="cmp-val" style="white-space:normal;font-size:10px">${ai.recentActivity||'—'}</span></div>
+        <div class="cmp-row"><span class="cmp-key">Potencjał w Polsce</span><span class="cmp-val" style="white-space:normal;font-size:10px">${ai.polishPotential||'—'}</span></div>
+        <div class="cmp-row"><span class="cmp-key">Predict</span><span class="${isWinner?'cmp-win':'cmp-val'}">${ai.predictUpdated?`${(ai.predictUpdated.min||0).toLocaleString()}–${(ai.predictUpdated.max||0).toLocaleString()}`:''}</span></div>
+        <div class="cmp-row"><span class="cmp-key">Sala Warszawa</span><span class="${isWinner?'cmp-win':'cmp-val'}">${ai.venue||'—'}</span></div>
+        <div class="cmp-row"><span class="cmp-key">Perspektywa wzrostu</span><span class="${isWinner?'cmp-win':'cmp-val'}">${ai.growthOutlook||'—'}</span></div>
+      </div>`;
+    }).join('');
+    if(p.verdict){const vd=document.getElementById('compareVerdict');vd.style.display='block';vd.innerHTML=`<strong>Wniosek MARKET:</strong> ${p.verdict}`;}
+    aiArtists.forEach(ai=>{const a=artists.find(x=>x.name===ai.name);if(a&&ai.predictUpdated){a.predMin=ai.predictUpdated.min||a.predMin;a.predMax=ai.predictUpdated.max||a.predMax;a.trendUpdated=new Date().toISOString();saveArtistToDb(a);}});
+    renderTable();
+  }catch(e){document.getElementById('compareLoading').style.display='none';document.getElementById('compareGrid').innerHTML=`<div style="color:var(--red);font-family:var(--mono);font-size:12px;padding:14px">Błąd analizy. Wymaga hostingu — sprawdź wdrożenie.</div>`;}
+}
+
+/* ── IMPORT ── */
+function handleDrop(e){e.preventDefault();document.getElementById('dropZone').classList.remove('drag-over');const file=e.dataTransfer.files[0];if(file)processFile(file);}
+function handleFileInput(e){const file=e.target.files[0];if(file)processFile(file);}
+async function processFile(file){
+  const prog=document.getElementById('importProgress'),fill=document.getElementById('progressFill'),txt=document.getElementById('progressText');
+  prog.style.display='block';let names=[];
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='csv'){const text=await file.text();names=text.split('\n').map(r=>r.split(',')[0].trim().replace(/^"|"$/g,'')).filter(Boolean);}
+  else{const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{header:1});names=rows.map(r=>String(r[0]||'').trim()).filter(Boolean);}
+  const newNames=names.filter(n=>!artists.some(a=>a.name.toLowerCase()===n.toLowerCase()));
+  if(!newNames.length){notify('Brak nowych artystów do importu','err');prog.style.display='none';return;}
+  notify(`Znaleziono ${newNames.length} nowych artystów...`,'info');
+  let done=0;
+  for(const name of newNames){
+    txt.textContent=`Przetwarzam: ${name} (${done+1}/${newNames.length})`;
+    fill.style.width=`${Math.round((done/newNames.length)*100)}%`;
+    await importSingle(name);done++;await new Promise(r=>setTimeout(r,500));
+  }
+  fill.style.width='100%';txt.textContent=`Zaimportowano ${done} artystów ✓`;
+  render();setTimeout(()=>{prog.style.display='none';},3000);
+}
+async function importSingle(name){
+  const prompt=`Artysta: "${name}". TYLKO JSON: {"genre":"po polsku","listeners":"np. 2.1M","spotifyUrl":"URL lub ''","plShow":"NIE lub info","predMin":N,"predMax":N,"notes":"1 zdanie"}`;
+  const now=new Date().toISOString();
+  try{
+    const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:prompt}]})});
+    const data=await resp.json();
+    const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
+    let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}
+    const newA={id:Date.now()+Math.random(),name,genre:p.genre||'',listeners:p.listeners||'',spotifyUrl:p.spotifyUrl||'',plShow:p.plShow||'NIE',plChecked:true,notes:p.notes||'',predMin:p.predMin||0,predMax:p.predMax||0,sourceTip:'Import XLS',status:'check',sentDate:null,source:'manual',addedBy:currentUser||'Import',dateAdded:now,ts:Date.now(),trend:'flat',predHistory:[]};artists.push(newA);await saveArtistToDb(newA);
+  }catch(e){const errA={id:Date.now()+Math.random(),name,genre:'',listeners:'',spotifyUrl:'',plShow:'NIE',plChecked:false,notes:'',predMin:0,predMax:0,sourceTip:'Import XLS',status:'check',sentDate:null,source:'manual',addedBy:currentUser||'Import',dateAdded:now,ts:Date.now(),trend:'flat',predHistory:[]};artists.push(errA);await saveArtistToDb(errA);}
+}
+
+function notify(msg,type=''){const n=document.createElement('div');n.className='notif'+(type?` ${type}`:'');n.textContent=msg;document.body.appendChild(n);setTimeout(()=>n.remove(),3200);}
+
+function deleteArtist(id){
+  const a=artists.find(x=>x.id===id);if(!a)return;
+  if(!confirm(`Usunąć "${a.name}" z listy? Tej operacji nie można cofnąć.`))return;
+  selected=selected.filter(x=>x!==id);
+  const btn=document.getElementById("cmpBtn");
+  btn.textContent=`Porównaj (${selected.length}/4)`;btn.disabled=selected.length<2;
+  deleteArtistFromDb(id);
+  notify(`${a.name} usunięty z listy`);
+}
+
+loadUsers();
+loadData();
+</script>
+</body>
+</html>
