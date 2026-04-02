@@ -87,6 +87,17 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .detail-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-family:var(--mono);font-size:11px;letter-spacing:.08em;gap:10px}
 .detail-empty svg{width:32px;height:32px;opacity:.25}
 
+/* ── LIST TABS ── */
+.list-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.list-tab{flex:1;padding:8px 0;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);cursor:pointer;text-align:center;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+.list-tab:hover{color:var(--text2)}
+.list-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.show-item-actions{display:flex;align-items:center;gap:5px}
+.trash-btn{width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--text3);cursor:pointer;transition:all .15s;flex-shrink:0;opacity:0}
+.show-item:hover .trash-btn{opacity:1}
+.trash-btn:hover{color:var(--red);background:rgba(248,113,113,.12)}
+.trash-btn svg{width:11px;height:11px}
+
 /* ── LIST PANEL ── */
 .list-header{padding:10px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .list-header-title{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
@@ -173,6 +184,14 @@ select.form-input{cursor:pointer}
 .tl-label.late{color:var(--red)}
 .tl-label.future{color:var(--text3)}
 .tl-period{font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:auto}
+
+/* ── TIMELINE+NOTES ROW ── */
+.tl-notes-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.notes-textarea{width:100%;min-height:130px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:12px;line-height:1.55;padding:9px 11px;border-radius:6px;outline:none;resize:vertical;transition:border-color .15s}
+.notes-textarea:focus{border-color:rgba(200,240,96,.3)}
+.notes-textarea::placeholder{color:var(--text3)}
+.notes-save-row{display:flex;align-items:center;justify-content:space-between;margin-top:7px}
+.notes-meta{font-family:var(--mono);font-size:9px;color:var(--text3)}
 
 /* ── CHART ── */
 .chart-wrap{position:relative;width:100%;height:160px}
@@ -307,8 +326,9 @@ select.form-input{cursor:pointer}
   <div class="content-area">
     <!-- LIST PANEL -->
     <div class="list-panel">
-      <div class="list-header">
-        <span class="list-header-title" id="list-count">0 kampanii</span>
+      <div class="list-tabs">
+        <div class="list-tab active" id="tab-active" onclick="switchTab('active')">Aktywne</div>
+        <div class="list-tab" id="tab-past" onclick="switchTab('past')">Przeszłe</div>
       </div>
       <div class="show-list" id="show-list">
         <div class="empty-list">Ładowanie...</div>
@@ -486,12 +506,12 @@ document.getElementById('new-user-input').addEventListener('keydown',e=>{if(e.ke
    SHOW LIST
    ──────────────────────────────────────────────── */
 const CP_NAMES={
-  adAccess:'Ad Access przyznany',
+  adAccess:'Artist ad access',
   campaignLaunch:'Kampania startowa',
-  contentRecorded:'Content od zespołu',
-  influencers:'Aktywizacja influencerów',
-  retargeting:'Retargeting aktywny',
-  emailBlast:'Email blast'
+  retargeting:'Kampania retargetingowa',
+  contentRecorded:'Content od artysty',
+  influencers:'Aktywizacja mediów',
+  emailBlast:'Wysyłka mailingu'
 };
 const CP_KEYS=Object.keys(CP_NAMES);
 
@@ -499,16 +519,40 @@ function showCosts(showId){return(window._costs||[]).filter(c=>c.showId===showId
 function sumCosts(showId){return showCosts(showId).reduce((s,c)=>s+(c.amount||0),0);}
 function countDone(show){return CP_KEYS.filter(k=>show.checkpoints&&show.checkpoints[k]).length;}
 
+let currentTab='active';
+
+function switchTab(tab){
+  currentTab=tab;
+  document.getElementById('tab-active').classList.toggle('active',tab==='active');
+  document.getElementById('tab-past').classList.toggle('active',tab==='past');
+  renderList();
+}
+
 function renderList(){
   const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
-  const shows=(window._shows||[]).filter(s=>
+  const today=new Date().toISOString().slice(0,10);
+  let shows=(window._shows||[]).filter(s=>
     !q||(s.artistName||'').toLowerCase().includes(q)||(s.venue||'').toLowerCase().includes(q)
   );
-  document.getElementById('list-count').textContent=`${shows.length} kampanii`;
-  document.getElementById('top-shows-count').textContent=shows.length;
+
+  // Split by tab
+  if(currentTab==='active'){
+    shows=shows.filter(s=>(s.date||'')>=today);
+    // Sort: soonest first
+    shows.sort((a,b)=>a.date.localeCompare(b.date));
+  } else {
+    shows=shows.filter(s=>(s.date||'')<today);
+    // Sort: most recently past first (closest to today at top)
+    shows.sort((a,b)=>b.date.localeCompare(a.date));
+  }
+
+  document.getElementById('top-shows-count').textContent=(window._shows||[]).length;
 
   const el=document.getElementById('show-list');
-  if(!shows.length){el.innerHTML='<div class="empty-list">Brak kampanii</div>';return;}
+  if(!shows.length){
+    el.innerHTML=`<div class="empty-list">${currentTab==='active'?'Brak aktywnych kampanii':'Brak przeszłych kampanii'}</div>`;
+    return;
+  }
   el.innerHTML='';
   shows.forEach(s=>{
     const done=countDone(s);
@@ -531,13 +575,37 @@ function renderList(){
         <div class="cp-bar-wrap"><div class="cp-bar" style="width:${pct}%"></div></div>
         <span class="cp-text">${done}/${total}</span>
         <span class="budget-text ${bcls}">${fmtPLN(costs)} / ${fmtPLN(budget)}</span>
-        <div class="ai-btn" title="AI Sugestie" onclick="event.stopPropagation();openAiModal('${s.id}')">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2L10 6H14L11 9L12 13L8 10L4 13L5 9L2 6H6Z"/></svg>
+        <div class="show-item-actions">
+          <div class="ai-btn" title="AI Sugestie" onclick="event.stopPropagation();openAiModal('${s.id}')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2L10 6H14L11 9L12 13L8 10L4 13L5 9L2 6H6Z"/></svg>
+          </div>
+          <div class="trash-btn" title="Usuń kampanię" onclick="event.stopPropagation();deleteShow('${s.id}','${esc(s.artistName||'')}')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 4h10M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4"/><path d="M7 7v4M9 7v4"/></svg>
+          </div>
         </div>
       </div>`;
     row.addEventListener('click',()=>selectShow(s.id));
     el.appendChild(row);
   });
+}
+
+async function deleteShow(showId, artistName){
+  if(!confirm(`Usunąć kampanię "${artistName}"?\nSpowoduje to też usunięcie wszystkich powiązanych kosztów.`))return;
+  if(!window._db||!window._fs)return;
+  const {doc,deleteDoc,collection,getDocs,query,where}=window._fs;
+  try{
+    // Delete the show
+    await deleteDoc(doc(window._db,'marketing_shows',showId));
+    // Delete associated costs
+    const costsSnap=await getDocs(query(collection(window._db,'marketing_costs'),where('showId','==',showId)));
+    for(const d of costsSnap.docs){await deleteDoc(d.ref);}
+    // Clear selection if deleted show was selected
+    if(window._selectedShowId===showId){
+      window._selectedShowId=null;
+      document.getElementById('detail-empty').style.display='flex';
+      document.getElementById('detail-content').style.display='none';
+    }
+  }catch(e){console.error(e);alert('Błąd usuwania: '+e.message);}
 }
 
 function selectShow(id){
@@ -668,10 +736,22 @@ function renderDetail(id){
       </div>
     </div>
 
-    <!-- TIMELINE -->
-    <div class="sec-card">
-      <div class="sec-head"><span class="sec-title">Timeline marketingowy</span></div>
-      <div class="sec-body" id="timeline-${id}"></div>
+    <!-- TIMELINE + NOTATKI -->
+    <div class="tl-notes-row">
+      <div class="sec-card">
+        <div class="sec-head"><span class="sec-title">Timeline marketingowy</span></div>
+        <div class="sec-body" id="timeline-${id}"></div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-head"><span class="sec-title">Notatki / Pomysły</span></div>
+        <div class="sec-body">
+          <textarea class="notes-textarea" id="notes-ta-${id}" placeholder="Zapisz pomysły, uwagi, linki…">${esc(show.notes||'')}</textarea>
+          <div class="notes-save-row">
+            <span class="notes-meta" id="notes-meta-${id}">${show.notesMeta||''}</span>
+            <button class="btn btn-sm btn-accent" onclick="saveNotes('${id}')">Zapisz</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- META ADS PLACEHOLDER -->
@@ -994,6 +1074,24 @@ ${xLabels}${tickYLabels}
       statusEl.style.color='var(--teal)';
     }
   }
+}
+
+async function saveNotes(showId){
+  if(!window._db||!window._fs)return;
+  const ta=document.getElementById(`notes-ta-${showId}`);
+  const meta=document.getElementById(`notes-meta-${showId}`);
+  if(!ta)return;
+  const text=ta.value;
+  const now=new Date().toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const notesMeta=`${curUser||'–'} · ${now}`;
+  const {doc,updateDoc}=window._fs;
+  try{
+    await updateDoc(doc(window._db,'marketing_shows',showId),{notes:text,notesMeta});
+    if(meta)meta.textContent=notesMeta;
+    // Flash save confirmation
+    const btn=ta.closest('.sec-body')?.querySelector('button');
+    if(btn){const orig=btn.textContent;btn.textContent='✓ Zapisano';setTimeout(()=>{btn.textContent=orig;},1500);}
+  }catch(e){console.error(e);}
 }
 
 /* ────────────────────────────────────────────────
