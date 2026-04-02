@@ -6,13 +6,10 @@
 <title>Fource.Plex — Terrarium</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
-
-<!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-/* ── TOKENS — identyczne z watchlist.html i ticketing.html ── */
 :root{
   --bg:#0e0e11;--bg2:#16161a;--bg3:#1e1e24;--bg4:#26262e;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
@@ -28,7 +25,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 ::-webkit-scrollbar-track{background:var(--bg2)}
 ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
 
-/* ── LAYOUT — identyczny grid jak watchlist/ticketing ── */
+/* ── LAYOUT ── */
 .layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:54px 1fr;height:100vh;overflow:hidden}
 
 /* ── TOPBAR ── */
@@ -61,79 +58,105 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 
 /* ── MAIN ── */
 .main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
-.main-scroll{flex:1;overflow-y:auto;padding:24px;scrollbar-width:thin}
+/* Padding wewnątrz, bez scrolla głównego — wszystko mieści się na ekranie */
+.main-scroll{flex:1;overflow:hidden;padding:16px 20px}
 
-/* ── WIDGET GRID ── */
-.widgets-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:1200px}
-@media(max-width:860px){.widgets-grid{grid-template-columns:1fr}}
+/* ── WIDGET GRID — 3 kolumny, widgets dopasowane do ekranu ── */
+.widgets-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  grid-template-rows:1fr 1fr;
+  gap:12px;
+  height:100%;
+}
 
 /* ── WIDGET CARD ── */
-.widget{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
-.widget-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid var(--border)}
+.widget{background:var(--bg2);border:1px solid var(--border);border-radius:10px;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.widget-header{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
 .widget-title{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3)}
 .widget-badge{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
 .badge-lime  {background:rgba(200,240,96,.12); color:var(--accent)}
 .badge-purple{background:rgba(167,139,250,.12);color:var(--purple)}
 .badge-teal  {background:rgba(52,211,153,.12); color:var(--teal)}
 .badge-amber {background:rgba(251,191,36,.12); color:var(--amber)}
-.widget-body{padding:16px;flex:1}
+/* widget-body scrolluje wewnątrz, nie "wycieka" na zewnątrz */
+.widget-body{padding:12px 14px;flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
 
-/* ── TODO ── */
-.todo-input-row{display:flex;gap:8px;margin-bottom:14px}
-.todo-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:7px 12px;outline:none;transition:border-color .15s}
+/* ── WIDGET POZYCJE w gridzie ── */
+/* Jaszczurze sprawy: col 1, wiersze 1-2 (pełna wysokość) */
+.widget-todo   {grid-column:1;grid-row:1/3}
+/* Watchlist: col 2, wiersz 1 */
+.widget-wl     {grid-column:2;grid-row:1}
+/* Ticketing: col 3, wiersz 1 */
+.widget-tk     {grid-column:3;grid-row:1}
+/* Pogadaj z Beatą: col 2-3, wiersz 2 */
+.widget-chat   {grid-column:2/4;grid-row:2}
+
+/* ── TODO ("Jaszczurze sprawy") ── */
+.todo-add-area{flex-shrink:0;margin-bottom:10px}
+.todo-input-row{display:flex;gap:6px;margin-bottom:6px}
+.todo-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:6px 10px;outline:none;transition:border-color .15s}
 .todo-input:focus{border-color:rgba(200,240,96,.4)}
 .todo-input::placeholder{color:var(--text3)}
-.btn{background:var(--accent);color:#0e0e11;border:none;border-radius:6px;padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
+/* Adresat */
+.todo-assignee-row{display:flex;gap:5px;flex-wrap:wrap}
+.assignee-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:2px 9px;font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;transition:all .12s;white-space:nowrap}
+.assignee-btn:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
+.assignee-btn.selected{color:#0e0e11;border-color:transparent}
+.btn{background:var(--accent);color:#0e0e11;border:none;border-radius:6px;padding:6px 12px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
 .btn:hover{opacity:.85}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:6px;padding:6px 12px;font-family:var(--sans);font-size:12px;cursor:pointer;transition:color .15s,border-color .15s;text-decoration:none;display:inline-block}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;font-family:var(--sans);font-size:12px;cursor:pointer;transition:color .15s,border-color .15s;text-decoration:none;display:inline-block}
 .btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.2)}
-.todo-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto}
-.todo-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;background:var(--bg3);border:1px solid transparent;transition:border-color .12s}
+/* Lista zadań — scroll wewnątrz widgetu */
+.todo-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:0}
+.todo-item{display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:6px;background:var(--bg3);border:1px solid transparent;transition:border-color .12s;flex-shrink:0}
 .todo-item:hover{border-color:var(--border2)}
-.todo-checkbox{width:16px;height:16px;border:1.5px solid var(--text3);border-radius:4px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,background .15s}
+.todo-checkbox{width:15px;height:15px;border:1.5px solid var(--text3);border-radius:4px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,background .15s;margin-top:1px}
 .todo-checkbox.done{border-color:var(--accent);background:rgba(200,240,96,.15)}
-.todo-checkbox.done::after{content:'';width:8px;height:5px;border-left:1.5px solid var(--accent);border-bottom:1.5px solid var(--accent);transform:rotate(-45deg) translateY(-1px);display:block}
-.todo-text{flex:1;font-size:13px;color:var(--text);line-height:1.4;word-break:break-word}
+.todo-checkbox.done::after{content:'';width:7px;height:4px;border-left:1.5px solid var(--accent);border-bottom:1.5px solid var(--accent);transform:rotate(-45deg) translateY(-1px);display:block}
+.todo-meta{flex:1;min-width:0}
+.todo-text{font-size:12px;color:var(--text);line-height:1.4;word-break:break-word}
 .todo-text.done{text-decoration:line-through;color:var(--text3)}
-.todo-author{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:500;color:#0e0e11;flex-shrink:0}
-.todo-delete{width:18px;height:18px;display:flex;align-items:center;justify-content:center;color:var(--text3);cursor:pointer;border-radius:3px;font-size:13px;transition:color .15s,background .15s;flex-shrink:0}
+.todo-sub{display:flex;align-items:center;gap:6px;margin-top:3px}
+.todo-assignee-tag{font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:3px;color:#0e0e11;font-weight:500}
+.todo-author-tag{font-family:var(--mono);font-size:9px;color:var(--text3)}
+.todo-delete{width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:var(--text3);cursor:pointer;border-radius:3px;font-size:12px;transition:color .15s,background .15s;flex-shrink:0;margin-top:1px}
 .todo-delete:hover{color:var(--red);background:rgba(248,113,113,.1)}
-.empty-state{text-align:center;color:var(--text3);font-size:12px;font-family:var(--mono);padding:24px 0}
+.empty-state{text-align:center;color:var(--text3);font-size:12px;font-family:var(--mono);padding:20px 0}
 
 /* ── STAT BOX ── */
-.stat-row{display:flex;gap:12px;margin-bottom:16px}
-.stat-box{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;text-align:center}
-.stat-num{font-family:var(--mono);font-size:24px;font-weight:300;color:var(--text);line-height:1}
-.stat-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-top:4px}
+.stat-row{display:flex;gap:10px;margin-bottom:12px}
+.stat-box{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center}
+.stat-num{font-family:var(--mono);font-size:22px;font-weight:300;color:var(--text);line-height:1}
+.stat-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-top:3px}
 
 /* ── MINI WATCHLIST ── */
-.top-label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
-.top-artists{display:flex;flex-direction:column;gap:6px}
-.artist-row{display:flex;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)}
-.artist-rank{font-family:var(--mono);font-size:10px;color:var(--text3);width:18px;flex-shrink:0}
-.artist-name{flex:1;font-size:13px;font-weight:500;padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.artist-val{font-family:var(--mono);font-size:12px;color:var(--purple);font-weight:500}
+.top-label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.top-artists{display:flex;flex-direction:column;gap:5px}
+.artist-row{display:flex;align-items:center;padding:6px 9px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)}
+.artist-rank{font-family:var(--mono);font-size:10px;color:var(--text3);width:16px;flex-shrink:0}
+.artist-name{flex:1;font-size:12px;font-weight:500;padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.artist-val{font-family:var(--mono);font-size:11px;color:var(--purple);font-weight:500}
 
 /* ── MINI TICKETING ── */
-.ticket-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.ticket-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px}
 
-/* ── CHAT ── */
-.widget.chat-widget{grid-column:1/-1}
-.chat-messages{height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0;margin-bottom:14px}
-.chat-msg{display:flex;flex-direction:column;max-width:75%;animation:msgIn .2s ease}
-@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* ── CHAT (Pogadaj z Beatą) ── */
+.chat-messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px 0;margin-bottom:10px;min-height:0}
+.chat-msg{display:flex;flex-direction:column;max-width:78%;animation:msgIn .2s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 .chat-msg.user  {align-self:flex-end; align-items:flex-end}
-.chat-msg.claude{align-self:flex-start;align-items:flex-start}
-.msg-bubble{padding:9px 13px;border-radius:10px;font-size:13px;line-height:1.55;word-break:break-word;white-space:pre-wrap}
-.chat-msg.user   .msg-bubble{background:rgba(200,240,96,.14);border:1px solid rgba(200,240,96,.25);color:var(--text)}
-.chat-msg.claude .msg-bubble{background:var(--bg3);border:1px solid var(--border2);color:var(--text)}
-.msg-sender{font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:3px;letter-spacing:.06em}
-.chat-input-row{display:flex;gap:8px}
-.chat-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:9px 12px;outline:none;resize:none;transition:border-color .15s;min-height:40px;max-height:100px}
+.chat-msg.beata {align-self:flex-start;align-items:flex-start}
+.msg-bubble{padding:7px 11px;border-radius:10px;font-size:12px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
+.chat-msg.user  .msg-bubble{background:rgba(200,240,96,.14);border:1px solid rgba(200,240,96,.25);color:var(--text)}
+.chat-msg.beata .msg-bubble{background:var(--bg3);border:1px solid var(--border2);color:var(--text)}
+.msg-sender{font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:2px;letter-spacing:.06em}
+.chat-input-row{display:flex;gap:7px;flex-shrink:0}
+.chat-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:7px 11px;outline:none;resize:none;transition:border-color .15s;min-height:36px;max-height:80px}
 .chat-input:focus{border-color:rgba(200,240,96,.3)}
 .chat-input::placeholder{color:var(--text3)}
-.chat-spinner{display:flex;align-items:center;gap:6px;padding:6px 0}
+.chat-spinner{display:flex;align-items:center;gap:5px;padding:5px 0}
 .dot{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:dotP 1.2s ease-in-out infinite}
 .dot:nth-child(2){animation-delay:.2s}
 .dot:nth-child(3){animation-delay:.4s}
@@ -159,7 +182,6 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 </style>
 </head>
 <body>
-
 <div class="layout">
 
 <!-- ── TOPBAR ── -->
@@ -200,101 +222,108 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 
 <!-- ── MAIN ── -->
 <div class="main">
-  <div class="main-scroll">
-    <div class="widgets-grid">
+<div class="main-scroll">
+<div class="widgets-grid">
 
-      <!-- WIDGET 1: TODO LISTA -->
-      <div class="widget">
-        <div class="widget-header">
-          <span class="widget-title">Todo Lista</span>
-          <span class="widget-badge badge-lime" id="todo-badge">0 zadań</span>
+  <!-- ── WIDGET: JASZCZURZE SPRAWY (col 1, full height) ── -->
+  <div class="widget widget-todo">
+    <div class="widget-header">
+      <span class="widget-title">Jaszczurze sprawy</span>
+      <span class="widget-badge badge-lime" id="todo-badge">0 zadań</span>
+    </div>
+    <div class="widget-body">
+      <!-- Pole dodawania -->
+      <div class="todo-add-area">
+        <div class="todo-input-row">
+          <input class="todo-input" id="todo-input" placeholder="Nowe zadanie…" maxlength="200">
+          <button class="btn" onclick="addTodo()">+</button>
         </div>
-        <div class="widget-body">
-          <div class="todo-input-row">
-            <input class="todo-input" id="todo-input" placeholder="Nowe zadanie…" maxlength="200">
-            <button class="btn" onclick="addTodo()">+</button>
-          </div>
-          <div class="todo-list" id="todo-list">
-            <div class="empty-state">Brak zadań</div>
-          </div>
+        <!-- Adresat -->
+        <div class="todo-assignee-row" id="assignee-row">
+          <!-- renderowane przez JS -->
         </div>
       </div>
+      <!-- Lista -->
+      <div class="todo-list" id="todo-list">
+        <div class="empty-state">Brak zadań</div>
+      </div>
+    </div>
+  </div>
 
-      <!-- WIDGET 2: MINI WATCHLIST -->
-      <div class="widget">
-        <div class="widget-header">
-          <span class="widget-title">Watchlist</span>
-          <span class="widget-badge badge-purple" id="wl-badge">–</span>
-        </div>
-        <div class="widget-body">
-          <div class="stat-row">
-            <div class="stat-box">
-              <div class="stat-num" id="wl-total">–</div>
-              <div class="stat-lbl">Artystów</div>
-            </div>
-          </div>
-          <div class="top-label">TOP 3 / predMax</div>
-          <div class="top-artists" id="wl-top3">
-            <div class="empty-state">Ładowanie…</div>
-          </div>
-          <div style="margin-top:14px">
-            <a href="watchlist.html" class="btn-ghost">Otwórz Watchlist →</a>
-          </div>
+  <!-- ── WIDGET: MINI WATCHLIST (col 2, row 1) ── -->
+  <div class="widget widget-wl">
+    <div class="widget-header">
+      <span class="widget-title">Watchlist</span>
+      <span class="widget-badge badge-purple" id="wl-badge">–</span>
+    </div>
+    <div class="widget-body">
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-num" id="wl-total">–</div>
+          <div class="stat-lbl">Artystów</div>
         </div>
       </div>
+      <div class="top-label">TOP 3 / predMax</div>
+      <div class="top-artists" id="wl-top3">
+        <div class="empty-state">Ładowanie…</div>
+      </div>
+      <div style="margin-top:10px">
+        <a href="watchlist.html" class="btn-ghost">Otwórz Watchlist →</a>
+      </div>
+    </div>
+  </div>
 
-      <!-- WIDGET 3: MINI TICKETING -->
-      <div class="widget">
-        <div class="widget-header">
-          <span class="widget-title">Ticketing</span>
-          <span class="widget-badge badge-teal" id="tk-badge">–</span>
+  <!-- ── WIDGET: MINI TICKETING (col 3, row 1) ── -->
+  <div class="widget widget-tk">
+    <div class="widget-header">
+      <span class="widget-title">Ticketing</span>
+      <span class="widget-badge badge-teal" id="tk-badge">–</span>
+    </div>
+    <div class="widget-body">
+      <div class="ticket-stats">
+        <div class="stat-box">
+          <div class="stat-num" id="tk-shows">–</div>
+          <div class="stat-lbl">Showów</div>
         </div>
-        <div class="widget-body">
-          <div class="ticket-stats">
-            <div class="stat-box">
-              <div class="stat-num" id="tk-shows">–</div>
-              <div class="stat-lbl">Showów</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-num" id="tk-sales" style="font-size:18px">–</div>
-              <div class="stat-lbl">Sprzedaż</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-num" id="tk-be">–</div>
-              <div class="stat-lbl">Break Even</div>
-            </div>
-          </div>
-          <a href="ticketing.html" class="btn-ghost">Otwórz Ticketing →</a>
+        <div class="stat-box">
+          <div class="stat-num" id="tk-sales" style="font-size:17px">–</div>
+          <div class="stat-lbl">Sprzedaż</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="tk-be">–</div>
+          <div class="stat-lbl">Break Even</div>
         </div>
       </div>
+      <a href="ticketing.html" class="btn-ghost">Otwórz Ticketing →</a>
+    </div>
+  </div>
 
-      <!-- WIDGET 4: CHAT Z CLAUDE -->
-      <div class="widget chat-widget">
-        <div class="widget-header">
-          <span class="widget-title">Chat z Claude</span>
-          <span class="widget-badge badge-amber">AI</span>
-        </div>
-        <div class="widget-body">
-          <div class="chat-messages" id="chat-messages">
-            <div class="chat-msg claude">
-              <div class="msg-sender">Claude</div>
-              <div class="msg-bubble">Cześć! Jestem asystentem agencji FOURCE. Jak mogę pomóc?</div>
-            </div>
-          </div>
-          <div class="chat-input-row">
-            <textarea class="chat-input" id="chat-input" placeholder="Napisz wiadomość…" rows="1"></textarea>
-            <button class="btn" id="chat-send" onclick="sendChat()">↑</button>
-          </div>
+  <!-- ── WIDGET: POGADAJ Z BEATĄ (col 2-3, row 2) ── -->
+  <div class="widget widget-chat">
+    <div class="widget-header">
+      <span class="widget-title">Pogadaj z Beatą</span>
+      <span class="widget-badge badge-amber">AI</span>
+    </div>
+    <div class="widget-body">
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-msg beata">
+          <div class="msg-sender">Beata</div>
+          <div class="msg-bubble">Cześć, tu Beata — wirtualna office managerka Fource! Mogę Ci jakoś pomóc?</div>
         </div>
       </div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chat-input" placeholder="Napisz do Beaty…" rows="1"></textarea>
+        <button class="btn" id="chat-send" onclick="sendChat()">↑</button>
+      </div>
+    </div>
+  </div>
 
-    </div><!-- /widgets-grid -->
-  </div><!-- /main-scroll -->
+</div><!-- /widgets-grid -->
+</div><!-- /main-scroll -->
 </div><!-- /main -->
-
 </div><!-- /layout -->
 
-<!-- ── MODAL: wybór użytkownika ── -->
+<!-- ── MODAL ── -->
 <div id="modal-overlay">
   <div id="modal">
     <div class="modal-title">Wybierz użytkownika</div>
@@ -318,15 +347,13 @@ const firebaseConfig = {
   appId: "1:764737878461:web:placeholder"
 };
 let db;
-try {
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-} catch(e) { console.error('Firebase init:', e); }
+try { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); }
+catch(e) { console.error('Firebase init:', e); }
 
 /* ── USERS ── */
-const USER_COLORS  = ['#a78bfa','#34d399','#fbbf24','#60a5fa','#f87171','#fb923c','#e879f9','#2dd4bf'];
-const USERS_KEY    = 'fourceplex_users_v1';
-const SESSION_KEY  = 'fourceplex_current_user';
+const USER_COLORS   = ['#a78bfa','#34d399','#fbbf24','#60a5fa','#f87171','#fb923c','#e879f9','#2dd4bf'];
+const USERS_KEY     = 'fourceplex_users_v1';
+const SESSION_KEY   = 'fourceplex_current_user';
 const DEFAULT_USERS = ['Monika','Igor','Mariusz'];
 let currentUser = null;
 
@@ -342,10 +369,9 @@ function getUserColor(name) {
 function getInitial(name) { return name ? name.charAt(0).toUpperCase() : '?'; }
 
 function updateBadge(name) {
-  const color = getUserColor(name);
   const dot = document.getElementById('badge-dot');
   const nm  = document.getElementById('badge-name');
-  if (dot) dot.style.background = color;
+  if (dot) dot.style.background = getUserColor(name);
   if (nm)  nm.textContent = name;
 }
 
@@ -356,14 +382,12 @@ document.getElementById('modal-overlay').addEventListener('click', function(e) {
 document.getElementById('new-user-input').addEventListener('keydown', e => { if (e.key === 'Enter') addUser(); });
 
 function renderUserList() {
-  const users = getUsers();
   const el = document.getElementById('user-list');
   el.innerHTML = '';
-  users.forEach(name => {
-    const color = getUserColor(name);
+  getUsers().forEach(name => {
     const div = document.createElement('div');
     div.className = 'user-option' + (name === currentUser ? ' selected' : '');
-    div.innerHTML = `<div class="user-avatar-sm" style="background:${color}">${getInitial(name)}</div><span class="user-option-name">${name}</span>`;
+    div.innerHTML = `<div class="user-avatar-sm" style="background:${getUserColor(name)}">${getInitial(name)}</div><span class="user-option-name">${name}</span>`;
     div.onclick = () => selectUser(name);
     el.appendChild(div);
   });
@@ -371,14 +395,11 @@ function renderUserList() {
 function selectUser(name) { currentUser = name; sessionStorage.setItem(SESSION_KEY, name); updateBadge(name); closeModal(); }
 function addUser() {
   const input = document.getElementById('new-user-input');
-  const name  = input.value.trim();
-  if (!name) return;
+  const name  = input.value.trim(); if (!name) return;
   const users = getUsers();
   if (!users.includes(name)) { users.push(name); saveUsers(users); }
   renderUserList(); input.value = '';
 }
-
-/* ── INIT USER ── */
 function initUser() {
   const users = getUsers();
   const sess  = sessionStorage.getItem(SESSION_KEY);
@@ -386,14 +407,46 @@ function initUser() {
   else openModal();
 }
 
-/* ── WIDGET 1: TODO ── */
+/* ── ADRESACI ZADAŃ ── */
+const ASSIGNEES = ['Monika','Igor','Mariusz','Radek'];
+// Kolory adresatów (stałe, niezależne od listy userów)
+const ASSIGNEE_COLORS = {'Monika':'#a78bfa','Igor':'#34d399','Mariusz':'#fbbf24','Radek':'#60a5fa'};
+let selectedAssignee = null;
+
+function renderAssigneeButtons() {
+  const row = document.getElementById('assignee-row');
+  row.innerHTML = '';
+  // przycisk "brak adresata"
+  const none = document.createElement('span');
+  none.className = 'assignee-btn' + (selectedAssignee === null ? ' selected' : '');
+  none.textContent = 'ogólne';
+  none.style.cssText = selectedAssignee === null ? `background:${ASSIGNEE_COLORS['Monika']}22;color:var(--text2);border-color:var(--border2)` : '';
+  none.onclick = () => { selectedAssignee = null; renderAssigneeButtons(); };
+  row.appendChild(none);
+
+  ASSIGNEES.forEach(name => {
+    const btn = document.createElement('span');
+    const color = ASSIGNEE_COLORS[name] || '#888';
+    btn.className = 'assignee-btn' + (selectedAssignee === name ? ' selected' : '');
+    if (selectedAssignee === name) btn.style.background = color;
+    btn.textContent = name;
+    btn.onclick = () => { selectedAssignee = (selectedAssignee === name) ? null : name; renderAssigneeButtons(); };
+    row.appendChild(btn);
+  });
+}
+
+/* ── WIDGET: JASZCZURZE SPRAWY ── */
 function addTodo() {
   const input = document.getElementById('todo-input');
   const text  = input.value.trim();
   if (!text || !currentUser) return;
   if (!db) { alert('Brak połączenia z bazą.'); return; }
-  db.collection('todos').add({ text, done: false, addedBy: currentUser, createdAt: firebase.firestore.FieldValue.serverTimestamp() })
-    .then(() => { input.value = ''; })
+  db.collection('todos').add({
+    text, done: false,
+    addedBy:  currentUser,
+    assignee: selectedAssignee || null,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => { input.value = ''; })
     .catch(e => console.error('Todo add:', e));
 }
 document.getElementById('todo-input').addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
@@ -407,25 +460,37 @@ function renderTodos(todos) {
   const pending = todos.filter(t => !t.done).length;
   if (badge)  badge.textContent = `${pending} zadań`;
   if (topCnt) topCnt.textContent = pending;
+
   if (!todos.length) { list.innerHTML = '<div class="empty-state">Brak zadań</div>'; return; }
-  const sorted = [...todos].sort((a,b) => {
-    if (a.done !== b.done) return a.done ? 1 : -1;
-    return (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0);
-  });
+
+  // Sortowanie: chronologicznie, najnowsze u góry (niezależnie od done)
+  const sorted = [...todos].sort((a,b) =>
+    (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)
+  );
+  // Wyświetl max 10
+  const visible = sorted.slice(0, 10);
+
   list.innerHTML = '';
-  sorted.forEach(todo => {
-    const color = getUserColor(todo.addedBy || '');
-    const init  = getInitial(todo.addedBy || '?');
+  visible.forEach(todo => {
+    const authorColor   = getUserColor(todo.addedBy || '');
+    const assigneeColor = todo.assignee ? (ASSIGNEE_COLORS[todo.assignee] || '#888') : null;
+
     const el = document.createElement('div');
     el.className = 'todo-item';
     el.innerHTML = `
       <div class="todo-checkbox ${todo.done?'done':''}" onclick="toggleTodo('${todo.id}',${todo.done})"></div>
-      <span class="todo-text ${todo.done?'done':''}">${escHtml(todo.text)}</span>
-      <div class="todo-author" style="background:${color}" title="${escHtml(todo.addedBy||'')}">${init}</div>
+      <div class="todo-meta">
+        <div class="todo-text ${todo.done?'done':''}">${escHtml(todo.text)}</div>
+        <div class="todo-sub">
+          ${todo.assignee ? `<span class="todo-assignee-tag" style="background:${assigneeColor}22;color:${assigneeColor};border:1px solid ${assigneeColor}44">→ ${escHtml(todo.assignee)}</span>` : ''}
+          <span class="todo-author-tag">od <span style="color:${authorColor}">${escHtml(getInitial(todo.addedBy||'?'))}</span></span>
+        </div>
+      </div>
       <div class="todo-delete" onclick="deleteTodo('${todo.id}')">✕</div>`;
     list.appendChild(el);
   });
 }
+
 if (db) {
   db.collection('todos').onSnapshot(
     snap => renderTodos(snap.docs.map(d => ({id:d.id,...d.data()}))),
@@ -433,7 +498,7 @@ if (db) {
   );
 }
 
-/* ── WIDGET 2: MINI WATCHLIST ── */
+/* ── WIDGET: MINI WATCHLIST ── */
 function renderWatchlist(artists) {
   const total = artists.length;
   document.getElementById('wl-total').textContent = total;
@@ -457,7 +522,7 @@ if (db) {
   );
 }
 
-/* ── WIDGET 3: MINI TICKETING ── */
+/* ── WIDGET: MINI TICKETING ── */
 function renderTicketing(shows) {
   const active = shows.filter(s => s.active !== false);
   let totalSales = 0, breakEvenCount = 0;
@@ -478,22 +543,23 @@ if (db) {
   );
 }
 
-/* ── WIDGET 4: CHAT ── */
-const chatHistory  = [];
-const CLAUDE_SYSTEM = 'Jesteś asystentem agencji koncertowej FOURCE. Pomagasz zespołowi (Monika, Igor, Mariusz) w planowaniu tras koncertowych, analizie artystów i zarządzaniu sprzedażą biletów. Odpowiadaj zwięźle i konkretnie.';
+/* ── WIDGET: POGADAJ Z BEATĄ ── */
+const chatHistory   = [];
+const CLAUDE_SYSTEM = 'Jesteś Beatą — wirtualną office managerką agencji koncertowej FOURCE. Rozmawiasz po polsku, jesteś pomocna, konkretna i przyjazna. Pomagasz zespołowi (Monika, Igor, Mariusz) w planowaniu tras koncertowych, analizie artystów i zarządzaniu sprzedażą biletów. Wypowiadasz się jako kobieta. Odpowiadaj zwięźle i konkretnie.';
 
 function appendMsg(role, text) {
   const c = document.getElementById('chat-messages');
   const m = document.createElement('div');
   m.className = `chat-msg ${role}`;
-  m.innerHTML = `<div class="msg-sender">${escHtml(role==='user'?(currentUser||'Ty'):'Claude')}</div><div class="msg-bubble">${escHtml(text)}</div>`;
+  const sender = role === 'user' ? (currentUser || 'Ty') : 'Beata';
+  m.innerHTML = `<div class="msg-sender">${escHtml(sender)}</div><div class="msg-bubble">${escHtml(text)}</div>`;
   c.appendChild(m); c.scrollTop = c.scrollHeight;
 }
 function showSpinner() {
   const c = document.getElementById('chat-messages');
   const s = document.createElement('div');
-  s.id = 'chat-spinner'; s.className = 'chat-msg claude';
-  s.innerHTML = `<div class="msg-sender">Claude</div><div class="chat-spinner"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  s.id = 'chat-spinner'; s.className = 'chat-msg beata';
+  s.innerHTML = `<div class="msg-sender">Beata</div><div class="chat-spinner"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
   c.appendChild(s); c.scrollTop = c.scrollHeight;
 }
 function removeSpinner() { const s = document.getElementById('chat-spinner'); if (s) s.remove(); }
@@ -501,8 +567,7 @@ function removeSpinner() { const s = document.getElementById('chat-spinner'); if
 async function sendChat() {
   const input = document.getElementById('chat-input');
   const btn   = document.getElementById('chat-send');
-  const text  = input.value.trim();
-  if (!text) return;
+  const text  = input.value.trim(); if (!text) return;
   input.value = ''; input.style.height = ''; btn.disabled = true;
   chatHistory.push({role:'user', content:text});
   appendMsg('user', text); showSpinner();
@@ -515,14 +580,14 @@ async function sendChat() {
     const data  = await res.json();
     const reply = data?.content?.[0]?.text || '(brak odpowiedzi)';
     chatHistory.push({role:'assistant', content:reply});
-    removeSpinner(); appendMsg('claude', reply);
+    removeSpinner(); appendMsg('beata', reply);
   } catch(e) {
-    removeSpinner(); appendMsg('claude', `Błąd połączenia z Claude: ${e.message}`);
+    removeSpinner(); appendMsg('beata', `Błąd połączenia: ${e.message}`);
   } finally { btn.disabled = false; input.focus(); }
 }
 document.getElementById('chat-input').addEventListener('keydown', function(e) {
   if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
-  setTimeout(() => { this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,100)+'px'; }, 0);
+  setTimeout(() => { this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,80)+'px'; }, 0);
 });
 
 /* ── HELPERS ── */
@@ -538,6 +603,7 @@ function fmtK(n) {
 
 /* ── START ── */
 initUser();
+renderAssigneeButtons();
 </script>
 </body>
 </html>
