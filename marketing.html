@@ -1169,7 +1169,7 @@ function appendAiMsg(role,text){
   const c=document.getElementById('ai-messages');
   const m=document.createElement('div');
   m.className=`ai-msg ${role==='user'?'user':'bot'}`;
-  const senderLabel=role==='user'?(curUser||'Ty'):'AI Marketing';
+  const senderLabel=role==='user'?(typeof curUser==='string'&&curUser?curUser:'Ty'):'AI Marketing';
   m.innerHTML=`<div class="ai-msg-sender">${esc(senderLabel)}</div><div class="ai-bubble">${esc(text)}</div>`;
   c.appendChild(m);c.scrollTop=c.scrollHeight;
 }
@@ -1187,7 +1187,7 @@ async function callClaude(){
   btn.disabled=true;showAiSpinner();
   const SYSTEM='Jesteś ekspertem marketingu muzycznego i koncertowego pracującym dla agencji FOURCE. Analizujesz dane konkretnego koncertu i sugerujesz działania marketingowe które zwiększą sprzedaż biletów. Bądź konkretny, praktyczny i zwięzły. Odpowiadaj po polsku.';
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    const res=await fetch('/.netlify/functions/claude',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYSTEM,messages:aiHistory})
     });
