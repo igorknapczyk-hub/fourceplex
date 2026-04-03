@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Market — Fource.Plex</title>
+<title>Watchlist — Fource.Plex</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
 <style>
@@ -255,7 +255,7 @@ select.form-input{cursor:pointer}
 <div class="topbar">
   <div class="topbar-left">
     <img src="fourceplex.png" alt="Fource.Plex" style="height:52px;mix-blend-mode:screen;opacity:.92;margin-right:4px">
-    <div><span class="brand-logo">MARKET</span><span class="brand-tag">Fource.Plex</span></div>
+    <div><span class="brand-logo">WATCHLIST</span><span class="brand-tag">Fource.Plex</span></div>
   </div>
   <div class="topbar-right">
     <div class="refresh-status" id="refreshStatus"><div class="refresh-dot" id="refreshDot"></div><span id="refreshLabel">inicjalizacja...</span></div>
@@ -270,11 +270,8 @@ select.form-input{cursor:pointer}
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M1 6h14M5 6v8"/></svg>
     Terrarium
   </a>
-  <a class="nav-item active" href="market.html">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 12 Q8 2 14 6"/><circle cx="14" cy="6" r="2"/><path d="M5 15l1-3M11 15l-1-3"/></svg>
-    Market
-  </a>
-  <a class="nav-item" href="watchlist.html">
+
+  <a class="nav-item active" href="watchlist.html">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="5" r="2.5"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
     Watchlist
   </a>
@@ -529,7 +526,7 @@ window._onSnapshot = onSnapshot;
 window.dispatchEvent(new Event('firebase-ready'));
 </script>
 <script>
-const SK='fourceplex_market_v1';
+const SK='fourceplex_watchlist_v1';
 const USERS_KEY='buzzek_users_v2';
 const THREE_M=90*24*3600*1000;
 const ONE_WEEK=7*24*3600*1000;
@@ -740,7 +737,7 @@ function renderStats(){
   const rem=artists.filter(a=>a.status==='reminder').length;
   document.getElementById('topCount').textContent=t;
   document.getElementById('statsBar').innerHTML=`
-    <div class="stat-block"><div class="stat-label">Artystów</div><div class="stat-value">${t}</div><div class="stat-sub">na liście Market</div></div>
+    <div class="stat-block"><div class="stat-label">Artystów</div><div class="stat-value">${t}</div><div class="stat-sub">na liście Watchlist</div></div>
     <div class="stat-block"><div class="stat-label">AI-sourced</div><div class="stat-value">${ai}<span>/${t}</span></div><div class="stat-sub up">auto-odkryte</div></div>
     <div class="stat-block"><div class="stat-label">Kontaktów</div><div class="stat-value">${sent}</div><div class="stat-sub">napisano do agenta</div></div>
     <div class="stat-block"><div class="stat-label">Remindery</div><div class="stat-value" style="color:${rem>0?'var(--amber)':'inherit'}">${rem}</div><div class="stat-sub ${rem>0?'warn':''}">wymagają follow-up</div></div>`;
