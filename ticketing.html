@@ -283,22 +283,6 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
 @keyframes ni{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 .sp-sm{width:11px;height:11px;border:1.5px solid rgba(167,139,250,.3);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite}
-
-/* TABS */
-.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;padding:0 2px}
-.tab-btn{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:9px 18px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none;transition:all .15s}
-.tab-btn:hover{color:var(--text2)}
-.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
-.tab-count{font-size:9px;margin-left:5px;opacity:.7}
-
-/* ICON BUTTONS in right panel */
-.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;border:1px solid var(--border2);background:var(--bg3);cursor:pointer;transition:all .15s;flex-shrink:0;color:var(--text2)}
-.icon-btn:hover{background:var(--bg4);color:var(--text)}
-.icon-btn.del:hover{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.1);color:var(--red)}
-.icon-btn.edit:hover{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.1);color:var(--purple)}
-
-/* Inline edit — text input only */
-.ie{width:52px;background:var(--bg3);border:1px solid var(--accent);color:var(--text);font-family:var(--mono);font-size:11px;padding:2px 5px;border-radius:3px;outline:none;text-align:right;}
 </style>
 </head>
 <body>
@@ -328,7 +312,7 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
 
 <div class="topbar">
   <div class="topbar-left">
-    <div class="fource-brand"><span>F</span>OURCE</div>
+    <img src="fourceplex.png" alt="Fource.Plex" style="height:52px;mix-blend-mode:screen;opacity:.92;margin-right:4px">
     <div><span class="brand-logo">TICKETING</span><span class="brand-tag">Fource.Plex</span></div>
   </div>
   <div class="topbar-right">
@@ -337,7 +321,10 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
       <span id="ntLabel" style="color:var(--text3)">—</span>
     </div>
     <div class="topbar-stat"><div class="live-dot"></div>&nbsp;<strong id="topCount">0</strong> show</div>
-    <div class="user-badge" onclick="openUserModal()"><div class="user-dot"></div><span id="curUserLabel">Wybierz użytkownika</span></div>
+    <div class="user-badge" onclick="openUserModal()">
+      <div class="user-dot" id="badge-dot"></div>
+      <span id="curUserLabel">Wybierz użytkownika</span>
+    </div>
   </div>
 </div>
 
@@ -359,7 +346,42 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 6h2v4H2zM4 7l7-4v10L4 9"/><path d="M11 6.5c1 .5 1 2.5 0 3"/></svg>
     Marketing
   </div>
-  <div class="nav-label">Ticketing</div>
+  <div class="nav-item" onclick="location.href='produkcja.html'">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="3" width="14" height="10" rx="1.5"/><circle cx="8" cy="8" r="2.5"/><circle cx="8" cy="8" r="1"/></svg>
+    Produkcja
+  </div>
+  <div class="nav-item" onclick="location.href='listy-gosci.html'">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 4h8M4 7h8M4 10h5"/><rect x="1" y="1" width="14" height="14" rx="1.5"/></svg>
+    Listy Gości
+  </div>
+  <div class="nav-item" onclick="location.href='projekty.html'">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    Projekty
+  </div>
+
+  <div class="nav-label" style="margin-top:6px">Szybkie Linki</div>
+  <a class="nav-item" href="https://fource.pl" target="_blank" rel="noopener">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 2c-2 2-3 4-3 6s1 4 3 6"/><path d="M8 2c2 2 3 4 3 6s-1 4-3 6"/><path d="M2 8h12"/></svg>
+    Fource.pl
+    <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
+  </a>
+  <a class="nav-item" href="https://home.mycloud.com/" target="_blank" rel="noopener">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 10a3 3 0 000-6 3.5 3.5 0 00-6.9.8A2.5 2.5 0 104 10"/><path d="M8 10v5M6 13l2 2 2-2"/></svg>
+    WD My Cloud
+    <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
+  </a>
+  <a class="nav-item" href="https://opos.ebilet.pl/" target="_blank" rel="noopener">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="4" width="14" height="8" rx="1.5"/><path d="M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/><circle cx="8" cy="8" r="1.5"/></svg>
+    Opos eBilet
+    <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
+  </a>
+  <a class="nav-item" href="https://one.ticketmaster.com/" target="_blank" rel="noopener">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 8h3M11 8h3M5 5.5A2.5 2.5 0 005 10.5"/><path d="M11 5.5a2.5 2.5 0 010 5"/><rect x="5" y="4" width="6" height="8" rx="1"/></svg>
+    TM1 Ticketmaster
+    <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
+  </a>
+
+  <div class="nav-label" style="margin-top:6px">Ticketing</div>
   <div class="nav-item" onclick="togglePanel('addPanel')">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
     Dodaj event
@@ -372,6 +394,7 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2L10 6H14L11 9L12 13L8 10L4 13L5 9L2 6H6Z"/></svg>
     AI Raport
   </div>
+
   <div class="sidebar-footer">
     <div class="sidebar-footer-logo"><span>F</span>OURCE</div>
     <div class="sidebar-footer-text">Agency Hub © 2026</div>
@@ -384,7 +407,7 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
       <div class="stat-block"><div class="stat-label">Aktywne show</div><div class="stat-value" id="st-active">—</div><div class="stat-sub" id="st-active-sub">ładowanie</div></div>
       <div class="stat-block"><div class="stat-label">Łączna sprzedaż</div><div class="stat-value" id="st-total">—</div><div class="stat-sub up">wszystkie kanały</div></div>
       <div class="stat-block"><div class="stat-label">Avg. wypełnienia</div><div class="stat-value" id="st-avg">—</div><div class="stat-sub">% cap</div></div>
-      <div class="stat-block"><div class="stat-label">Sold Outy</div><div class="stat-value" id="st-soldout">—</div><div class="stat-sub" id="st-soldout-sub">koncerty</div></div>
+      <div class="stat-block"><div class="stat-label">Snapshoty</div><div class="stat-value" id="st-snaps">—</div><div class="stat-sub" id="st-snaps-sub">wtorki</div></div>
       <div class="stat-block"><div class="stat-label">Następny wtorek</div><div class="stat-value" id="st-tuesday" style="font-size:15px">—</div><div class="stat-sub" id="st-tuesday-sub">dzień raportu</div></div>
     </div>
     <div class="toolbar">
@@ -392,15 +415,17 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="6.5" cy="6.5" r="4"/><path d="M10 10l3 3" stroke-linecap="round"/></svg>
         <input type="text" id="searchInput" placeholder="Szukaj artysty, venue..." oninput="renderTable()">
       </div>
+      <select class="filter" id="filterStatus" onchange="renderTable()">
+        <option value="">Wszystkie</option>
+        <option value="upcoming">Nadchodzące</option>
+        <option value="past">Minione</option>
+        <option value="soldout">Sold out</option>
+      </select>
       <select class="filter" id="filterVenue" onchange="renderTable()">
         <option value="">Wszystkie venue</option>
       </select>
       <button class="btn btn-teal btn-sm" onclick="doCountAll()">⊞ Policz wszystko</button>
       <button class="btn btn-accent" onclick="togglePanel('addPanel')">+ Dodaj event</button>
-    </div>
-    <div class="tab-bar">
-      <button class="tab-btn active" id="tabActive" onclick="switchTab('active')">Aktywne<span class="tab-count" id="cntActive"></span></button>
-      <button class="tab-btn" id="tabPast" onclick="switchTab('past')">Przeszłe<span class="tab-count" id="cntPast"></span></button>
     </div>
   </div>
 
@@ -523,45 +548,46 @@ const SEED=[
   {name:'Kiki Rockwell',date:'2026-04-21',venue:'Niebo',           price:'105',   cap:750,  onSale:'2025-04-28',tm:142, eb:581, other:0,  remains:27,  wraps:23,vip:'',       notes:'',addedBy:'Igor'},
 ];
 
-/* Snapshot seed — all Tuesdays from 6.1.2026 up to today, active events only */
+/* Snapshot seed — 5 Tuesday dates going back from today */
+// Will be built dynamically after events are seeded
 function buildSnapSeed(evs){
-  const today=new Date(); today.setHours(0,0,0,0);
-  // All Tuesdays from 6 Jan 2026 up to (not including) today
-  const allTuesdays=[];
-  let t=new Date(2026,0,6); // 6 Jan 2026 = Tuesday
-  while(t<today){ allTuesdays.push(new Date(t)); t.setDate(t.getDate()+7); }
+  // Generate 5 past Tuesdays
+  const tuesdays=[];
+  const d=new Date();
+  // Find most recent Tuesday
+  const day=d.getDay();
+  const diff=(day-2+7)%7; // days since last Tuesday
+  let tue=new Date(d);
+  tue.setDate(d.getDate()-diff);
+  for(let i=4;i>=0;i--){
+    const t=new Date(tue);
+    t.setDate(tue.getDate()-i*7);
+    tuesdays.push({
+      label:`${t.getDate()}.${t.getMonth()+1}.${t.getFullYear()}`,
+      daysAgo:(i)*7+diff,
+    });
+  }
 
-  const cutoff=new Date(today); cutoff.setDate(today.getDate()-2);
-  // Only active events (concert date >= 2 days ago)
-  const activeEvs=evs.filter(ev=>new Date(ev.date)>=cutoff);
-
+  // For each event seed snapshots for all 5 Tuesdays with gradual growth
   const result=[];
-  activeEvs.forEach(ev=>{
-    const evDate=new Date(ev.date);
-    // Only Tuesdays before the concert date
-    const relevant=allTuesdays.filter(tue=>tue<evDate);
-    if(!relevant.length)return;
-    const n=relevant.length;
-    relevant.forEach((tue,ti)=>{
-      // Smooth growth: starts at 30% of final, ends at 97%
-      const prog=n>1?ti/(n-1):1;
-      const f=0.30+prog*0.67;
-      const noise=0.93+Math.random()*0.14;
-      const sTM=Math.round((ev.tm||0)*f*noise);
-      const sEB=Math.round((ev.eb||0)*f*noise);
-      const sOt=Math.round((ev.other||0)*f);
+  evs.forEach(ev=>{
+    tuesdays.forEach((tue,ti)=>{
+      // Fraction grows from ~60% to ~95% of current value
+      const f=0.60+ti*0.08+(Math.random()*0.04);
+      const sTM=Math.round((ev.tm||0)*Math.min(f,1)*(0.9+Math.random()*.2));
+      const sEB=Math.round((ev.eb||0)*Math.min(f,1)*(0.9+Math.random()*.2));
+      const sOt=Math.round((ev.other||0)*Math.min(f,1));
       const tot=sTM+sEB+sOt;
-      const lbl=`${tue.getDate()}.${tue.getMonth()+1}.${tue.getFullYear()}`;
-      const daysAgo=Math.round((today-tue)/86400000);
       result.push({
-        sid:`snap_${ev.id}_${lbl.replace(/\./g,'_')}`,
+        evId:ev.id,
+        sid:`snap_${ev.id}_${tue.label.replace(/\./g,'_')}`,
         data:{
-          eventId:ev.id,eventName:ev.name,date:lbl,
+          eventId:ev.id,eventName:ev.name,date:tue.label,
           tm:sTM,eb:sEB,other:sOt,total:tot,
           remains:Math.max(0,(ev.cap||0)-tot),
-          wraps:Math.round((ev.wraps||0)*f),
+          wraps:Math.round((ev.wraps||0)*Math.min(f,1)),
           pct:ev.cap?Math.round(tot/ev.cap*100):0,
-          createdBy:'seed',createdAt:Date.now()-daysAgo*86400000,
+          createdBy:'seed',createdAt:Date.now()-tue.daysAgo*86400000,
         }
       });
     });
@@ -572,51 +598,22 @@ function buildSnapSeed(evs){
 window.addEventListener('fb-ready',async()=>{
   const s=await window._getDocs(window._evCol);
   if(s.empty){
+    const ids=[];
     for(const ev of SEED){
       const id='ev_'+Math.random().toString(36).slice(2,9);
+      ids.push(id);
       await window._setDoc(window._doc(window._db,'ticketing_events',id),{...ev,breakEven:0,internalBuys:0,addedAt:Date.now()});
     }
     notify('Załadowano eventy testowe');
-    // Wait for onSnapshot to populate window._events, then seed snapshots
-    const waitAndSeed=()=>{
-      if(!window._events.length){setTimeout(waitAndSeed,500);return;}
-      const snaps=buildSnapSeed(window._events);
-      let i=0;
-      const batch=async()=>{
-        if(i>=snaps.length){notify('Dodano '+snaps.length+' snapshotów (od 6.1.2026)');return;}
-        await window._setDoc(window._doc(window._db,'ticketing_snapshots',snaps[i].sid),snaps[i].data);
-        i++;
-        if(i%10===0)await new Promise(r=>setTimeout(r,50)); // small delay every 10 writes
-        batch();
-      };
-      batch();
-    };
-    setTimeout(waitAndSeed,1500);
-  } else {
-    // Events exist — check if we need to fill in missing historical snapshots
-    // (handles case where snapshots were seeded with only 5 dates before this update)
     setTimeout(async()=>{
       const evs=window._events;
       if(!evs.length)return;
-      const existingSnaps=window._snaps||{};
-      const today=new Date(); today.setHours(0,0,0,0);
-      const cutoff=new Date(today); cutoff.setDate(today.getDate()-2);
-      const activeEvs=evs.filter(ev=>new Date(ev.date)>=cutoff);
-      // Check if any active event has fewer than 5 snapshots — if so, reseed all
-      const needsReseed=activeEvs.some(ev=>(existingSnaps[ev.id]||[]).length<5);
-      if(needsReseed){
-        const snaps=buildSnapSeed(evs);
-        let i=0;
-        const batch=async()=>{
-          if(i>=snaps.length){notify('Historia zaktualizowana: '+snaps.length+' snapshotów');return;}
-          await window._setDoc(window._doc(window._db,'ticketing_snapshots',snaps[i].sid),snaps[i].data);
-          i++;
-          if(i%10===0)await new Promise(r=>setTimeout(r,50));
-          batch();
-        };
-        batch();
+      const snaps=buildSnapSeed(evs);
+      for(const snap of snaps){
+        await window._setDoc(window._doc(window._db,'ticketing_snapshots',snap.sid),snap.data);
       }
-    },3000);
+      notify(`Dodano ${snaps.length} snapshot'ów historycznych`);
+    },2000);
   }
 });
 
@@ -629,6 +626,8 @@ function loadUsers(){
     curUser=saved;
     const el=document.getElementById('curUserLabel');
     if(el)el.textContent=saved;
+    const dot=document.getElementById('badge-dot');
+    if(dot)dot.style.background=uCol(saved);
   }else{
     openUserModal();
   }
@@ -650,6 +649,8 @@ function selectUser(n){
   localStorage.setItem(SESSION_USER_KEY,n);
   const el=document.getElementById('curUserLabel');
   if(el)el.textContent=n;
+  const dot=document.getElementById('badge-dot');
+  if(dot)dot.style.background=uCol(n);
   const modal=document.getElementById('userModal');
   if(modal)modal.classList.remove('open');
 }
@@ -677,28 +678,6 @@ function closeAllPanels(){document.querySelectorAll('.overlay-panel').forEach(p=
 function clearForm(){['fName','fDate','fVenue','fPrice','fCap','fOnSale','fBreakEven','fInternalBuys','fVip','fTM','fEB','fOther','fRemains','fWraps','fNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
 function sortBy(col){if(_sCol===col)_sDir*=-1;else{_sCol=col;_sDir=1;}renderTable();}
 
-/* ── TAB STATE ── */
-let _activeTab='active';
-function switchTab(t){
-  _activeTab=t;
-  document.getElementById('tabActive').classList.toggle('active',t==='active');
-  document.getElementById('tabPast').classList.toggle('active',t==='past');
-  renderTable();
-}
-
-/* ── CONFIRM DELETE ── */
-async function confirmDelete(evId){
-  const ev=window._events?.find(e=>e.id===evId);
-  if(!ev)return;
-  if(!confirm('Usunąć "'+ev.name+'" z systemu? Tej operacji nie można cofnąć.'))return;
-  const snaps=window._snaps?.[evId]||[];
-  for(const s of snaps){
-    try{await window._deleteDoc(window._doc(window._db,'ticketing_snapshots',s.id));}catch(e){}
-  }
-  await window._deleteDoc(window._doc(window._db,'ticketing_events',evId));
-  notify('Usunięto: '+ev.name);
-}
-
 /* ── COLUMN WIDTHS ── */
 // Middle panel: static info + Tuesday blocks
 // Static: Dni(54) Venue(120) Cena(64) CAP(50) Onsale(62) BE(62)
@@ -712,45 +691,38 @@ const RIGHT_W=Object.values(RW).reduce((s,v)=>s+v,0); // 418
 const BCOLS=['TM','eB','Inne','T','W','%','R'];
 const RCOLS=['TM','eB','Inne','T','W','%','R',''];
 
-/* ── BUILD PCT — number only, no bar ── */
+/* ── BUILD PCT CELL ── */
 function mkPct(pct,ev_cap){
   if(!ev_cap)return'—';
-  return`<span style="color:${pctColor(pct)};font-family:var(--mono);font-size:11px">${pct}%</span>`;
+  const col=pctColor(pct),pmin=Math.min(pct,100);
+  return`<div class="pct-w"><div class="pct-bar"><div class="pct-fill" style="width:${pmin}%;background:${col}"></div></div><span class="pct-n" style="color:${col}">${pct}%</span></div>`;
 }
 
 /* ── RENDER TABLE ── */
 function renderTable(){
   const evs=window._events||[];
   const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  const fS=document.getElementById('filterStatus')?.value||'';
   const fV=document.getElementById('filterVenue')?.value||'';
 
   const venues=[...new Set(evs.map(e=>e.venue).filter(Boolean))].sort();
   const vSel=document.getElementById('filterVenue');
   if(vSel){const cur=vSel.value;vSel.innerHTML='<option value="">Wszystkie venue</option>'+venues.map(v=>`<option ${v===cur?'selected':''} value="${v}">${v}</option>`).join('');}
 
-  // Tab split: active = concert date >= today-2d; past = older
-  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
-  const activeEvs=evs.filter(ev=>new Date(ev.date)>=cutoff);
-  const pastEvs=evs.filter(ev=>new Date(ev.date)<cutoff);
-  const ca=document.getElementById('cntActive'),cp=document.getElementById('cntPast');
-  if(ca)ca.textContent=activeEvs.length;
-  if(cp)cp.textContent=pastEvs.length;
-
-  const pool=_activeTab==='active'?activeEvs:pastEvs;
-  let rows=pool.filter(ev=>{
+  let rows=evs.filter(ev=>{
     if(q&&!ev.name?.toLowerCase().includes(q)&&!ev.venue?.toLowerCase().includes(q))return false;
+    const d=daysLeft(ev.date),tot=(ev.tm||0)+(ev.eb||0)+(ev.other||0),pct=ev.cap?Math.round(tot/ev.cap*100):0;
+    if(fS==='upcoming'&&d<0)return false;
+    if(fS==='past'&&d>=0)return false;
+    if(fS==='soldout'&&pct<100)return false;
     if(fV&&ev.venue!==fV)return false;
     return true;
   });
-  if(_activeTab==='active'){
-    rows.sort((a,b)=>{
-      if(_sCol==='date')return _sDir*(a.date||'').localeCompare(b.date||'');
-      if(_sCol==='name')return _sDir*(a.name||'').localeCompare(b.name||'');
-      return _sDir*((a[_sCol]||0)>(b[_sCol]||0)?1:(a[_sCol]||0)<(b[_sCol]||0)?-1:0);
-    });
-  } else {
-    rows.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  }
+  rows.sort((a,b)=>{
+    if(_sCol==='date')return _sDir*(a.date||'').localeCompare(b.date||'');
+    if(_sCol==='name')return _sDir*(a.name||'').localeCompare(b.name||'');
+    return _sDir*((a[_sCol]||0)>(b[_sCol]||0)?1:(a[_sCol]||0)<(b[_sCol]||0)?-1:0);
+  });
   document.getElementById('topCount').textContent=rows.length;
 
   /* Collect and sort all snapshot dates (= Tuesday history) */
@@ -856,14 +828,15 @@ function renderTable(){
     // Tuesday snapshot blocks
     snapDates.forEach((dt,bi)=>{
       const s=(allSnaps[ev.id]||[]).find(x=>x.date===dt);
+      const bord=`border-left:1px solid rgba(255,255,255,.05)`;
       if(s){
         const sp=s.pct||0;
         mr+=`<td class="num bl-sep" style="width:${BW.tm}px">${s.tm||0}</td>`;
         mr+=`<td class="num" style="width:${BW.eb}px">${s.eb||0}</td>`;
-        mr+=`<td class="num ec" style="width:${BW.oth}px;color:var(--text2)" data-snapid="${s.id}" data-evid="${ev.id}" data-val="${s.other||0}" onclick="iEditSnap(this)" title="Edytuj Inne">${s.other||0}</td>`;
+        mr+=`<td class="num" style="width:${BW.oth}px;color:var(--text3)">${s.other||0}</td>`;
         mr+=`<td class="num-b" style="width:${BW.t}px">${s.total||0}</td>`;
         mr+=`<td class="num" style="width:${BW.w}px">${s.wraps||0}</td>`;
-        mr+=`<td class="num" style="width:${BW.pct}px;color:${pctColor(sp)}">${ev.cap?sp+'%':'—'}</td>`;
+        mr+=`<td style="width:${BW.pct}px">${mkPct(sp,ev.cap)}</td>`;
         mr+=`<td class="num" style="width:${BW.r}px;color:var(--text3)">${s.remains||0}</td>`;
       }else{
         mr+=`<td class="num bl-sep" style="width:${BW.tm}px;color:var(--text3)">—</td>`;
@@ -878,26 +851,18 @@ function renderTable(){
     mr+='</tr>';
     mH+=mr;
 
-    /* RIGHT panel row — LIVE. Only 'Inne' editable. Icon buttons. */
+    /* RIGHT panel row — LIVE data + edit button */
     const remColor=rem===0?'var(--teal)':rem<50?'var(--amber)':'var(--text3)';
-    const pctCol=pctColor(pct);
     let rr=`<tr class="${rc}" data-id="${ev.id}">`;
-    rr+=`<td class="num live-bg" style="width:${RW.tm}px;border-left:1px solid rgba(200,240,96,.12)">${ev.tm||0}</td>`;
-    rr+=`<td class="num live-bg" style="width:${RW.eb}px">${ev.eb||0}</td>`;
-    rr+=`<td class="num live-bg ec" style="width:${RW.oth}px;color:var(--text2)" data-val="${ev.other||0}" onclick="iEdit(this,'${ev.id}','other')" title="Kliknij — edytuj Inne">${ev.other||0}</td>`;
+    rr+=`<td class="num live-bg ec" style="width:${RW.tm}px;border-left:1px solid rgba(200,240,96,.12)" data-val="${ev.tm||0}" onclick="iEdit(this,'${ev.id}','tm')" title="Kliknij — edytuj TM">${ev.tm||0}</td>`;
+    rr+=`<td class="num live-bg ec" style="width:${RW.eb}px" data-val="${ev.eb||0}" onclick="iEdit(this,'${ev.id}','eb')" title="Kliknij — edytuj eBilet">${ev.eb||0}</td>`;
+    rr+=`<td class="num live-bg" style="width:${RW.oth}px;color:var(--text3)">${ev.other||0}</td>`;
     rr+=`<td class="num-b live-bg" style="width:${RW.t}px">${tot}</td>`;
     rr+=`<td class="num live-bg" style="width:${RW.w}px">${ev.wraps||0}</td>`;
-    rr+=`<td class="num live-bg" style="width:${RW.pct}px;color:${pctCol}">${ev.cap?pct+'%':'—'}</td>`;
+    rr+=`<td class="live-bg" style="width:${RW.pct}px">${mkPct(pct,ev.cap)}</td>`;
     rr+=`<td class="num live-bg" style="width:${RW.r}px;color:${remColor}">${rem}</td>`;
-    rr+=`<td style="width:${RW.act}px;padding:0 6px">
-      <div style="display:flex;gap:5px;justify-content:flex-end;align-items:center">
-        <span class="icon-btn edit" onclick="openEdit('${ev.id}')" title="Edytuj">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
-        </span>
-        <span class="icon-btn del" onclick="confirmDelete('${ev.id}')" title="Usuń event">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9"/></svg>
-        </span>
-      </div>
+    rr+=`<td style="width:${RW.act}px;text-align:right;padding-right:8px">
+      <button class="btn btn-purple btn-sm" onclick="openEdit('${ev.id}')">Edytuj</button>
     </td></tr>`;
     rH+=rr;
   });
@@ -946,46 +911,18 @@ function bindHover(){
   });
 }
 
-/* ── INLINE EDIT — 'other' in LIVE block ── */
+/* ── INLINE EDIT ── */
 async function iEdit(td,evId,field){
   const cur=td.getAttribute('data-val')||'0';
   const inp=document.createElement('input');
-  inp.type='text';inp.inputMode='numeric';inp.className='ie';inp.value=cur;
+  inp.type='number';inp.className='ie';inp.value=cur;inp.min=0;
   td.innerHTML='';td.appendChild(inp);inp.focus();inp.select();
   const done=async()=>{
-    const val=Math.max(0,parseInt(inp.value)||0);
+    const val=parseInt(inp.value)||0;
     const ev=window._events.find(e=>e.id===evId);if(!ev)return;
-    const newTot=(ev.tm||0)+(ev.eb||0)+val;
-    const newRem=ev.cap?Math.max(0,ev.cap-newTot):(ev.remains||0);
-    const u={...ev,other:val,remains:newRem,updatedBy:curUser,updatedAt:Date.now()};
-    delete u.id;
+    const u={...ev,[field]:val,updatedBy:curUser,updatedAt:Date.now()};delete u.id;
     await window._setDoc(window._doc(window._db,'ticketing_events',evId),u);
-    notify('Inne → '+val+' (Total: '+newTot+')','info');
-  };
-  inp.addEventListener('blur',done);
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderTable();});
-}
-
-/* ── INLINE EDIT — 'other' in snapshot block ── */
-async function iEditSnap(td){
-  const snapId=td.getAttribute('data-snapid');
-  const evId=td.getAttribute('data-evid');
-  const cur=td.getAttribute('data-val')||'0';
-  const inp=document.createElement('input');
-  inp.type='text';inp.inputMode='numeric';inp.className='ie';inp.value=cur;
-  td.innerHTML='';td.appendChild(inp);inp.focus();inp.select();
-  const done=async()=>{
-    const val=Math.max(0,parseInt(inp.value)||0);
-    const snapsArr=window._snaps?.[evId]||[];
-    const snap=snapsArr.find(s=>s.id===snapId);if(!snap)return;
-    const newTot=(snap.tm||0)+(snap.eb||0)+val;
-    const ev=window._events.find(e=>e.id===evId);
-    const newRem=ev?.cap?Math.max(0,ev.cap-newTot):(snap.remains||0);
-    const newPct=ev?.cap?Math.round(newTot/ev.cap*100):0;
-    const u={...snap,other:val,total:newTot,remains:newRem,pct:newPct,updatedBy:curUser,updatedAt:Date.now()};
-    delete u.id;
-    await window._setDoc(window._doc(window._db,'ticketing_snapshots',snapId),u);
-    notify('Inne ('+snap.date+') → '+val,'info');
+    notify(`${field.toUpperCase()} → ${val}`,'info');
   };
   inp.addEventListener('blur',done);
   inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderTable();});
@@ -1022,22 +959,21 @@ function doCountOne(id){
 /* ── STATS ── */
 function updateStats(){
   const evs=window._events||[];
-  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
-  const act=evs.filter(e=>new Date(e.date)>=cutoff);
+  const act=evs.filter(e=>daysLeft(e.date)>=0);
   const tot=evs.reduce((s,e)=>s+(e.tm||0)+(e.eb||0)+(e.other||0),0);
-  const pcts=act.filter(e=>e.cap>0).map(e=>((e.tm||0)+(e.eb||0)+(e.other||0))/e.cap*100);
+  const pcts=evs.filter(e=>e.cap>0).map(e=>((e.tm||0)+(e.eb||0)+(e.other||0))/e.cap*100);
   const avg=pcts.length?Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length):0;
-  const soldOut=act.filter(e=>e.cap>0&&((e.tm||0)+(e.eb||0)+(e.other||0))>=e.cap).length;
+  const sc=Object.values(window._snaps||{}).reduce((s,a)=>s+a.length,0);
   const nt=nextTue(),ntd=Math.round((nt-new Date())/86400000);
   document.getElementById('st-active').textContent=act.length;
-  document.getElementById('st-active-sub').textContent='z '+evs.length+' total';
+  document.getElementById('st-active-sub').textContent=`z ${evs.length} total`;
   document.getElementById('st-total').textContent=tot.toLocaleString('pl-PL');
   document.getElementById('st-avg').textContent=avg+'%';
-  document.getElementById('st-soldout').textContent=soldOut;
-  document.getElementById('st-soldout-sub').textContent=soldOut===1?'koncert sold out':'koncerty sold out';
-  document.getElementById('st-tuesday').textContent=nt.getDate()+'.'+(nt.getMonth()+1);
-  document.getElementById('st-tuesday-sub').textContent='za '+ntd+' '+(ntd===1?'dzień':'dni');
-  document.getElementById('ntLabel').textContent='Wtorek: '+nt.getDate()+'.'+(nt.getMonth()+1)+' (za '+ntd+'d)';
+  document.getElementById('st-snaps').textContent=sc;
+  document.getElementById('st-snaps-sub').textContent=`${Object.keys(window._snaps||{}).length} eventów`;
+  document.getElementById('st-tuesday').textContent=`${nt.getDate()}.${nt.getMonth()+1}`;
+  document.getElementById('st-tuesday-sub').textContent=`za ${ntd} ${ntd===1?'dzień':'dni'}`;
+  document.getElementById('ntLabel').textContent=`Wtorek: ${nt.getDate()}.${nt.getMonth()+1} (za ${ntd}d)`;
 }
 
 /* ── SAVE / EDIT / DELETE ── */
@@ -1109,7 +1045,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAllPanels();document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open'));}});
 });
 
-Object.assign(window,{openUserModal,selectUser,addNewUser,togglePanel,closePanel,closeAllPanels,sortBy,switchTab,renderTable,saveEvent,openEdit,deleteCurrentEvent,confirmDelete,iEdit,iEditSnap,doCountAll,doCountOne,runAiSummary,notify});
+Object.assign(window,{openUserModal,selectUser,addNewUser,togglePanel,closePanel,closeAllPanels,sortBy,renderTable,saveEvent,openEdit,deleteCurrentEvent,iEdit,doCountAll,doCountOne,runAiSummary,notify});
 </script>
 
 <!-- UPDATE INDEX.HTML SIDEBAR NOTE: Add Ticketing link to Market module sidebar -->
