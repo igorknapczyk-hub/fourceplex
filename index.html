@@ -703,8 +703,11 @@ function initCal(){const now=new Date();calYear=now.getFullYear();calMonth=now.g
 function calNav(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}else if(calMonth<0){calMonth=11;calYear--;}renderCal();}
 
 function renderCal(){
-  document.getElementById('cal-month-label').textContent=`${MONTHS_PL[calMonth]} ${calYear}`;
+  if(calYear==null||calMonth==null)return;
+  const lbl=document.getElementById('cal-month-label');
+  if(lbl)lbl.textContent=`${MONTHS_PL[calMonth]} ${calYear}`;
   const grid=document.getElementById('cal-grid');
+  if(!grid)return;
   grid.innerHTML='';
 
   // Nagłówki dni
@@ -902,10 +905,10 @@ document.getElementById('chat-input').addEventListener('keydown',function(e){
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtK(n){if(n==null)return'–';if(n>=1000000)return(n/1000000).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'k';return String(Math.round(n));}
 
-/* ── START ── */
+/* ── START — initCal jako pierwsze, żeby kalendarz nie pokazywał "..." ── */
+initCal();
 initUser();
 renderAssigneeButtons();
-initCal();
 </script>
 </body>
 </html>
