@@ -85,6 +85,9 @@ select.filter:focus{border-color:var(--accent)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
 .btn-del{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:5px;border:1px solid rgba(248,113,113,.25);background:rgba(248,113,113,.08);color:var(--red);cursor:pointer;transition:all .15s;flex-shrink:0;padding:0}
 .btn-del:hover{background:rgba(248,113,113,.22);border-color:rgba(248,113,113,.5)}
+.btn-refresh-row{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all .15s;flex-shrink:0;padding:0}
+.btn-refresh-row:hover{color:var(--accent);border-color:rgba(200,240,96,.3);background:rgba(200,240,96,.06)}
+.btn-refresh-row.spinning svg{animation:spin .7s linear infinite}
 .btn-accent{background:var(--accent);border-color:var(--accent);color:#0e0e11;font-weight:500}
 .btn-accent:hover{background:var(--accent2);border-color:var(--accent2);color:#0e0e11}
 .btn-purple{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.3);color:var(--purple)}
@@ -342,23 +345,15 @@ select.form-input{cursor:pointer}
         <option value="sent">Napisano do agenta</option>
         <option value="reminder">Reminder</option>
       </select>
-      <select class="filter" id="filterSource" onchange="renderTable()">
-        <option value="">Wszystkie źródła</option>
-        <option value="ai">AI</option>
-        <option value="manual">Ręczny</option>
-      </select>
-      <select class="filter" id="filterPL" onchange="renderTable()">
-        <option value="">PL Show: wszystkie</option>
-        <option value="no">Nie grał w Polsce</option>
-        <option value="yes">Grał w Polsce</option>
-      </select>
+
+
       <button class="btn btn-teal" id="cmpBtn" disabled onclick="togglePanel('comparePanel')">Porównaj (0/4)</button>
       <button class="btn btn-accent" onclick="togglePanel('addPanel')">+ Dodaj</button>
-      <div class="legend">
-        <span class="legend-item"><span class="l-dot" style="background:var(--purple)"></span>AI</span>
-        <span class="legend-item"><span class="l-dot" style="background:var(--teal)"></span>Ręczny</span>
-        <span class="legend-item"><span class="l-dot" style="background:var(--amber)"></span>Reminder</span>
-      </div>
+      <button class="btn" onclick="refreshAllTrends()" title="Odśwież trendy dla wszystkich artystów" style="flex-shrink:0">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="vertical-align:middle;margin-right:4px"><path d="M13 8A5 5 0 112 8" stroke-linecap="round"/><path d="M13 4v4h-4"/></svg>Odśwież trendy
+      </button>
+      <button class="btn btn-purple" onclick="togglePanel('aiPanel')" style="flex-shrink:0">Odkryj z AI ↗</button>
+
     </div>
   </div>
 
@@ -459,7 +454,7 @@ select.form-input{cursor:pointer}
     <div class="table-scroll">
       <table>
         <colgroup>
-          <col style="width:34px">
+          <col style="width:56px">
           <col style="width:175px">
           <col style="width:30px">
           <col style="width:165px">
@@ -533,9 +528,13 @@ const ONE_WEEK=7*24*3600*1000;
 
 function venueForPredict(max){
   if(!max||max<100)return null;
-  if(max<200)return'Chmury';if(max<400)return'Hydrozagadka';
-  if(max<700)return'Niebo';if(max<1000)return'Proxima';
-  if(max<1800)return'Palladium';return'Arena';
+  if(max<200)return'Chmury';
+  if(max<=400)return'Hydrozagadka';
+  if(max<=700)return'Niebo';
+  if(max<=1000)return'Proxima';
+  if(max<=1800)return'Progresja';
+  if(max<=5000)return'COS Torwar';
+  return'duża Arena';
 }
 
 const USER_COLORS=['#a78bfa','#34d399','#fbbf24','#60a5fa','#f87171','#fb923c','#e879f9','#2dd4bf'];
@@ -575,7 +574,7 @@ const STARTER=[
   {name:'Samia',genre:'Indie Rock',listeners:'1.4M',predMin:400,predMax:750,notes:'Alt-country crossover, dobry timing na PL.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
   {name:'Wednesday',genre:'Indie Rock / Shoegaze',listeners:'1.2M',predMin:350,predMax:700,notes:'Hype shoegaze revival 2024.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'up'},
   {name:'Bladee',genre:'Cloud Rap / Drain',listeners:'3.8M',predMin:800,predMax:1500,notes:'Kultowy w Polsce. Drain Gang.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
-  {name:'Yung Lean',genre:'Cloud Rap',listeners:'6.2M',predMin:1200,predMax:2500,notes:'Ikoniczny w Polsce. Palladium realny.',spotifyUrl:'',plShow:'Proxima Warszawa 2019',src:'ai',by:'AI',trend:'down'},
+  {name:'Yung Lean',genre:'Cloud Rap',listeners:'6.2M',predMin:1200,predMax:2500,notes:'Ikoniczny w Polsce. Progresja realny.',spotifyUrl:'',plShow:'Proxima Warszawa 2019',src:'ai',by:'AI',trend:'down'},
   {name:'Sofia Kourtesis',genre:'Electronic / Afro House',listeners:'1.6M',predMin:600,predMax:1100,notes:'Fabric London rezydent.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'up'},
   {name:'Floating Points',genre:'Electronic / Jazz',listeners:'2.3M',predMin:700,predMax:1400,notes:'"Promises" z Pharoah Sanders.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
   {name:'Kelly Lee Owens',genre:'Electronic / Techno-Pop',listeners:'1.1M',predMin:400,predMax:800,notes:'Welska elektronika, rośnie Europa.',spotifyUrl:'',plShow:'NIE',src:'ai',by:'AI',trend:'flat'},
@@ -714,7 +713,7 @@ async function processRefreshQueue(){
 async function refreshArtistTrend(a){
   const prompt=`Artysta: "${a.name}". Oceń aktualny trend popularności (hype) 2025-2026.
 TYLKO JSON: {"trend":"up|down|flat","predMin":N,"predMax":N,"note":"1 zdanie co się zmieniło"}
-Predict solo headliner Warszawa: Chmury<200, Hydrozagadka 200-400, Niebo 400-700, Proxima 700-1000, Palladium 1000-1800, Arena 1800+`;
+Predict solo headliner Warszawa: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-5000, duża Arena 5001+`;
   try{
     const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
@@ -728,6 +727,16 @@ Predict solo headliner Warszawa: Chmury<200, Hydrozagadka 200-400, Niebo 400-700
     saveArtistToDb(a);renderTable();
   }catch(e){}
 }
+async function refreshSingleTrend(id){
+  const a=artists.find(x=>x.id===id);if(!a)return;
+  const btn=document.getElementById('rbtn-'+id);
+  if(btn){btn.classList.add('spinning');btn.disabled=true;}
+  await refreshArtistTrend(a);
+  saveData();renderTable();
+  if(btn){btn.classList.remove('spinning');btn.disabled=false;}
+  notify(`Trend zaktualizowany: ${a.name}`);
+}
+
 async function refreshAllTrends(){refreshQueue=artists.map(a=>a.id);refreshing=false;notify('Odświeżam trendy dla wszystkich artystów...','info');processRefreshQueue();}
 
 function render(){renderStats();renderTable();}
@@ -754,14 +763,10 @@ function updateSortHeaders(){
 function getFiltered(){
   const q=document.getElementById('searchInput').value.toLowerCase();
   const fs=document.getElementById('filterStatus').value;
-  const fsrc=document.getElementById('filterSource').value;
-  const fpl=document.getElementById('filterPL').value;
+
   return artists.filter(a=>{
     if(q&&![a.name,a.genre,a.notes,a.addedBy,a.plShow].some(v=>(v||'').toLowerCase().includes(q)))return false;
     if(fs&&a.status!==fs)return false;
-    if(fsrc&&a.source!==fsrc)return false;
-    if(fpl==='no'&&a.plShow&&a.plShow!=='NIE')return false;
-    if(fpl==='yes'&&(!a.plShow||a.plShow==='NIE'))return false;
     return true;
   }).sort((a,b)=>{
     if(sortCol==='predict')return sortDir*((b.predMax||0)-(a.predMax||0));
@@ -826,7 +831,12 @@ function renderTable(){
     let rc=a.status==='reminder'?'row-reminder':a.source==='ai'?'row-ai':'row-manual';
     if(sel)rc+=' selected';
     return`<tr class="${rc}">
-      <td><input type="checkbox" ${sel?'checked':''} onchange="toggleSel(${a.id})"></td>
+      <td style="display:flex;align-items:center;gap:4px">
+        <input type="checkbox" ${sel?'checked':''} onchange="toggleSel(${a.id})">
+        <button class="btn-refresh-row" onclick="refreshSingleTrend(${a.id})" id="rbtn-${a.id}" title="Odśwież trend">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 8A5 5 0 112 8" stroke-linecap="round"/><path d="M13 4v4h-4"/></svg>
+        </button>
+      </td>
       <td class="name-cell">${a.name}</td>
       <td>${spotifyCell(a)}</td>
       <td>${statusSel(a)}</td>
@@ -901,7 +911,7 @@ async function autoFill(){
   const prompt=`Ekspert bookingu. Artysta: "${name}". TYLKO JSON bez markdown:
 {"genre":"po polsku","listeners":"np. 3.2M","spotifyUrl":"pełny URL spotify lub ''","plShow":"NIE lub np. 'Open'er Festival 2023' jeśli grał w Polsce","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania buzz"}
 Dla plShow: sprawdź czy artysta grał kiedykolwiek w Polsce (koncert, festival). Jeśli nie — wpisz 'NIE'. Jeśli tak — podaj nazwę miejsca/festiwalu i rok.
-Predict solo headliner Warszawa: Chmury<200, Hydrozagadka 200-400, Niebo 400-700, Proxima 700-1000, Palladium 1000-1800, Arena 1800+`;
+Predict solo headliner Warszawa: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-5000, duża Arena 5001+`;
   try{
     const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
@@ -942,7 +952,7 @@ async function runAiSearch(){
   const existing=artists.map(a=>a.name).join(', ');
   const prompt=`5 artystów NIE GRALI headliner solo w Polsce. Gatunek: "${genre||'dowolny'}", region: "${region||'globalny'}", poziom: ${hypeMap[hype]}. Pomiń: ${existing||'brak'}.
 TYLKO JSON: {"artists":[{"name":"","genre":"","listeners":"XM","spotifyUrl":"URL lub ''","plShow":"NIE lub info","predMin":N,"predMax":N,"notes":"1 zdanie + sala"}]}
-Skale: Chmury<200, Hydrozagadka 200-400, Niebo 400-700, Proxima 700-1000, Palladium 1000-1800, Arena 1800+`;
+Skale: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-5000, duża Arena 5001+`;
   try{
     const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
