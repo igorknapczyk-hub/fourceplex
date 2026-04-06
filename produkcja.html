@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fource.Plex — Produkcja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0e11;--bg2:#16161a;--bg3:#1e1e24;--bg4:#26262e;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0eff4;--text2:#9998a8;--text3:#5c5b6e;
+  --accent:#c8f060;--accent2:#9de84a;
+  --purple:#a78bfa;--teal:#34d399;--amber:#fbbf24;--red:#f87171;--blue:#60a5fa;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:54px 1fr;height:100vh;overflow:hidden}
+.topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:200}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.brand-logo{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--text);letter-spacing:.06em}
+.brand-tag{font-size:10px;color:var(--text3);font-family:var(--mono);border:1px solid var(--border2);padding:2px 7px;border-radius:4px;margin-left:8px}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar-stat{font-family:var(--mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
+.topbar-stat strong{color:var(--accent)}
+.user-badge{background:var(--bg3);border:1px solid var(--border2);padding:4px 10px;border-radius:6px;font-size:12px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px}
+.user-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:18px 0;display:flex;flex-direction:column;gap:1px;overflow:hidden}
+.nav-label{font-family:var(--mono);font-size:9px;font-weight:500;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;padding:12px 18px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 18px;font-size:13px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all .15s;text-decoration:none}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--accent);background:rgba(200,240,96,.06);border-left-color:var(--accent)}
+.nav-icon{width:14px;height:14px;flex-shrink:0;opacity:.6}
+.nav-item.active .nav-icon,.nav-item:hover .nav-icon{opacity:1}
+.sidebar-footer{margin-top:auto;padding:14px 18px;border-top:1px solid var(--border)}
+.sidebar-footer-logo{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.18em;color:var(--text3);text-transform:uppercase;margin-bottom:3px}
+.sidebar-footer-logo span{color:var(--accent)}
+.sidebar-footer-text{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.toolbar{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.toolbar-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-right:4px}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:5px 12px;border-radius:6px;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--bg4);color:var(--text)}
+.btn-accent{background:var(--accent);border-color:var(--accent);color:#0e0e11;font-weight:600}
+.btn-accent:hover{background:var(--accent2);border-color:var(--accent2)}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-purple{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--purple)}
+.btn-purple:hover{background:rgba(167,139,250,.2)}
+button:disabled{opacity:.35;cursor:not-allowed}
+.content-area{flex:1;display:flex;overflow:hidden;min-height:0}
+.list-panel{width:35%;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.detail-panel{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.detail-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-family:var(--mono);font-size:11px;letter-spacing:.08em;gap:10px}
+.detail-empty svg{width:32px;height:32px;opacity:.25}
+.list-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.list-tab{flex:1;padding:8px 0;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);cursor:pointer;text-align:center;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+.list-tab:hover{color:var(--text2)}
+.list-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.show-list{flex:1;overflow-y:auto}
+.show-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;border-left:2px solid transparent}
+.show-item:hover{background:var(--bg3)}
+.show-item.selected{background:rgba(200,240,96,.05);border-left-color:var(--accent)}
+.show-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.show-artist{font-size:13px;font-weight:500;color:var(--text)}
+.show-venue{font-size:11px;color:var(--text2);margin-bottom:5px}
+.trash-btn{width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--text3);cursor:pointer;transition:all .15s;flex-shrink:0;opacity:0;border:none;background:none}
+.show-item:hover .trash-btn{opacity:1}
+.trash-btn:hover{color:var(--red);background:rgba(248,113,113,.12)}
+.trash-btn svg{width:11px;height:11px}
+.empty-list{padding:24px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:11px}
+.cp-bar-wrap{flex:1;height:3px;background:var(--bg4);border-radius:2px}
+.cp-bar{height:3px;background:var(--teal);border-radius:2px;transition:width .3s}
+.cp-text{font-family:var(--mono);font-size:9px;color:var(--text3);flex-shrink:0}
+.weekend-badge{font-family:var(--mono);font-size:8px;padding:1px 4px;border-radius:3px;background:rgba(251,191,36,.15);color:var(--amber);border:1px solid rgba(251,191,36,.25);flex-shrink:0}
+.detail-header{padding:13px 18px 11px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);position:sticky;top:0;z-index:10}
+.detail-title{font-size:16px;font-weight:500;color:var(--text);margin-bottom:2px}
+.detail-sub{font-family:var(--mono);font-size:10px;color:var(--text3);display:flex;align-items:center;gap:10px}
+.detail-body{padding:14px 16px;display:flex;flex-direction:column;gap:12px;padding-bottom:28px}
+.weekend-alert{display:flex;align-items:center;gap:10px;padding:9px 14px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.25);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--amber)}
+.sec-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.sec-head{padding:7px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:6px}
+.sec-title{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.sec-body{padding:12px 14px}
+.cp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.cp-col-title{display:none}
+.cp-item{margin-bottom:5px}
+.cp-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s;user-select:none}
+.cp-row:hover{border-color:var(--border2)}
+.cp-row.done{border-color:rgba(52,211,153,.2);background:rgba(52,211,153,.04)}
+.cp-icon{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--text3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.cp-icon.done{border-color:var(--teal);background:rgba(52,211,153,.15)}
+.cp-icon.done::after{content:'✓';font-size:7px;color:var(--teal);font-weight:700}
+.cp-name{flex:1;font-size:11px;color:var(--text);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-row.done .cp-name{color:var(--teal)}
+.cp-note-input{width:100%;margin-top:3px;background:var(--bg4);border:1px solid transparent;border-radius:4px;color:var(--text2);font-family:var(--mono);font-size:10px;padding:3px 7px;outline:none;transition:border-color .15s}
+.cp-note-input:focus{border-color:rgba(200,240,96,.25);color:var(--text)}
+.cp-note-input::placeholder{color:var(--text3)}
+.expenses-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.exp-col-title{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.exp-col-sum{color:var(--text);font-size:11px}
+.exp-item{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;margin-bottom:4px}
+.exp-info{flex:1;min-width:0}
+.exp-name{font-size:11px;color:var(--text);font-weight:500}
+.exp-amount{font-family:var(--mono);font-size:10px;color:var(--teal)}
+.exp-note-txt{font-size:10px;color:var(--text3);margin-top:1px}
+.exp-del{color:var(--text3);cursor:pointer;font-size:14px;transition:color .15s;padding:1px 3px;flex-shrink:0;line-height:1;background:none;border:none}
+.exp-table{width:100%;border-collapse:collapse;margin-bottom:6px}
+.exp-table tr{border-bottom:1px solid var(--border)}
+.exp-table tr:last-child{border-bottom:none}
+.etbl-input{width:100%;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--sans);font-size:11px;padding:4px 6px;border-radius:3px;transition:background .1s}
+.etbl-input:focus{background:rgba(255,255,255,.04)}
+.etbl-input::placeholder{color:var(--text3);font-size:10px}
+.eamt{font-family:var(--mono);font-size:11px}
+.exp-del:hover{color:var(--red)}
+.exp-form{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:9px 10px;margin-top:6px}
+.exp-form-row{display:flex;gap:6px;margin-bottom:6px}
+.fl{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px}
+.finput{background:var(--bg4);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:11px;padding:5px 8px;border-radius:5px;outline:none;transition:border-color .15s;width:100%}
+.finput:focus{border-color:rgba(200,240,96,.4)}
+.finput::placeholder{color:var(--text3)}
+.tt-notes-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.notes-textarea{width:100%;min-height:240px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:11px;line-height:1.6;padding:9px 11px;border-radius:6px;outline:none;resize:vertical;transition:border-color .15s}
+.notes-textarea:focus{border-color:rgba(200,240,96,.3)}
+.notes-textarea::placeholder{color:var(--text3)}
+.notes-save-row{display:flex;align-items:center;justify-content:space-between;margin-top:5px}
+.notes-meta{font-family:var(--mono);font-size:9px;color:var(--teal)}
+#setlist-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+#setlist-overlay.open{display:flex}
+#setlist-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:520px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.setlist-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.setlist-title-sm{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.setlist-artist{font-size:13px;font-weight:500;color:var(--text);margin-top:2px}
+.setlist-body{flex:1;overflow-y:auto;padding:14px 18px}
+.setlist-footer{padding:10px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+.slide-panel{position:fixed;top:0;right:-420px;width:360px;height:100vh;background:var(--bg2);border-left:1px solid var(--border2);z-index:400;transition:right .25s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;overflow:hidden}
+.slide-panel.open{right:0}
+.slide-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:399;display:none;backdrop-filter:blur(2px)}
+.slide-overlay.open{display:block}
+.slide-header{padding:15px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.slide-title{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2)}
+.slide-close{background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;line-height:1;padding:0 4px;transition:color .15s}
+.slide-close:hover{color:var(--text)}
+.slide-body{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
+.slide-field{display:flex;flex-direction:column;gap:4px}
+.slide-actions{padding:13px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+.sfl{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px}
+.sinput{background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:12px;padding:6px 10px;border-radius:6px;outline:none;transition:border-color .15s;width:100%}
+.sinput:focus{border-color:var(--accent)}
+.sinput::placeholder{color:var(--text3)}
+#user-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+#user-modal-overlay.open{display:flex}
+#user-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:310px;max-width:95vw;animation:modalIn .2s ease}
+.modal-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:16px}
+.user-list-modal{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.user-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s}
+.user-option:hover{border-color:rgba(255,255,255,.18)}
+.user-option.selected{border-color:var(--accent);background:rgba(200,240,96,.06)}
+.user-avatar-sm{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#0e0e11;flex-shrink:0}
+.user-option-name{font-size:14px;font-weight:500}
+.modal-divider{height:1px;background:var(--border);margin:14px 0}
+.add-user-row{display:flex;gap:8px}
+.modal-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;outline:none;transition:border-color .15s}
+.modal-input:focus{border-color:rgba(200,240,96,.4)}
+.modal-input::placeholder{color:var(--text3)}
+.chat-spinner{display:flex;align-items:center;gap:5px;padding:5px 0}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:dotP 1.2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes dotP{0%,80%,100%{opacity:.3;transform:scale(.85)}40%{opacity:1;transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<div class="topbar">
+  <div class="topbar-left">
+    <img src="fourceplex.png" alt="Fource.Plex" style="height:52px;mix-blend-mode:screen;opacity:.92;margin-right:4px">
+    <div><span class="brand-logo">PRODUKCJA</span><span class="brand-tag">Fource.Plex</span></div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-stat"><div class="live-dot"></div>&nbsp;<strong id="top-count">0</strong> aktywnych</div>
+    <div class="user-badge" id="user-badge-btn">
+      <div class="user-dot" id="badge-dot"></div>
+      <span id="badge-name">Wybierz użytkownika</span>
+    </div>
+  </div>
+</div>
+
+<div class="sidebar">
+  <div class="nav-label">Moduły</div>
+  <div class="nav-item" onclick="location.href='index.html'"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M1 6h14M5 6v8"/></svg>Terrarium</div>
+  <div class="nav-item" onclick="location.href='watchlist.html'"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="5" r="2.5"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Watchlist</div>
+  <div class="nav-item" onclick="location.href='ticketing.html'"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="4" width="14" height="10" rx="1.5"/><path d="M5 4V2M11 4V2"/><path d="M1 8h14"/></svg>Ticketing</div>
+  <div class="nav-item" onclick="location.href='marketing.html'"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 6h2v4H2zM4 7l7-4v10L4 9"/><path d="M11 6.5c1 .5 1 2.5 0 3"/></svg>Marketing</div>
+  <div class="nav-item active"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="3" width="14" height="10" rx="1.5"/><circle cx="8" cy="8" r="2.5"/><circle cx="8" cy="8" r="1"/></svg>Produkcja</div>
+  <div class="nav-item" onclick="location.href='listy-gosci.html'"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 4h8M4 7h8M4 10h5"/><rect x="1" y="1" width="14" height="14" rx="1.5"/></svg>Listy Gości</div>
+  <div class="nav-item" onclick="location.href='projekty.html'"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>Projekty</div>
+  <div class="nav-label" style="margin-top:6px">Szybkie Linki</div>
+  <a class="nav-item" href="https://fource.pl" target="_blank" rel="noopener"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 2c-2 2-3 4-3 6s1 4 3 6"/><path d="M8 2c2 2 3 4 3 6s-1 4-3 6"/><path d="M2 8h12"/></svg>Fource.pl<svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg></a>
+  <a class="nav-item" href="https://home.mycloud.com/" target="_blank" rel="noopener"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 10a3 3 0 000-6 3.5 3.5 0 00-6.9.8A2.5 2.5 0 104 10"/><path d="M8 10v5M6 13l2 2 2-2"/></svg>WD My Cloud<svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg></a>
+  <div class="sidebar-footer">
+    <div class="sidebar-footer-logo"><span>F</span>OURCE</div>
+    <div class="sidebar-footer-text">Agency Hub © 2026</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="toolbar">
+    <span class="toolbar-title">Advancing / Produkcja</span>
+    <button class="btn btn-accent" id="btn-add-show">+ Nowy koncert</button>
+  </div>
+  <div class="content-area">
+    <div class="list-panel">
+      <div class="list-tabs">
+        <div class="list-tab active" id="tab-active">Aktywne</div>
+        <div class="list-tab" id="tab-past">Przeszłe</div>
+      </div>
+      <div class="show-list" id="show-list"><div class="empty-list">Ładowanie...</div></div>
+    </div>
+    <div class="detail-panel">
+      <div class="detail-empty" id="detail-empty">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1" y="3" width="14" height="10" rx="1.5"/><circle cx="8" cy="8" r="2.5"/><circle cx="8" cy="8" r="1"/></svg>
+        Wybierz koncert z listy
+      </div>
+      <div id="detail-content" style="display:none;flex-direction:column"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="slide-overlay" id="slide-overlay"></div>
+<div class="slide-panel" id="slide-panel">
+  <div class="slide-header">
+    <span class="slide-title">Nowy koncert</span>
+    <button class="slide-close" id="slide-close-btn">×</button>
+  </div>
+  <div class="slide-body">
+    <div class="slide-field"><div class="sfl">Artysta / Wydarzenie *</div><input class="sinput" type="text" id="f-artist" placeholder="np. Dakhabrakha"></div>
+    <div class="slide-field"><div class="sfl">Data *</div><input class="sinput" type="date" id="f-date"></div>
+    <div class="slide-field"><div class="sfl">Venue</div><input class="sinput" type="text" id="f-venue" placeholder="np. Progresja, Warszawa"></div>
+  </div>
+  <div class="slide-actions">
+    <button class="btn" id="slide-cancel-btn">Anuluj</button>
+    <button class="btn btn-accent" id="save-btn">Zapisz</button>
+  </div>
+</div>
+
+<div id="setlist-overlay">
+  <div id="setlist-modal">
+    <div class="setlist-header">
+      <div>
+        <div class="setlist-title-sm">Setlista koncertu</div>
+        <div class="setlist-artist" id="setlist-artist-name"></div>
+      </div>
+      <button class="btn btn-sm" id="setlist-close-btn">Zamknij</button>
+    </div>
+    <div class="setlist-body" id="setlist-body"></div>
+    <div class="setlist-footer"><button class="btn btn-sm" id="setlist-close-btn2">Zamknij</button></div>
+  </div>
+</div>
+
+<div id="user-modal-overlay">
+  <div id="user-modal">
+    <div class="modal-title">Wybierz użytkownika</div>
+    <div class="user-list-modal" id="user-list-modal"></div>
+    <div class="modal-divider"></div>
+    <div class="add-user-row">
+      <input class="modal-input" id="new-user-input" placeholder="Dodaj użytkownika…" maxlength="30">
+      <button class="btn btn-accent btn-sm" id="add-user-btn">+</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import{initializeApp,getApps}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getFirestore,collection,doc,onSnapshot,addDoc,updateDoc,deleteDoc,serverTimestamp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+/* ══ FIREBASE ══ */
+const cfg={apiKey:"AIzaSyCUsvjkzYG3AVROysZh9BtN2_vagSSyMww",authDomain:"fourceplex-market.firebaseapp.com",projectId:"fourceplex-market",storageBucket:"fourceplex-market.firebasestorage.app",messagingSenderId:"300062366060",appId:"1:300062366060:web:0cf7bd4128bea35cc63b49"};
+const existing=getApps().find(a=>a.name==='produkcja');
+const app=existing||initializeApp(cfg,'produkcja');
+const db=getFirestore(app);
+const showsCol=collection(db,'production_shows');
+const expsCol=collection(db,'production_expenses');
+const addShow=(data)=>addDoc(showsCol,{...data,createdAt:serverTimestamp()});
+const updShow=(id,data)=>updateDoc(doc(db,'production_shows',id),data);
+const delShow=(id)=>deleteDoc(doc(db,'production_shows',id));
+const addExp=(data)=>addDoc(expsCol,{...data,createdAt:serverTimestamp()});
+const delExp=(id)=>deleteDoc(doc(db,'production_expenses',id));
+
+/* ══ HELPERS ══ */
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(s){if(!s)return'–';const p=s.split('-');return p[2]+'.'+p[1]+'.'+p[0];}
+function fmtPLN(n){return(+n||0).toLocaleString('pl-PL');}
+function isActive(show){if(!show.date)return true;const c=new Date();c.setDate(c.getDate()-2);c.setHours(0,0,0,0);return new Date(show.date)>=c;}
+function isWeekend(d){if(!d)return false;const w=new Date(d).getDay();return w===5||w===6||w===0;}
+function dayName(d){return['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'][new Date(d).getDay()];}
+function daysUntil(d){const n=new Date();n.setHours(0,0,0,0);return Math.round((new Date(d)-n)/864e5);}
+
+/* ══ CHECKPOINTS — 21 items, 3 cols of 7, no group titles ══ */
+const ALL_CPS=[
+  {key:'dosContact',      label:'DoS contact'},
+  {key:'advancingArtist', label:'Advancing artist'},
+  {key:'advancingSupport',label:'Advancing support'},
+  {key:'advancingVenue',  label:'Advancing venue'},
+  {key:'fohEngineer',     label:'FOH engineer'},
+  {key:'fohDesk',         label:'FOH desk'},
+  {key:'ldEngineer',      label:'LD engineer'},
+  {key:'ldDesk',          label:'LD desk'},
+  {key:'timetable',       label:'Timetable'},
+  {key:'setLength',       label:'Set length'},
+  {key:'curfews',         label:'Curfews'},
+  {key:'parking',         label:'Parking'},
+  {key:'frisco',          label:'Frisco'},
+  {key:'dinner',          label:'Dinner'},
+  {key:'backline',        label:'Backline'},
+  {key:'stagehands',      label:'Stagehands'},
+  {key:'firstAid',        label:'First aid'},
+  {key:'security',        label:'Security'},
+  {key:'ebilet',          label:'eBilet'},
+  {key:'vipMg',           label:'VIP / M&G / EE'},
+  {key:'merch',           label:'Merch'},
+];
+const ALL_KEYS=ALL_CPS.map(i=>i.key);
+function cpPct(show){const done=ALL_KEYS.filter(k=>(show.checkpoints||{})[k]).length;return{done,total:ALL_KEYS.length,pct:Math.round(done/ALL_KEYS.length*100)};}
+
+/* ══ USERS ══ */
+const USER_COLORS=['#a78bfa','#34d399','#fbbf24','#60a5fa','#f87171','#fb923c','#e879f9','#2dd4bf'];
+const USERS_KEY='fourceplex_users_v1';
+const SESSION_KEY='fourceplex_current_user';
+const DEFAULT_USERS=['Monika','Igor','Mariusz'];
+let currentUser=null;
+function getUsers(){try{const s=localStorage.getItem(USERS_KEY);return s?JSON.parse(s):[...DEFAULT_USERS];}catch{return[...DEFAULT_USERS];}}
+function saveUsers(u){localStorage.setItem(USERS_KEY,JSON.stringify(u));}
+function getUserColor(n){const u=getUsers();const i=u.indexOf(n);return USER_COLORS[i>=0?i%USER_COLORS.length:0];}
+function renderUserListModal(){
+  const el=document.getElementById('user-list-modal');el.innerHTML='';
+  getUsers().forEach(name=>{
+    const div=document.createElement('div');
+    div.className='user-option'+(name===currentUser?' selected':'');
+    div.innerHTML=`<div class="user-avatar-sm" style="background:${getUserColor(name)}">${name[0].toUpperCase()}</div><span class="user-option-name">${esc(name)}</span>`;
+    div.onclick=()=>{currentUser=name;sessionStorage.setItem(SESSION_KEY,name);document.getElementById('badge-dot').style.background=getUserColor(name);document.getElementById('badge-name').textContent=name;closeUserModal();};
+    el.appendChild(div);
+  });
+}
+function openUserModal(){renderUserListModal();document.getElementById('user-modal-overlay').classList.add('open');}
+function closeUserModal(){document.getElementById('user-modal-overlay').classList.remove('open');}
+document.getElementById('user-modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('user-modal-overlay'))closeUserModal();});
+document.getElementById('user-badge-btn').addEventListener('click',openUserModal);
+document.getElementById('add-user-btn').addEventListener('click',()=>{
+  const inp=document.getElementById('new-user-input');const name=inp.value.trim();if(!name)return;
+  const u=getUsers();if(!u.includes(name)){u.push(name);saveUsers(u);}renderUserListModal();inp.value='';
+});
+document.getElementById('new-user-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('add-user-btn').click();});
+
+/* ══ STATE ══ */
+let allShows=[];
+let allExps=[];
+let selectedShowId=null;
+let currentTab='active';
+
+/* ══ FIRESTORE LISTENERS ══ */
+onSnapshot(showsCol,snap=>{
+  allShows=snap.docs.map(d=>({id:d.id,...d.data()}));
+  allShows.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  renderList();
+  if(selectedShowId){const s=allShows.find(x=>x.id===selectedShowId);if(s)renderDetail(s);}
+  if(allShows.length===0&&!window._prodSeeded){window._prodSeeded=true;seedData();}
+},err=>{
+  console.error('Firestore error:',err);
+  document.getElementById('show-list').innerHTML=`<div class="empty-list">Błąd: ${err.code}</div>`;
+});
+
+onSnapshot(expsCol,snap=>{
+  allExps=snap.docs.map(d=>({id:d.id,...d.data()}));
+  if(selectedShowId){const s=allShows.find(x=>x.id===selectedShowId);if(s)renderDetail(s);}
+},err=>console.error('Expenses error:',err));
+
+/* ══ SEED ══ */
+async function seedData(){
+  const t=new Date();
+  const addD=(n)=>{const d=new Date(t);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
+  await addShow({artistName:'Dakhabrakha',date:addD(12),venue:'Progresja, Warszawa',checkpoints:{productionManager:true,advancingArtist:true,advancingVenue:true,fohEngineer:true,timetable:true,frisco:true,backline:true,ebilet:true,photoPolicy:true,setLength:true},cpNotes:{fohEngineer:'Własny inżynier — Dmitri'},timetableText:'18:00 Wpuszczenie\n19:30 Support\n21:00 Dakhabrakha\n23:00 Curfew',notesText:'Rider wymaga wegańskiego cateringu.',createdBy:'system'});
+  await addShow({artistName:'INJI',date:addD(5),venue:'Piekło nad Niebem, Kraków',checkpoints:{productionManager:true,advancingArtist:true,advancingVenue:true,advancingSupport:true,fohEngineer:true,fohDesk:true,ldEngineer:true,ldDesk:true,timetable:true,parking:true,frisco:true,dinner:true,backline:true,stagehands:true,ebilet:true,vipMg:true,photoPolicy:true,setLength:true,curfews:true},cpNotes:{},timetableText:'',notesText:'',createdBy:'system'});
+  await addShow({artistName:'Hannah Bahng',date:addD(21),venue:'Niebo, Warszawa',checkpoints:{},cpNotes:{},timetableText:'',notesText:'',createdBy:'system'});
+  await addShow({artistName:'Heilung',date:addD(-30),venue:'Torwar, Warszawa',checkpoints:{dosContact:true,advancingArtist:true,advancingSupport:true,advancingVenue:true,fohEngineer:true,fohDesk:true,ldEngineer:true,ldDesk:true,timetable:true,setLength:true,curfews:true,parking:true,frisco:true,dinner:true,backline:true,stagehands:true,firstAid:true,security:true,ebilet:true,vipMg:true,merch:true},cpNotes:{dosContact:'Katarzyna Kowalska'},timetableText:'19:00 Wpuszczenie
+20:30 Heilung
+22:30 Koniec',notesText:'Specjalne wymagania sceniczne — platforma 6x6m.',createdBy:'system'});
+}
+
+/* ══ TABS ══ */
+document.getElementById('tab-active').addEventListener('click',()=>switchTab('active'));
+document.getElementById('tab-past').addEventListener('click',()=>switchTab('past'));
+function switchTab(tab){
+  currentTab=tab;
+  document.getElementById('tab-active').classList.toggle('active',tab==='active');
+  document.getElementById('tab-past').classList.toggle('active',tab==='past');
+  renderList();
+}
+
+/* ══ RENDER LIST ══ */
+function renderList(){
+  const filtered=allShows.filter(s=>currentTab==='active'?isActive(s):!isActive(s));
+  if(currentTab==='past')filtered.reverse();
+  document.getElementById('top-count').textContent=allShows.filter(s=>isActive(s)).length;
+  const el=document.getElementById('show-list');
+  if(!filtered.length){el.innerHTML=`<div class="empty-list">${currentTab==='active'?'Brak aktywnych koncertów':'Brak przeszłych koncertów'}</div>`;return;}
+  el.innerHTML='';
+  filtered.forEach(show=>{
+    const{done,total,pct}=cpPct(show);
+    const we=isWeekend(show.date);
+    const d=daysUntil(show.date);
+    let dclr='var(--text3)';
+    if(isActive(show)&&d<=3)dclr='var(--red)';
+    else if(isActive(show)&&d<=7)dclr='var(--amber)';
+    const el2=document.createElement('div');
+    el2.className='show-item'+(show.id===selectedShowId?' selected':'');
+    const dosVal=(show.cpNotes||{}).dosContact||'';
+    const dStr=isActive(show)?(d===0?'Dziś':d===1?'Jutro':`za ${d}d`):(d<0?`${Math.abs(d)}d temu`:'');
+    el2.innerHTML=`
+      <div class="show-item-top">
+        <span class="show-artist">${esc(show.artistName||'–')}</span>
+        <div style="display:flex;align-items:center;gap:4px">
+          ${we?`<span class="weekend-badge">${dayName(show.date).slice(0,3).toUpperCase()}</span>`:''}
+          <span style="font-family:var(--mono);font-size:10px;color:${dclr}">${fmtDate(show.date)}</span>
+          <button class="trash-btn" data-id="${show.id}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 4h10M6 4V2h4v2M5 4l1 9h4l1-9"/></svg></button>
+        </div>
+      </div>
+      <div class="show-venue">${esc(show.venue||'–')}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:3px;margin-bottom:4px">
+        ${dosVal?`<span style="font-family:var(--mono);font-size:10px;color:var(--purple)">DoS: ${esc(dosVal)}</span>`:''}
+        ${dStr?`<span style="font-family:var(--mono);font-size:10px;color:${dclr};margin-left:auto">${dStr}</span>`:''}
+      </div>
+      <div style="display:flex;align-items:center;gap:7px">
+        <div class="cp-bar-wrap"><div class="cp-bar" style="width:${pct}%"></div></div>
+        <span class="cp-text">${done}/${total}</span>
+      </div>`;
+    el2.querySelector('.trash-btn').addEventListener('click',e=>{e.stopPropagation();doDelete(show.id);});
+    el2.addEventListener('click',()=>selectShow(show.id));
+    el.appendChild(el2);
+  });
+}
+
+/* ══ ADD / DELETE ══ */
+function openPanel(){
+  ['f-artist','f-date','f-venue'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('slide-panel').classList.add('open');
+  document.getElementById('slide-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('f-artist').focus(),220);
+}
+function closePanel(){
+  document.getElementById('slide-panel').classList.remove('open');
+  document.getElementById('slide-overlay').classList.remove('open');
+  document.getElementById('slide-title').textContent='Nowy koncert';
+  delete document.getElementById('save-btn').dataset.editId;
+}
+document.getElementById('btn-add-show').addEventListener('click',openPanel);
+document.getElementById('slide-overlay').addEventListener('click',closePanel);
+document.getElementById('slide-close-btn').addEventListener('click',closePanel);
+document.getElementById('slide-cancel-btn').addEventListener('click',closePanel);
+document.getElementById('f-artist').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('save-btn').click();});
+document.getElementById('save-btn').addEventListener('click',async()=>{
+  const artist=document.getElementById('f-artist').value.trim();
+  const date=document.getElementById('f-date').value;
+  const venue=document.getElementById('f-venue').value.trim();
+  if(!artist||!date){alert('Wypełnij Artysta i Data');return;}
+  const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Zapisuję...';
+  const editId=btn.dataset.editId||'';
+  try{
+    if(editId){
+      await updShow(editId,{artistName:artist,date,venue:venue||''});
+      delete btn.dataset.editId;
+      closePanel();
+    } else {
+      const ref=await addShow({artistName:artist,date,venue:venue||'',checkpoints:{},cpNotes:{},timetableText:'',notesText:'',createdBy:currentUser||'?'});
+      selectedShowId=ref.id;closePanel();currentTab='active';switchTab('active');
+    }
+  }catch(e){console.error(e);alert('Błąd: '+e.message);}
+  finally{btn.disabled=false;btn.textContent='Zapisz';}
+});
+
+async function doDelete(id){
+  if(!confirm('Usunąć ten koncert?'))return;
+  try{
+    await delShow(id);
+    if(selectedShowId===id){selectedShowId=null;document.getElementById('detail-empty').style.display='';document.getElementById('detail-content').style.display='none';}
+  }catch(e){console.error(e);}
+}
+
+/* ══ SELECT / DETAIL ══ */
+function selectShow(id){
+  selectedShowId=id;
+  const show=allShows.find(s=>s.id===id);
+  if(show)renderDetail(show);
+  renderList();
+}
+
+function renderDetail(show){
+  document.getElementById('detail-empty').style.display='none';
+  const dc=document.getElementById('detail-content');
+  dc.style.display='flex';dc.style.flexDirection='column';
+  const past=!isActive(show);
+  const we=isWeekend(show.date);
+  const{done,total,pct}=cpPct(show);
+  const prodE=allExps.filter(e=>e.showId===show.id&&e.category==='production');
+  const hospE=allExps.filter(e=>e.showId===show.id&&e.category==='hospitality');
+  const prodSum=prodE.reduce((a,e)=>a+(+e.amount||0),0);
+  const hospSum=hospE.reduce((a,e)=>a+(+e.amount||0),0);
+
+  // Inline expense table: 4 default rows, auto-expand
+  function buildExpTable(existing,cat,sid){
+    const MIN=4;
+    const rows=[...existing];
+    while(rows.length<MIN)rows.push(null);
+    const rowsHtml=rows.map((e,i)=>`
+      <tr class="exp-tr" data-cat="${cat}" data-idx="${i}" data-eid="${e?e.id:''}">
+        <td><input class="etbl-input ename" data-cat="${cat}" data-idx="${i}" value="${e?esc(e.name||''):''}" placeholder="Nazwa wydatku" ${!e?'style="opacity:.5"':''}></td>
+        <td style="width:80px"><input class="etbl-input eamt" data-cat="${cat}" data-idx="${i}" type="number" value="${e?e.amount:''}" placeholder="PLN" ${!e?'style="opacity:.5"':''}></td>
+        <td style="width:20px;text-align:center">${e?`<button class="exp-del" data-eid="${e.id}" style="font-size:12px;opacity:.5">×</button>`:''}</td>
+      </tr>`).join('');
+    return `<table class="exp-table" data-cat="${cat}" data-sid="${sid}"><tbody>${rowsHtml}</tbody></table>`;
+  }
+
+  // Split 21 CPs into 3 cols of 7
+  const cpCols=[ALL_CPS.slice(0,7),ALL_CPS.slice(7,14),ALL_CPS.slice(14,21)];
+  const cpGrid=cpCols.map(items=>`<div>
+    ${items.map(item=>{
+      const dn=!!((show.checkpoints||{})[item.key]);
+      const note=(show.cpNotes||{})[item.key]||'';
+      return `<div class="cp-item">
+        <div class="cp-row${dn?' done':''}" data-key="${item.key}"><div class="cp-icon${dn?' done':''}"></div><span class="cp-name" title="${esc(item.label)}">${esc(item.label)}</span></div>
+        <input class="cp-note-input" data-nk="${item.key}" placeholder="notatka…" value="${esc(note)}">
+      </div>`;
+    }).join('')}
+  </div>`).join('');
+
+  dc.innerHTML=`
+    <div class="detail-header">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div>
+          <div class="detail-title">${esc(show.artistName||'–')}</div>
+          <div class="detail-sub">
+            <span>${fmtDate(show.date)} · ${esc(show.venue||'–')}</span>
+            <span style="color:var(--teal)">${pct}% advancing</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-sm" id="btn-edit">✏️ Edytuj</button>
+          <button class="btn btn-sm btn-purple" id="btn-setlist" ${!past?'disabled title="Dostępne po koncercie"':''}>🎵 Wygeneruj setlistę</button>
+        </div>
+      </div>
+    </div>
+    <div class="detail-body">
+      ${we?`<div class="weekend-alert">⚠️ Koncert w ${dayName(show.date).toUpperCase()} — pamiętaj o zwiększonych wymaganiach organizacyjnych.</div>`:''}
+      <div class="sec-card">
+        <div class="sec-head"><span class="sec-title">Advancing / Checkpointy</span><span style="font-family:var(--mono);font-size:10px;color:var(--teal)">${done}/${total} · ${pct}%</span></div>
+        <div class="sec-body"><div class="cp-grid">${cpGrid}</div></div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-head"><span class="sec-title">Wydatki</span><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">Razem: <strong style="color:var(--text)">${fmtPLN(prodSum+hospSum)} PLN</strong></span></div>
+        <div class="sec-body">
+          <div class="expenses-grid">
+            <div>
+              <div class="exp-col-title">Production <span class="exp-col-sum">${fmtPLN(prodSum)} PLN</span>
+                <button class="btn btn-sm" style="margin-left:auto;padding:2px 7px;font-size:10px" data-copy="production">Kopiuj</button>
+              </div>
+              ${buildExpTable(prodE,'production',show.id)}
+            </div>
+            <div>
+              <div class="exp-col-title">Hospitality <span class="exp-col-sum">${fmtPLN(hospSum)} PLN</span>
+                <button class="btn btn-sm" style="margin-left:auto;padding:2px 7px;font-size:10px" data-copy="hospitality">Kopiuj</button>
+              </div>
+              ${buildExpTable(hospE,'hospitality',show.id)}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-head"><span class="sec-title">Timetable & Notatki</span></div>
+        <div class="sec-body">
+          <div class="tt-notes-row">
+            <div>
+              <div class="fl" style="margin-bottom:5px">Timetable</div>
+              <textarea class="notes-textarea" rows="15" id="tt-area" placeholder="18:00 Wpuszczenie&#10;21:00 Artysta&#10;23:00 Curfew">${esc(show.timetableText||'')}</textarea>
+              <div class="notes-save-row"><span class="notes-meta" id="tt-meta"></span><button class="btn btn-sm" id="tt-save">Zapisz</button></div>
+            </div>
+            <div>
+              <div class="fl" style="margin-bottom:5px">Notatki</div>
+              <textarea class="notes-textarea" rows="15" id="notes-area" placeholder="Rider notes, informacje specjalne…">${esc(show.notesText||'')}</textarea>
+              <div class="notes-save-row"><span class="notes-meta" id="notes-meta"></span><button class="btn btn-sm" id="notes-save">Zapisz</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  /* bind */
+  dc.querySelectorAll('.cp-row[data-key]').forEach(row=>{
+    row.addEventListener('click',async()=>{
+      const key=row.dataset.key;
+      const cur=!!((show.checkpoints||{})[key]);
+      await updShow(show.id,{[`checkpoints.${key}`]:!cur,[`checkpoints.${key}_by`]:!cur?(currentUser||'–'):null});
+    });
+  });
+  dc.querySelectorAll('.cp-note-input[data-nk]').forEach(inp=>{
+    inp.addEventListener('blur',async()=>{await updShow(show.id,{[`cpNotes.${inp.dataset.nk}`]:inp.value});});
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}});
+  });
+  // Expense table: save on blur if name filled
+  async function saveExpRow(cat,idx,sid){
+    const nameEl=dc.querySelector(`.ename[data-cat="${cat}"][data-idx="${idx}"]`);
+    const amtEl=dc.querySelector(`.eamt[data-cat="${cat}"][data-idx="${idx}"]`);
+    const tr=dc.querySelector(`.exp-tr[data-cat="${cat}"][data-idx="${idx}"]`);
+    if(!nameEl||!amtEl||!tr)return;
+    const name=nameEl.value.trim();
+    const amount=parseFloat(amtEl.value)||0;
+    const eid=tr.dataset.eid;
+    if(!name){if(eid){await delExp(eid);}return;}
+    if(eid){
+      await updateDoc(doc(db,'production_expenses',eid),{name,amount});
+    } else {
+      const ref=await addExp({showId:sid,category:cat,name,amount,addedBy:currentUser||'?'});
+      tr.dataset.eid=ref.id;
+    }
+  }
+  dc.querySelectorAll('.etbl-input').forEach(inp=>{
+    inp.addEventListener('focus',()=>{inp.style.opacity='1';});
+    inp.addEventListener('blur',async()=>{
+      const cat=inp.dataset.cat;const idx=inp.dataset.idx;
+      await saveExpRow(cat,idx,show.id);
+    });
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}});
+  });
+  dc.querySelectorAll('.exp-del[data-eid]').forEach(btn=>{
+    btn.addEventListener('click',async()=>{if(!confirm('Usunąć?'))return;await delExp(btn.dataset.eid);});
+  });
+  // Copy buttons
+  dc.querySelectorAll('[data-copy]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const cat=btn.dataset.copy;
+      const exps=allExps.filter(e=>e.showId===show.id&&e.category===cat);
+      if(!exps.length){alert('Brak wydatków do skopiowania.');return;}
+      const txt=exps.map(e=>`${e.name}	${fmtPLN(e.amount)} PLN`).join('\n');
+      navigator.clipboard.writeText(txt).then(()=>{btn.textContent='✓ Skopiowano';setTimeout(()=>btn.textContent='Kopiuj',2000);});
+    });
+  });
+  document.getElementById('tt-save').addEventListener('click',async()=>{
+    await updShow(show.id,{timetableText:document.getElementById('tt-area').value});
+    document.getElementById('tt-meta').textContent='Zapisano '+new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  });
+  document.getElementById('notes-save').addEventListener('click',async()=>{
+    await updShow(show.id,{notesText:document.getElementById('notes-area').value});
+    document.getElementById('notes-meta').textContent='Zapisano '+new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+  });
+  document.getElementById('btn-setlist').addEventListener('click',()=>openSetlist(show));
+  document.getElementById('btn-edit').addEventListener('click',()=>openEditPanel(show));
+}
+
+/* ══ EDIT PANEL ══ */
+function openEditPanel(show){
+  document.getElementById('f-artist').value=show.artistName||'';
+  document.getElementById('f-date').value=show.date||'';
+  document.getElementById('f-venue').value=show.venue||'';
+  document.getElementById('slide-title').textContent='Edytuj koncert';
+  document.getElementById('save-btn').dataset.editId=show.id;
+  document.getElementById('slide-panel').classList.add('open');
+  document.getElementById('slide-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('f-artist').focus(),220);
+}
+
+/* ══ SETLIST ══ */
+function openSetlist(show){
+  document.getElementById('setlist-artist-name').textContent=show.artistName+(show.venue?' — '+show.venue:'');
+  document.getElementById('setlist-body').innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px;color:var(--text3);font-family:var(--mono);font-size:11px"><div class="chat-spinner"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><span>Szukam setlisty…</span></div>';
+  document.getElementById('setlist-overlay').classList.add('open');
+  fetchSetlist(show);
+}
+document.getElementById('setlist-close-btn').addEventListener('click',()=>document.getElementById('setlist-overlay').classList.remove('open'));
+document.getElementById('setlist-close-btn2').addEventListener('click',()=>document.getElementById('setlist-overlay').classList.remove('open'));
+document.getElementById('setlist-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('setlist-overlay'))document.getElementById('setlist-overlay').classList.remove('open');});
+async function fetchSetlist(show){
+  try{
+    const res=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
+        system:'Jesteś asystentem szukającym setlist koncertów. Znajdź setlistę wykonawcy z podanej daty i venue, głównie na setlist.fm. Wypisz kolejne numery jako listę numerowaną. Jeśli nie znajdziesz tej daty, podaj ostatnią dostępną i zaznacz to. Odpowiadaj po polsku.',
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:[{role:'user',content:`Znajdź setlistę: ${show.artistName}, ${show.date}, ${show.venue||''}`}]})
+    });
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const text=(data?.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n')||'(brak odpowiedzi)';
+    document.getElementById('setlist-body').innerHTML=`<textarea style="width:100%;min-height:280px;background:var(--bg3);border:none;color:var(--text);font-family:var(--mono);font-size:12px;line-height:1.7;padding:12px;border-radius:6px;outline:none;resize:none" readonly>${esc(text)}</textarea>`;
+  }catch(e){
+    document.getElementById('setlist-body').innerHTML=`<div style="padding:20px;font-family:var(--mono);font-size:11px;color:var(--red)">Błąd: ${esc(e.message)}</div>`;
+  }
+}
+
+/* ══ INIT ══ */
+initUser();
+function initUser(){
+  const sess=sessionStorage.getItem(SESSION_KEY);const users=getUsers();
+  if(sess&&users.includes(sess)){currentUser=sess;document.getElementById('badge-dot').style.background=getUserColor(sess);document.getElementById('badge-name').textContent=sess;}
+  else openUserModal();
+}
+</script>
+</body>
+</html>
