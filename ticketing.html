@@ -37,7 +37,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .topbar-stat{font-family:var(--mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
 .topbar-stat strong{color:var(--accent)}
 .user-badge{background:var(--bg3);border:1px solid var(--border2);padding:4px 10px;border-radius:6px;font-size:12px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px}
-.user-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0}
+.user-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 
 /* SIDEBAR */
 .sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:18px 0;display:flex;flex-direction:column;gap:1px;overflow:hidden}
@@ -262,17 +262,44 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
 /* Block separator */
 .bl-sep{border-left:1px solid rgba(255,255,255,.05)!important}
 
+/* TABS */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;padding:0 2px}
+.tab-btn{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:9px 18px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none;transition:all .15s}
+.tab-btn:hover{color:var(--text2)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-count{font-size:9px;margin-left:5px;opacity:.7}
+
+/* ICON BUTTONS */
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:var(--bg3);cursor:pointer;transition:all .15s;flex-shrink:0;color:var(--text2)}
+.icon-btn:hover{background:var(--bg4);color:var(--text)}
+.icon-btn.del:hover{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.1);color:var(--red)}
+.icon-btn.edit:hover{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.1);color:var(--purple)}
+
+/* ALERT CHIPS */
+.alert-chip{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:500;padding:1px 6px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px}
+.alert-10{background:rgba(251,191,36,.18);color:var(--amber);border:1px solid rgba(251,191,36,.3)}
+.alert-5{background:rgba(248,113,113,.18);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+
+/* MODAL (index.html style) */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+#modal-overlay.open{display:flex}
+#modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:340px;max-width:95vw;animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+#modal .modal-title{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:14px}
+#modal .user-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+#modal .user-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s}
+#modal .user-option:hover{border-color:rgba(255,255,255,.18)}
+#modal .user-option.selected{border-color:var(--accent);background:rgba(200,240,96,.06)}
+.uav{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#0e0e11;flex-shrink:0}
+#modal .user-option-name{font-size:14px;font-weight:500}
+#modal .modal-divider{height:1px;background:var(--border);margin:12px 0}
+#modal .add-user-row{display:flex;gap:7px}
+.modal-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;outline:none;transition:border-color .15s}
+.modal-input:focus{border-color:rgba(200,240,96,.4)}
+.modal-input::placeholder{color:var(--text3)}
+
 /* MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;align-items:center;justify-content:center}
-.modal-overlay.open{display:flex}
-.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:26px;min-width:300px;max-width:580px;width:95vw;max-height:90vh;overflow-y:auto}
-.modal-title{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text);margin-bottom:18px;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between}
-.user-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-.user-opt{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;transition:all .15s;font-size:13px;color:var(--text2)}
-.user-opt:hover{border-color:var(--border2);color:var(--text)}
-.user-opt.sel{border-color:var(--accent);color:var(--accent);background:rgba(200,240,96,.06)}
-.ua{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;flex-shrink:0}
-.nur{display:flex;gap:8px}
+/* modal CSS moved to #modal-overlay above */
 .ai-box{background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:14px;margin-top:10px}
 .ai-box-h{font-family:var(--mono);font-size:10px;color:var(--purple);display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .ai-box-t{font-size:13px;color:var(--text2);line-height:1.7}
@@ -287,26 +314,19 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
 </head>
 <body>
 
-<div class="modal-overlay" id="userModal">
-  <div class="modal">
-    <div class="modal-title">Kto jesteś?</div>
-    <div class="user-list" id="userList"></div>
-    <div class="nur">
-      <input class="form-input" type="text" id="newUserInput" placeholder="Dodaj nową osobę...">
-      <button class="btn btn-accent" onclick="addNewUser()">Dodaj</button>
+<div id="modal-overlay">
+  <div id="modal">
+    <div class="modal-title">Wybierz użytkownika</div>
+    <div class="user-list" id="user-list"></div>
+    <div class="modal-divider"></div>
+    <div class="add-user-row">
+      <input class="modal-input" id="new-user-input" placeholder="Dodaj użytkownika…" maxlength="30">
+      <button class="btn btn-accent" onclick="addUser()" style="background:var(--accent);color:#0e0e11;border:none;border-radius:6px;padding:6px 13px;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer">+</button>
     </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="aiModal">
-  <div class="modal" style="max-width:600px">
-    <div class="modal-title">
-      <span id="aiModalTitle">AI Raport</span>
-      <button class="panel-close" onclick="document.getElementById('aiModal').classList.remove('open')">×</button>
-    </div>
-    <div id="aiModalContent"></div>
-  </div>
-</div>
+
 
 <div class="layout">
 
@@ -316,14 +336,10 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
     <div><span class="brand-logo">TICKETING</span><span class="brand-tag">Fource.Plex</span></div>
   </div>
   <div class="topbar-right">
-    <div class="topbar-stat" style="font-size:11px">
-      <div class="live-dot" style="background:var(--purple)"></div>&nbsp;
-      <span id="ntLabel" style="color:var(--text3)">—</span>
-    </div>
     <div class="topbar-stat"><div class="live-dot"></div>&nbsp;<strong id="topCount">0</strong> show</div>
-    <div class="user-badge" onclick="openUserModal()">
+    <div class="user-badge" onclick="openModal()">
       <div class="user-dot" id="badge-dot"></div>
-      <span id="curUserLabel">Wybierz użytkownika</span>
+      <span id="badge-name">Wybierz użytkownika</span>
     </div>
   </div>
 </div>
@@ -381,20 +397,6 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
     <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
   </a>
 
-  <div class="nav-label" style="margin-top:6px">Ticketing</div>
-  <div class="nav-item" onclick="togglePanel('addPanel')">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
-    Dodaj event
-  </div>
-  <div class="nav-item" onclick="doCountAll()">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2" width="5" height="5" rx=".5"/><rect x="9" y="2" width="5" height="5" rx=".5"/><rect x="2" y="9" width="5" height="5" rx=".5"/><rect x="9" y="9" width="5" height="5" rx=".5"/></svg>
-    Policz wszystko
-  </div>
-  <div class="nav-item" onclick="runAiSummary()">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2L10 6H14L11 9L12 13L8 10L4 13L5 9L2 6H6Z"/></svg>
-    AI Raport
-  </div>
-
   <div class="sidebar-footer">
     <div class="sidebar-footer-logo"><span>F</span>OURCE</div>
     <div class="sidebar-footer-text">Agency Hub © 2026</div>
@@ -406,26 +408,24 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
     <div class="stats-bar">
       <div class="stat-block"><div class="stat-label">Aktywne show</div><div class="stat-value" id="st-active">—</div><div class="stat-sub" id="st-active-sub">ładowanie</div></div>
       <div class="stat-block"><div class="stat-label">Łączna sprzedaż</div><div class="stat-value" id="st-total">—</div><div class="stat-sub up">wszystkie kanały</div></div>
-      <div class="stat-block"><div class="stat-label">Avg. wypełnienia</div><div class="stat-value" id="st-avg">—</div><div class="stat-sub">% cap</div></div>
-      <div class="stat-block"><div class="stat-label">Snapshoty</div><div class="stat-value" id="st-snaps">—</div><div class="stat-sub" id="st-snaps-sub">wtorki</div></div>
-      <div class="stat-block"><div class="stat-label">Następny wtorek</div><div class="stat-value" id="st-tuesday" style="font-size:15px">—</div><div class="stat-sub" id="st-tuesday-sub">dzień raportu</div></div>
+      <div class="stat-block"><div class="stat-label">Avg. wypełnienia</div><div class="stat-value" id="st-avg">—</div><div class="stat-sub">% aktywnych</div></div>
+      <div class="stat-block"><div class="stat-label">Sold Outy</div><div class="stat-value" id="st-soldout">—</div><div class="stat-sub">aktywne ≥100%</div></div>
+      <div class="stat-block"><div class="stat-label">Ostatnie bilety</div><div class="stat-value" id="st-alerts">—</div><div class="stat-sub" id="st-alerts-sub">alertów 5%/10%</div></div>
     </div>
     <div class="toolbar">
       <div class="search-wrap">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="6.5" cy="6.5" r="4"/><path d="M10 10l3 3" stroke-linecap="round"/></svg>
         <input type="text" id="searchInput" placeholder="Szukaj artysty, venue..." oninput="renderTable()">
       </div>
-      <select class="filter" id="filterStatus" onchange="renderTable()">
-        <option value="">Wszystkie</option>
-        <option value="upcoming">Nadchodzące</option>
-        <option value="past">Minione</option>
-        <option value="soldout">Sold out</option>
-      </select>
       <select class="filter" id="filterVenue" onchange="renderTable()">
         <option value="">Wszystkie venue</option>
       </select>
       <button class="btn btn-teal btn-sm" onclick="doCountAll()">⊞ Policz wszystko</button>
       <button class="btn btn-accent" onclick="togglePanel('addPanel')">+ Dodaj event</button>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabActive" onclick="switchTab('active')">Aktywne<span class="tab-count" id="cntActive"></span></button>
+      <button class="tab-btn" id="tabPast" onclick="switchTab('past')">Przeszłe<span class="tab-count" id="cntPast"></span></button>
     </div>
   </div>
 
@@ -529,65 +529,70 @@ window.dispatchEvent(new Event('fb-ready'));
 <script>
 const UK='fourceplex_users_v1';
 const SESSION_USER_KEY='fourceplex_current_user';
-const UC=['#a78bfa','#34d399','#fbbf24','#60a5fa','#f87171','#fb923c','#e879f9','#2dd4bf'];
+const UC=['#a78bfa','#34d399','#fbbf24','#60a5fa','#f87171','#fb923c','#e879f9','#2dd4bf']; // kept for compat
 let users=[],curUser='',editId=null,_sCol='date',_sDir=1;
 window._events=window._events||[];
 window._snaps=window._snaps||{};
 
 /* ── SEED EVENTS ── */
 const SEED=[
-  {name:'Schur',        date:'2026-03-26',venue:'Hydrozagadka',    price:'99',    cap:370,  onSale:'2025-11-07',tm:105, eb:178, other:0,  remains:87,  wraps:23,vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Killowen',     date:'2026-03-26',venue:'BARdzo Bardzo',   price:'99',    cap:200,  onSale:'2025-10-31',tm:23,  eb:45,  other:0,  remains:132, wraps:10,vip:'',       notes:'',addedBy:'Monika'},
-  {name:'vgtbl.pl',     date:'2026-03-26',venue:'Drizzly Grizzly', price:'89',    cap:370,  onSale:'2025-09-22',tm:23,  eb:65,  other:0,  remains:282, wraps:12,vip:'',       notes:'',addedBy:'Monika'},
-  {name:'vgtbl.pl',     date:'2026-03-27',venue:'Schron',          price:'89',    cap:150,  onSale:'2025-09-22',tm:30,  eb:105, other:0,  remains:15,  wraps:11,vip:'',       notes:'',addedBy:'Monika'},
-  {name:'vgtbl.pl',     date:'2026-03-28',venue:'Niebo',           price:'89',    cap:700,  onSale:'2025-09-22',tm:21,  eb:180, other:0,  remains:499, wraps:28,vip:'',       notes:'',addedBy:'Monika'},
-  {name:'INJI',         date:'2026-04-11',venue:'Piekło nad Niebem',price:'109',  cap:250,  onSale:'2025-11-21',tm:125, eb:124, other:0,  remains:1,   wraps:12,vip:'',       notes:'prawie sold out!',addedBy:'Igor'},
-  {name:'Pentatonix',   date:'2026-04-14',venue:'COS Torwar',      price:'219-279',cap:6651,onSale:'2025-10-10',tm:2020,eb:3003,other:0,  remains:1628,wraps:37,vip:'notatka',notes:'kilka kategorii cen',addedBy:'Mariusz'},
-  {name:'Dakhabrakha',  date:'2026-04-17',venue:'Progresja',       price:'149',   cap:1800, onSale:'2025-10-12',tm:153, eb:446, other:245,remains:956, wraps:77,vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Hannah Bahng', date:'2026-04-20',venue:'Niebo',           price:'159-677',cap:800, onSale:'2026-02-20',tm:112, eb:688, other:0,  remains:0,   wraps:0, vip:'notatka',notes:'sold out',addedBy:'Monika'},
-  {name:'Kiki Rockwell',date:'2026-04-21',venue:'Niebo',           price:'105',   cap:750,  onSale:'2025-04-28',tm:142, eb:581, other:0,  remains:27,  wraps:23,vip:'',       notes:'',addedBy:'Igor'},
+  // PRZESZŁE
+  {name:'Schur',         date:'2026-03-26',venue:'Hydrozagadka',     price:'99',     cap:370,  onSale:'2025-11-07',tm:105, eb:178, other:0,  remains:87,  wraps:23,vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Killowen',      date:'2026-03-26',venue:'BARdzo Bardzo',    price:'99',     cap:200,  onSale:'2025-10-31',tm:23,  eb:45,  other:0,  remains:132, wraps:10,vip:'',       notes:'',addedBy:'Monika'},
+  {name:'vgtbl.pl',      date:'2026-03-26',venue:'Drizzly Grizzly',  price:'89',     cap:370,  onSale:'2025-09-22',tm:23,  eb:65,  other:0,  remains:282, wraps:12,vip:'',       notes:'',addedBy:'Monika'},
+  {name:'vgtbl.pl',      date:'2026-03-27',venue:'Schron',           price:'89',     cap:150,  onSale:'2025-09-22',tm:30,  eb:105, other:0,  remains:15,  wraps:11,vip:'',       notes:'',addedBy:'Monika'},
+  {name:'vgtbl.pl',      date:'2026-03-28',venue:'Niebo',            price:'89',     cap:700,  onSale:'2025-09-22',tm:21,  eb:180, other:0,  remains:499, wraps:28,vip:'',       notes:'',addedBy:'Monika'},
+  {name:'INJI',          date:'2026-04-11',venue:'Piekło nad Niebem',price:'109',    cap:250,  onSale:'2025-11-21',tm:125, eb:124, other:0,  remains:1,   wraps:12,vip:'',       notes:'prawie sold out!',addedBy:'Igor'},
+  // AKTYWNE — istniejące
+  {name:'Pentatonix',    date:'2026-04-14',venue:'COS Torwar',       price:'219-279',cap:6651, onSale:'2025-10-10',tm:2020,eb:3003,other:0,  remains:1628,wraps:37,vip:'notatka',notes:'kilka kategorii cen',addedBy:'Mariusz'},
+  {name:'Dakhabrakha',   date:'2026-04-17',venue:'Progresja',        price:'149',    cap:1800, onSale:'2025-10-12',tm:153, eb:446, other:245,remains:956, wraps:77,vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Hannah Bahng',  date:'2026-04-20',venue:'Niebo',            price:'159-677',cap:800,  onSale:'2026-02-20',tm:112, eb:688, other:0,  remains:0,   wraps:0, vip:'notatka',notes:'sold out',addedBy:'Monika'},
+  {name:'Kiki Rockwell', date:'2026-04-21',venue:'Niebo',            price:'105',    cap:750,  onSale:'2025-04-28',tm:142, eb:581, other:0,  remains:27,  wraps:23,vip:'',       notes:'',addedBy:'Igor'},
+  // NOWE ze screena
+  {name:'Asgeir',        date:'2026-04-28',venue:'Proxima',          price:'99-119', cap:850,  onSale:'2025-12-01',tm:312, eb:198, other:0,  remains:340, wraps:18,vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Tinariwen',     date:'2026-04-28',venue:'Studio',           price:'169-189',cap:1622, onSale:'2025-11-15',tm:680, eb:490, other:32, remains:420, wraps:44,vip:'',       notes:'2 koncerty',addedBy:'Monika'},
+  {name:'Tinariwen',     date:'2026-04-29',venue:'Progresja',        price:'179',    cap:1750, onSale:'2025-11-15',tm:520, eb:743, other:0,  remains:487, wraps:51,vip:'',       notes:'dzień 2',addedBy:'Monika'},
+  {name:'Yellow Days',   date:'2026-04-29',venue:'Hydrozagadka',     price:'99',     cap:370,  onSale:'2026-01-10',tm:89,  eb:142, other:0,  remains:139, wraps:9, vip:'',       notes:'wschodzący hype',addedBy:'Mariusz'},
+  {name:'Anatole Muster',date:'2026-05-17',venue:'Jassmine',         price:'110',    cap:200,  onSale:'2026-02-01',tm:44,  eb:61,  other:0,  remains:95,  wraps:5, vip:'',       notes:'nowy artysta',addedBy:'Igor'},
+  {name:'Alok',          date:'2026-05-24',venue:'Niebo',            price:'119',    cap:250,  onSale:'2026-01-20',tm:98,  eb:82,  other:15, remains:55,  wraps:12,vip:'',       notes:'EDM, mocna kampania',addedBy:'Mariusz'},
+  {name:'Pacifica',      date:'2026-05-27',venue:'BARdzo Bardzo',    price:'99',     cap:200,  onSale:'2026-02-14',tm:31,  eb:28,  other:0,  remains:141, wraps:3, vip:'',       notes:'słaba sprzedaż',addedBy:'Monika'},
 ];
 
-/* Snapshot seed — 5 Tuesday dates going back from today */
-// Will be built dynamically after events are seeded
+/* buildSnapSeed — all Tuesdays from 6.1.2026 to today, per-event personality curve */
 function buildSnapSeed(evs){
-  // Generate 5 past Tuesdays
-  const tuesdays=[];
-  const d=new Date();
-  // Find most recent Tuesday
-  const day=d.getDay();
-  const diff=(day-2+7)%7; // days since last Tuesday
-  let tue=new Date(d);
-  tue.setDate(d.getDate()-diff);
-  for(let i=4;i>=0;i--){
-    const t=new Date(tue);
-    t.setDate(tue.getDate()-i*7);
-    tuesdays.push({
-      label:`${t.getDate()}.${t.getMonth()+1}.${t.getFullYear()}`,
-      daysAgo:(i)*7+diff,
-    });
-  }
+  const today=new Date(); today.setHours(0,0,0,0);
+  const allTues=[];
+  let t=new Date(2026,0,6); // first Tuesday 2026
+  while(t<today){ allTues.push(new Date(t)); t.setDate(t.getDate()+7); }
 
-  // For each event seed snapshots for all 5 Tuesdays with gradual growth
   const result=[];
   evs.forEach(ev=>{
-    tuesdays.forEach((tue,ti)=>{
-      // Fraction grows from ~60% to ~95% of current value
-      const f=0.60+ti*0.08+(Math.random()*0.04);
-      const sTM=Math.round((ev.tm||0)*Math.min(f,1)*(0.9+Math.random()*.2));
-      const sEB=Math.round((ev.eb||0)*Math.min(f,1)*(0.9+Math.random()*.2));
-      const sOt=Math.round((ev.other||0)*Math.min(f,1));
+    const evDate=new Date(ev.date);
+    const relevant=allTues.filter(tue=>tue<evDate);
+    if(!relevant.length)return;
+    const n=relevant.length;
+    const startFrac=0.18+Math.random()*0.22; // 18-40%
+    const endFrac  =0.87+Math.random()*0.12; // 87-99%
+    relevant.forEach((tue,ti)=>{
+      const prog=n>1?ti/(n-1):1;
+      const eased=prog<0.5?2*prog*prog:(1-Math.pow(-2*prog+2,2)/2);
+      const f=startFrac+(endFrac-startFrac)*eased;
+      const noise=0.93+Math.random()*0.14;
+      const sTM=Math.round((ev.tm||0)*f*noise);
+      const sEB=Math.round((ev.eb||0)*f*noise);
+      const sOt=Math.round((ev.other||0)*f);
       const tot=sTM+sEB+sOt;
+      const lbl=`${tue.getDate()}.${tue.getMonth()+1}.${tue.getFullYear()}`;
+      const daysAgo=Math.round((today-tue)/86400000);
       result.push({
-        evId:ev.id,
-        sid:`snap_${ev.id}_${tue.label.replace(/\./g,'_')}`,
+        sid:`snap_${ev.id}_${lbl.replace(/\./g,'_')}`,
         data:{
-          eventId:ev.id,eventName:ev.name,date:tue.label,
+          eventId:ev.id,eventName:ev.name,date:lbl,
           tm:sTM,eb:sEB,other:sOt,total:tot,
           remains:Math.max(0,(ev.cap||0)-tot),
-          wraps:Math.round((ev.wraps||0)*Math.min(f,1)),
+          wraps:Math.round((ev.wraps||0)*f),
           pct:ev.cap?Math.round(tot/ev.cap*100):0,
-          createdBy:'seed',createdAt:Date.now()-tue.daysAgo*86400000,
+          createdBy:'seed',createdAt:Date.now()-daysAgo*86400000,
         }
       });
     });
@@ -598,70 +603,91 @@ function buildSnapSeed(evs){
 window.addEventListener('fb-ready',async()=>{
   const s=await window._getDocs(window._evCol);
   if(s.empty){
-    const ids=[];
     for(const ev of SEED){
       const id='ev_'+Math.random().toString(36).slice(2,9);
-      ids.push(id);
       await window._setDoc(window._doc(window._db,'ticketing_events',id),{...ev,breakEven:0,internalBuys:0,addedAt:Date.now()});
     }
-    notify('Załadowano eventy testowe');
+    notify('Załadowano '+SEED.length+' eventów testowych');
+    const waitAndSeed=()=>{
+      if(!window._events.length){setTimeout(waitAndSeed,600);return;}
+      const snaps=buildSnapSeed(window._events);
+      let i=0;
+      const batch=async()=>{
+        if(i>=snaps.length){notify('Historia: '+snaps.length+' snapshotów od 6.1.2026');return;}
+        await window._setDoc(window._doc(window._db,'ticketing_snapshots',snaps[i].sid),snaps[i].data);
+        i++; if(i%8===0)await new Promise(r=>setTimeout(r,40)); batch();
+      };
+      batch();
+    };
+    setTimeout(waitAndSeed,1500);
+  } else {
+    // Backfill missing snapshots (e.g. new events added or old 5-week seed)
     setTimeout(async()=>{
-      const evs=window._events;
-      if(!evs.length)return;
+      const evs=window._events; if(!evs.length)return;
+      const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
+      const active=evs.filter(ev=>new Date(ev.date)>=cutoff);
+      const needsFill=active.some(ev=>(window._snaps?.[ev.id]||[]).length<4);
+      if(!needsFill)return;
       const snaps=buildSnapSeed(evs);
-      for(const snap of snaps){
-        await window._setDoc(window._doc(window._db,'ticketing_snapshots',snap.sid),snap.data);
-      }
-      notify(`Dodano ${snaps.length} snapshot'ów historycznych`);
-    },2000);
+      let i=0;
+      const batch=async()=>{
+        if(i>=snaps.length){notify('Historia uzupełniona: '+snaps.length+' snapshotów');return;}
+        await window._setDoc(window._doc(window._db,'ticketing_snapshots',snaps[i].sid),snaps[i].data);
+        i++; if(i%8===0)await new Promise(r=>setTimeout(r,40)); batch();
+      };
+      batch();
+    },3500);
   }
 });
 
-/* ── USERS ── */
-function loadUsers(){
-  try{users=JSON.parse(localStorage.getItem(UK)||'[]');}catch(e){users=[];}
-  if(!users.length)users=['Monika','Igor','Mariusz'];
-  const saved=localStorage.getItem(SESSION_USER_KEY);
-  if(saved&&users.includes(saved)){
-    curUser=saved;
-    const el=document.getElementById('curUserLabel');
-    if(el)el.textContent=saved;
-    const dot=document.getElementById('badge-dot');
-    if(dot)dot.style.background=uCol(saved);
-  }else{
-    openUserModal();
-  }
-}
-function saveUsers(){localStorage.setItem(UK,JSON.stringify(users));}
-function uCol(n){const i=users.indexOf(n);return UC[i<0?0:i%UC.length];}
-function openUserModal(){
-  const list=document.getElementById('userList');
-  if(!list)return;
-  list.innerHTML=users.map(u=>`<div class="user-opt ${u===curUser?'sel':''}" data-user="${u.replace(/"/g,'&quot;')}"><div class="ua" style="background:${uCol(u)}22;color:${uCol(u)}">${u[0]}</div>${u}</div>`).join('');
-  list.querySelectorAll('.user-opt').forEach(el=>{
-    el.addEventListener('click',()=>selectUser(el.getAttribute('data-user')));
-  });
-  document.getElementById('userModal').classList.add('open');
-}
-function selectUser(n){
-  if(!n||typeof n!=='string')return;
-  curUser=n;
-  localStorage.setItem(SESSION_USER_KEY,n);
-  const el=document.getElementById('curUserLabel');
-  if(el)el.textContent=n;
+/* ── USERS (index.html compatible) ── */
+const USER_COLORS=['#a78bfa','#34d399','#fbbf24','#60a5fa','#f87171','#fb923c','#e879f9','#2dd4bf'];
+const DEFAULT_USERS=['Monika','Igor','Mariusz'];
+function getUsers(){try{const s=localStorage.getItem(UK);return s?JSON.parse(s):[...DEFAULT_USERS];}catch{return[...DEFAULT_USERS];}}
+function saveUsersList(u){localStorage.setItem(UK,JSON.stringify(u));}
+function getUserColor(n){const u=getUsers();const i=u.indexOf(n);return USER_COLORS[i>=0?i%USER_COLORS.length:0];}
+function uCol(n){return getUserColor(n);}
+function updateBadge(n){
   const dot=document.getElementById('badge-dot');
-  if(dot)dot.style.background=uCol(n);
-  const modal=document.getElementById('userModal');
-  if(modal)modal.classList.remove('open');
+  const nm=document.getElementById('badge-name');
+  if(dot)dot.style.background=getUserColor(n);
+  if(nm)nm.textContent=n;
 }
-function addNewUser(){
-  const v=document.getElementById('newUserInput').value.trim();
-  if(!v)return;
-  if(!users.includes(v))users.push(v);
-  saveUsers();
-  document.getElementById('newUserInput').value='';
-  selectUser(v);
+function openModal(){renderUserList();document.getElementById('modal-overlay').classList.add('open');}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');const inp=document.getElementById('new-user-input');if(inp)inp.value='';}
+function renderUserList(){
+  const el=document.getElementById('user-list');if(!el)return;
+  el.innerHTML='';
+  getUsers().forEach(name=>{
+    const div=document.createElement('div');
+    div.className='user-option'+(name===curUser?' selected':'');
+    div.innerHTML=`<div class="uav" style="background:${getUserColor(name)}">${name.charAt(0).toUpperCase()}</div><span class="user-option-name">${name}</span>`;
+    div.onclick=()=>selectUser(name);
+    el.appendChild(div);
+  });
 }
+function selectUser(name){
+  if(!name||typeof name!=='string')return;
+  curUser=name;
+  localStorage.setItem(SESSION_USER_KEY,name);
+  updateBadge(name);
+  closeModal();
+}
+function addUser(){
+  const input=document.getElementById('new-user-input');
+  const name=input?.value.trim();if(!name)return;
+  const u=getUsers();if(!u.includes(name)){u.push(name);saveUsersList(u);}
+  renderUserList();if(input)input.value='';
+}
+function loadUsers(){
+  const saved=localStorage.getItem(SESSION_USER_KEY);
+  const u=getUsers();
+  if(saved&&u.includes(saved)){curUser=saved;updateBadge(saved);}
+  else openModal();
+}
+// Keep aliases
+function openUserModal(){openModal();}
+function addNewUser(){addUser();}
 
 /* ── HELPERS ── */
 function daysLeft(ds){const d=new Date(ds),t=new Date();t.setHours(0,0,0,0);return Math.round((d-t)/86400000);}
@@ -678,6 +704,26 @@ function closeAllPanels(){document.querySelectorAll('.overlay-panel').forEach(p=
 function clearForm(){['fName','fDate','fVenue','fPrice','fCap','fOnSale','fBreakEven','fInternalBuys','fVip','fTM','fEB','fOther','fRemains','fWraps','fNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
 function sortBy(col){if(_sCol===col)_sDir*=-1;else{_sCol=col;_sDir=1;}renderTable();}
 
+/* ── TAB STATE ── */
+let _activeTab='active';
+function switchTab(t){
+  _activeTab=t;
+  document.getElementById('tabActive').classList.toggle('active',t==='active');
+  document.getElementById('tabPast').classList.toggle('active',t==='past');
+  const pm=document.getElementById('panMid');if(pm)pm._firstRender=undefined;
+  renderTable();
+}
+
+/* ── DELETE ── */
+async function confirmDelete(evId){
+  const ev=window._events?.find(e=>e.id===evId);if(!ev)return;
+  if(!confirm('Usunąć "'+ev.name+'" z systemu?'))return;
+  const snaps=window._snaps?.[evId]||[];
+  for(const s of snaps){try{await window._deleteDoc(window._doc(window._db,'ticketing_snapshots',s.id));}catch(e){}}
+  await window._deleteDoc(window._doc(window._db,'ticketing_events',evId));
+  notify('Usunięto: '+ev.name);
+}
+
 /* ── COLUMN WIDTHS ── */
 // Middle panel: static info + Tuesday blocks
 // Static: Dni(54) Venue(120) Cena(64) CAP(50) Onsale(62) BE(62)
@@ -691,41 +737,52 @@ const RIGHT_W=Object.values(RW).reduce((s,v)=>s+v,0); // 418
 const BCOLS=['TM','eB','Inne','T','W','%','R'];
 const RCOLS=['TM','eB','Inne','T','W','%','R',''];
 
-/* ── BUILD PCT CELL ── */
-function mkPct(pct,ev_cap){
-  if(!ev_cap)return'—';
-  const col=pctColor(pct),pmin=Math.min(pct,100);
-  return`<div class="pct-w"><div class="pct-bar"><div class="pct-fill" style="width:${pmin}%;background:${col}"></div></div><span class="pct-n" style="color:${col}">${pct}%</span></div>`;
+/* ── PCT — number only ── */
+function mkPct(pct,cap){
+  if(!cap)return'—';
+  return`<span style="color:${pctColor(pct)};font-family:var(--mono);font-size:11px">${pct}%</span>`;
+}
+/* ── ALERT CHIP for name cell ── */
+function alertChip(pct){
+  if(pct>=95&&pct<100)return'<span class="alert-chip alert-5">OSTATNIE 5%</span>';
+  if(pct>=89&&pct<95) return'<span class="alert-chip alert-10">OSTATNIE 10%</span>';
+  return'';
 }
 
 /* ── RENDER TABLE ── */
 function renderTable(){
   const evs=window._events||[];
   const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
-  const fS=document.getElementById('filterStatus')?.value||'';
   const fV=document.getElementById('filterVenue')?.value||'';
 
   const venues=[...new Set(evs.map(e=>e.venue).filter(Boolean))].sort();
   const vSel=document.getElementById('filterVenue');
   if(vSel){const cur=vSel.value;vSel.innerHTML='<option value="">Wszystkie venue</option>'+venues.map(v=>`<option ${v===cur?'selected':''} value="${v}">${v}</option>`).join('');}
 
-  let rows=evs.filter(ev=>{
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
+  const activeEvs=evs.filter(ev=>new Date(ev.date)>=cutoff);
+  const pastEvs  =evs.filter(ev=>new Date(ev.date)<cutoff);
+  const ca=document.getElementById('cntActive'),cp=document.getElementById('cntPast');
+  if(ca)ca.textContent=activeEvs.length;
+  if(cp)cp.textContent=pastEvs.length;
+
+  const pool=_activeTab==='active'?activeEvs:pastEvs;
+  let rows=pool.filter(ev=>{
     if(q&&!ev.name?.toLowerCase().includes(q)&&!ev.venue?.toLowerCase().includes(q))return false;
-    const d=daysLeft(ev.date),tot=(ev.tm||0)+(ev.eb||0)+(ev.other||0),pct=ev.cap?Math.round(tot/ev.cap*100):0;
-    if(fS==='upcoming'&&d<0)return false;
-    if(fS==='past'&&d>=0)return false;
-    if(fS==='soldout'&&pct<100)return false;
     if(fV&&ev.venue!==fV)return false;
     return true;
   });
-  rows.sort((a,b)=>{
-    if(_sCol==='date')return _sDir*(a.date||'').localeCompare(b.date||'');
-    if(_sCol==='name')return _sDir*(a.name||'').localeCompare(b.name||'');
-    return _sDir*((a[_sCol]||0)>(b[_sCol]||0)?1:(a[_sCol]||0)<(b[_sCol]||0)?-1:0);
-  });
+  if(_activeTab==='active'){
+    rows.sort((a,b)=>{
+      if(_sCol==='date')return _sDir*(a.date||'').localeCompare(b.date||'');
+      if(_sCol==='name')return _sDir*(a.name||'').localeCompare(b.name||'');
+      return _sDir*((a[_sCol]||0)>(b[_sCol]||0)?1:(a[_sCol]||0)<(b[_sCol]||0)?-1:0);
+    });
+  } else {
+    rows.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  }
   document.getElementById('topCount').textContent=rows.length;
 
-  /* Collect and sort all snapshot dates (= Tuesday history) */
   const allSnaps=window._snaps||{};
   const dateSet=new Set();
   rows.forEach(ev=>{(allSnaps[ev.id]||[]).forEach(s=>dateSet.add(s.date));});
@@ -734,57 +791,66 @@ function renderTable(){
     return ms(a)-ms(b);
   });
 
-  /* ── MIDDLE PANEL THEAD ── */
-  // colgroup
+  // Column widths
+  const LW={calc:20,name:360,date:188,t:34,w:26,pct:32,r:30,act:40};
+  const LEFT_W=Object.values(LW).reduce((s,v)=>s+v,0);
+  const SW={dni:52,venue:118,cena:62,cap:48,onsale:60,be:60};
+  const BW={tm:46,eb:46,oth:40,t:50,w:36,pct:44,r:44};
+  const BLOCK_W=Object.values(BW).reduce((s,v)=>s+v,0);
+  const BCOLS=['TM','eB','Inne','T','W','%','R'];
+
+  // LEFT PANEL THEAD
+  const lpThead=`
+  <colgroup>
+    <col style="width:${LW.calc}px"><col style="width:${LW.name}px"><col style="width:${LW.date}px">
+    <col style="width:${LW.t}px"><col style="width:${LW.w}px"><col style="width:${LW.pct}px">
+    <col style="width:${LW.r}px"><col style="width:${LW.act}px">
+  </colgroup>
+  <tr>
+    <th class="r1" colspan="3"></th>
+    <th class="r1 dg live-hdr" colspan="4"><span style="color:var(--accent)">LIVE ●</span></th>
+    <th class="r1"></th>
+  </tr>
+  <tr>
+    <th class="r2"></th>
+    <th class="r2" style="cursor:pointer" onclick="sortBy('name')">Artysta</th>
+    <th class="r2" style="cursor:pointer" onclick="sortBy('date')">Data</th>
+    <th class="r2 live-bg" style="text-align:right;padding-right:8px;border-left:1px solid rgba(200,240,96,.15)">T</th>
+    <th class="r2 live-bg" style="text-align:right;padding-right:8px">W</th>
+    <th class="r2 live-bg" style="text-align:right;padding-right:8px">%</th>
+    <th class="r2 live-bg" style="text-align:right;padding-right:8px">R</th>
+    <th class="r2"></th>
+  </tr>`;
+  const lpTable=document.querySelector('#panLeft table');
+  if(lpTable){lpTable.querySelector('thead').innerHTML=lpThead;lpTable.style.width=LEFT_W+'px';}
+  document.getElementById('panLeft').style.width=LEFT_W+'px';
+
+  // MIDDLE PANEL THEAD
   let cg='<colgroup>';
   Object.values(SW).forEach(w=>cg+=`<col style="width:${w}px">`);
   snapDates.forEach(()=>Object.values(BW).forEach(w=>cg+=`<col style="width:${w}px">`));
   cg+='</colgroup>';
-
-  // row1: date group spans
   let r1='<tr>';
   Object.values(SW).forEach(w=>r1+=`<th class="r1" style="width:${w}px"></th>`);
   snapDates.forEach(d=>r1+=`<th class="r1 dg" colspan="${BCOLS.length}" style="width:${BLOCK_W}px">${d}</th>`);
   r1+='</tr>';
-
-  // row2: sub-column names
   let r2='<tr>';
   const SHDRS=['Dni','Venue','Cena','CAP','Onsale','BE'];
   Object.values(SW).forEach((w,i)=>r2+=`<th class="r2" style="width:${w}px">${SHDRS[i]}</th>`);
-  snapDates.forEach((_,bi)=>{
+  snapDates.forEach(()=>{
     Object.values(BW).forEach((w,ci)=>{
       const bord=ci===0?'border-left:1px solid rgba(255,255,255,.05)':'';
       r2+=`<th class="r2" style="width:${w}px;text-align:right;padding-right:8px;${bord}">${BCOLS[ci]}</th>`;
     });
   });
   r2+='</tr>';
-
   const midW=Object.values(SW).reduce((s,v)=>s+v,0)+snapDates.length*BLOCK_W;
   document.getElementById('thdMid').innerHTML=cg+r1+r2;
   document.getElementById('tblMid').style.width=midW+'px';
   document.getElementById('tblMid').style.minWidth=midW+'px';
 
-  /* ── RIGHT PANEL THEAD ── */
-  document.getElementById('panRight').style.width=RIGHT_W+'px';
-  document.getElementById('tblRight').style.width=RIGHT_W+'px';
-
-  let rcg='<colgroup>';
-  Object.values(RW).forEach(w=>rcg+=`<col style="width:${w}px">`);
-  rcg+='</colgroup>';
-
-  let rr1=`<tr><th class="r1 dg live-hdr" colspan="${Object.keys(RW).length}" style="width:${RIGHT_W}px"><span style="color:var(--accent)">LIVE ●</span></th></tr>`;
-  let rr2='<tr>';
-  Object.values(RW).forEach((w,i)=>{
-    const lbl=RCOLS[i];
-    const bord=i===0?'border-left:1px solid rgba(200,240,96,.18)':'';
-    rr2+=`<th class="r2 live-bg" style="width:${w}px;text-align:right;padding-right:8px;${bord}">${lbl}</th>`;
-  });
-  rr2+='</tr>';
-  document.getElementById('thdRight').innerHTML=rcg+rr1+rr2;
-
-  /* ── BUILD TBODY ROWS ── */
-  let lH='', mH='', rH='';
-
+  // BUILD ROWS
+  let lH='', mH='';
   rows.forEach(ev=>{
     const days=daysLeft(ev.date);
     const tot=(ev.tm||0)+(ev.eb||0)+(ev.other||0);
@@ -794,7 +860,7 @@ function renderTable(){
     const beHit=be>0&&tot>=be;
 
     let rc;
-    if(days<0)rc='row-past';
+    if(days<-2)rc='row-past';
     else if(days<=7)rc='row-urgent';
     else if(days<=21)rc='row-warn';
     else rc='row-ok';
@@ -806,16 +872,34 @@ function renderTable(){
     else if(days<=21)dbadge=`<span class="db ds">${days}d</span>`;
     else dbadge=`<span class="db do">${days}d</span>`;
 
-    /* LEFT panel row */
+    const remColor=rem===0?'var(--teal)':typeof rem==='number'&&rem<50?'var(--amber)':'var(--text3)';
+    const pctCol=pctColor(pct);
+    const chip=alertChip(pct);
+
+    // LEFT ROW
     lH+=`<tr class="${rc}" data-id="${ev.id}">
-      <td style="width:34px;text-align:center;padding:0 4px">
+      <td style="width:${LW.calc}px;text-align:center;padding:0 3px">
         <span class="calc-btn" onclick="doCountOne('${ev.id}')" title="Zlicz (wymaga API)">⊞</span>
       </td>
-      <td class="name-c" style="width:120px">${ev.name}</td>
-      <td class="date-c" style="width:80px">${fd(ev.date)}</td>
+      <td class="name-c" style="width:${LW.name}px">${ev.name}${chip}</td>
+      <td class="date-c" style="width:${LW.date}px">${fd(ev.date)}</td>
+      <td class="num-b live-bg" style="width:${LW.t}px;border-left:1px solid rgba(200,240,96,.12)">${tot}</td>
+      <td class="num live-bg" style="width:${LW.w}px">${ev.wraps||0}</td>
+      <td class="num live-bg" style="width:${LW.pct}px;color:${pctCol}">${ev.cap?pct+'%':'—'}</td>
+      <td class="num live-bg" style="width:${LW.r}px;color:${remColor}">${rem}</td>
+      <td style="width:${LW.act}px;padding:0 5px">
+        <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">
+          <span class="icon-btn edit" onclick="openEdit('${ev.id}')" title="Edytuj">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
+          </span>
+          <span class="icon-btn del" onclick="confirmDelete('${ev.id}')" title="Usuń">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9"/></svg>
+          </span>
+        </div>
+      </td>
     </tr>`;
 
-    /* MIDDLE panel row — static info + Tuesday blocks */
+    // MIDDLE ROW
     let mr=`<tr class="${rc}" data-id="${ev.id}">`;
     mr+=`<td style="width:${SW.dni}px">${dbadge}</td>`;
     mr+=`<td style="width:${SW.venue}px"><span class="vt" title="${ev.venue||''}">${ev.venue||'—'}</span></td>`;
@@ -825,56 +909,36 @@ function renderTable(){
     const beHtml=be?(beHit?`<span class="be-v be-hit">${be} 💰</span>`:`<span class="be-v">${be}</span>`):'—';
     mr+=`<td style="width:${SW.be}px;text-align:right;padding-right:8px">${beHtml}</td>`;
 
-    // Tuesday snapshot blocks
-    snapDates.forEach((dt,bi)=>{
+    snapDates.forEach((dt)=>{
       const s=(allSnaps[ev.id]||[]).find(x=>x.date===dt);
-      const bord=`border-left:1px solid rgba(255,255,255,.05)`;
       if(s){
         const sp=s.pct||0;
         mr+=`<td class="num bl-sep" style="width:${BW.tm}px">${s.tm||0}</td>`;
         mr+=`<td class="num" style="width:${BW.eb}px">${s.eb||0}</td>`;
-        mr+=`<td class="num" style="width:${BW.oth}px;color:var(--text3)">${s.other||0}</td>`;
+        mr+=`<td class="num ec" style="width:${BW.oth}px;color:var(--text2)" data-snapid="${s.id}" data-evid="${ev.id}" data-val="${s.other||0}" onclick="iEditSnap(this)" title="Edytuj Inne">${s.other||0}</td>`;
         mr+=`<td class="num-b" style="width:${BW.t}px">${s.total||0}</td>`;
         mr+=`<td class="num" style="width:${BW.w}px">${s.wraps||0}</td>`;
-        mr+=`<td style="width:${BW.pct}px">${mkPct(sp,ev.cap)}</td>`;
+        mr+=`<td class="num" style="width:${BW.pct}px;color:${pctColor(sp)}">${ev.cap?sp+'%':'—'}</td>`;
         mr+=`<td class="num" style="width:${BW.r}px;color:var(--text3)">${s.remains||0}</td>`;
       }else{
         mr+=`<td class="num bl-sep" style="width:${BW.tm}px;color:var(--text3)">—</td>`;
-        mr+=`<td class="num" style="width:${BW.eb}px;color:var(--text3)">—</td>`;
-        mr+=`<td class="num" style="width:${BW.oth}px;color:var(--text3)">—</td>`;
-        mr+=`<td class="num" style="width:${BW.t}px;color:var(--text3)">—</td>`;
-        mr+=`<td class="num" style="width:${BW.w}px;color:var(--text3)">—</td>`;
+        ['eb','oth','t','w'].forEach(k=>mr+=`<td class="num" style="width:${BW[k]}px;color:var(--text3)">—</td>`);
         mr+=`<td style="width:${BW.pct}px"></td>`;
         mr+=`<td class="num" style="width:${BW.r}px;color:var(--text3)">—</td>`;
       }
     });
     mr+='</tr>';
     mH+=mr;
-
-    /* RIGHT panel row — LIVE data + edit button */
-    const remColor=rem===0?'var(--teal)':rem<50?'var(--amber)':'var(--text3)';
-    let rr=`<tr class="${rc}" data-id="${ev.id}">`;
-    rr+=`<td class="num live-bg ec" style="width:${RW.tm}px;border-left:1px solid rgba(200,240,96,.12)" data-val="${ev.tm||0}" onclick="iEdit(this,'${ev.id}','tm')" title="Kliknij — edytuj TM">${ev.tm||0}</td>`;
-    rr+=`<td class="num live-bg ec" style="width:${RW.eb}px" data-val="${ev.eb||0}" onclick="iEdit(this,'${ev.id}','eb')" title="Kliknij — edytuj eBilet">${ev.eb||0}</td>`;
-    rr+=`<td class="num live-bg" style="width:${RW.oth}px;color:var(--text3)">${ev.other||0}</td>`;
-    rr+=`<td class="num-b live-bg" style="width:${RW.t}px">${tot}</td>`;
-    rr+=`<td class="num live-bg" style="width:${RW.w}px">${ev.wraps||0}</td>`;
-    rr+=`<td class="live-bg" style="width:${RW.pct}px">${mkPct(pct,ev.cap)}</td>`;
-    rr+=`<td class="num live-bg" style="width:${RW.r}px;color:${remColor}">${rem}</td>`;
-    rr+=`<td style="width:${RW.act}px;text-align:right;padding-right:8px">
-      <button class="btn btn-purple btn-sm" onclick="openEdit('${ev.id}')">Edytuj</button>
-    </td></tr>`;
-    rH+=rr;
   });
 
   document.getElementById('tbLeft').innerHTML=lH;
   document.getElementById('tbMid').innerHTML=mH;
-  document.getElementById('tbRight').innerHTML=rH;
+  const tbRight=document.getElementById('tbRight');
+  if(tbRight)tbRight.innerHTML='';
 
   initScrollSync();
   bindHover();
 
-  // Auto-scroll middle panel to the right (show most recent history)
   const pm=document.getElementById('panMid');
   if(pm&&pm._firstRender!==false){
     pm._firstRender=false;
@@ -882,33 +946,47 @@ function renderTable(){
   }
 }
 
-/* ── SCROLL SYNC (vertical) — all three panels ── */
+/* ── SCROLL SYNC — left + mid ── */
 let _sl=false;
 function initScrollSync(){
   const L=document.getElementById('panLeft');
   const M=document.getElementById('panMid');
-  const R=document.getElementById('panRight');
-  if(!L||!M||!R||L._ss)return;
-  L._ss=M._ss=R._ss=true;
-  const sync=(src,others)=>{
-    src.addEventListener('scroll',()=>{
-      if(_sl)return;_sl=true;
-      others.forEach(p=>p.scrollTop=src.scrollTop);
-      _sl=false;
-    });
-  };
-  sync(M,[L,R]);
-  sync(L,[M,R]);
-  sync(R,[M,L]);
+  if(!L||!M||L._ss)return;
+  L._ss=M._ss=true;
+  const sync=(s,others)=>{s.addEventListener('scroll',()=>{if(_sl)return;_sl=true;others.forEach(p=>p.scrollTop=s.scrollTop);_sl=false;});};
+  sync(M,[L]);sync(L,[M]);
 }
 
 /* ── HOVER SYNC ── */
 function bindHover(){
-  document.querySelectorAll('#tbLeft tr,#tbMid tr,#tbRight tr').forEach(row=>{
+  document.querySelectorAll('#tbLeft tr,#tbMid tr').forEach(row=>{
     const id=row.getAttribute('data-id');
     row.addEventListener('mouseenter',()=>document.querySelectorAll(`tr[data-id="${id}"]`).forEach(r=>r.classList.add('h')));
     row.addEventListener('mouseleave',()=>document.querySelectorAll(`tr[data-id="${id}"]`).forEach(r=>r.classList.remove('h')));
   });
+}
+
+/* ── iEditSnap — 'Inne' in snapshot ── */
+async function iEditSnap(td){
+  const snapId=td.getAttribute('data-snapid');
+  const evId=td.getAttribute('data-evid');
+  const inp=document.createElement('input');
+  inp.type='text';inp.inputMode='numeric';inp.className='ie';inp.value=td.getAttribute('data-val')||'0';
+  td.innerHTML='';td.appendChild(inp);inp.focus();inp.select();
+  const done=async()=>{
+    const val=Math.max(0,parseInt(inp.value)||0);
+    const snap=(window._snaps?.[evId]||[]).find(s=>s.id===snapId);if(!snap)return;
+    const newTot=(snap.tm||0)+(snap.eb||0)+val;
+    const ev=window._events.find(e=>e.id===evId);
+    const newRem=ev?.cap?Math.max(0,ev.cap-newTot):(snap.remains||0);
+    const newPct=ev?.cap?Math.round(newTot/ev.cap*100):0;
+    const u={...snap,other:val,total:newTot,remains:newRem,pct:newPct,updatedBy:curUser,updatedAt:Date.now()};
+    delete u.id;
+    await window._setDoc(window._doc(window._db,'ticketing_snapshots',snapId),u);
+    notify('Inne ('+snap.date+') → '+val,'info');
+  };
+  inp.addEventListener('blur',done);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderTable();});
 }
 
 /* ── INLINE EDIT ── */
@@ -959,21 +1037,21 @@ function doCountOne(id){
 /* ── STATS ── */
 function updateStats(){
   const evs=window._events||[];
-  const act=evs.filter(e=>daysLeft(e.date)>=0);
-  const tot=evs.reduce((s,e)=>s+(e.tm||0)+(e.eb||0)+(e.other||0),0);
-  const pcts=evs.filter(e=>e.cap>0).map(e=>((e.tm||0)+(e.eb||0)+(e.other||0))/e.cap*100);
-  const avg=pcts.length?Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length):0;
-  const sc=Object.values(window._snaps||{}).reduce((s,a)=>s+a.length,0);
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
+  const act=evs.filter(e=>new Date(e.date)>=cutoff);
+  const tot=act.reduce((s,e)=>s+(e.tm||0)+(e.eb||0)+(e.other||0),0);
+  const pctsArr=act.filter(e=>e.cap>0).map(e=>((e.tm||0)+(e.eb||0)+(e.other||0))/e.cap*100);
+  const avg=pctsArr.length?Math.round(pctsArr.reduce((a,b)=>a+b,0)/pctsArr.length):0;
+  const soldOut=act.filter(e=>e.cap>0&&((e.tm||0)+(e.eb||0)+(e.other||0))>=e.cap).length;
+  const alertCount=act.filter(e=>{if(!e.cap)return false;const p=((e.tm||0)+(e.eb||0)+(e.other||0))/e.cap*100;return p>=89&&p<100;}).length;
   const nt=nextTue(),ntd=Math.round((nt-new Date())/86400000);
   document.getElementById('st-active').textContent=act.length;
-  document.getElementById('st-active-sub').textContent=`z ${evs.length} total`;
+  document.getElementById('st-active-sub').textContent='z '+evs.length+' total';
   document.getElementById('st-total').textContent=tot.toLocaleString('pl-PL');
   document.getElementById('st-avg').textContent=avg+'%';
-  document.getElementById('st-snaps').textContent=sc;
-  document.getElementById('st-snaps-sub').textContent=`${Object.keys(window._snaps||{}).length} eventów`;
-  document.getElementById('st-tuesday').textContent=`${nt.getDate()}.${nt.getMonth()+1}`;
-  document.getElementById('st-tuesday-sub').textContent=`za ${ntd} ${ntd===1?'dzień':'dni'}`;
-  document.getElementById('ntLabel').textContent=`Wtorek: ${nt.getDate()}.${nt.getMonth()+1} (za ${ntd}d)`;
+  document.getElementById('st-soldout').textContent=soldOut;
+  document.getElementById('st-alerts').textContent=alertCount;
+  document.getElementById('st-alerts-sub').textContent=alertCount===1?'alert sprzedaży':'alertów sprzedaży';
 }
 
 /* ── SAVE / EDIT / DELETE ── */
@@ -1015,37 +1093,22 @@ function openEdit(id){
 }
 async function deleteCurrentEvent(){if(!editId||!confirm('Usunąć event?'))return;await window._deleteDoc(window._doc(window._db,'ticketing_events',editId));notify('Usunięto');closeAllPanels();}
 
-/* ── AI RAPORT ── */
-async function runAiSummary(){
-  if(!curUser){notify('Wybierz użytkownika','err');return;}
-  const evs=(window._events||[]).filter(e=>daysLeft(e.date)>=0);
-  if(!evs.length){notify('Brak aktywnych eventów','err');return;}
-  document.getElementById('aiModalTitle').textContent='AI Raport sprzedażowy';
-  document.getElementById('aiModalContent').innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:20px 0;font-family:var(--mono);font-size:12px;color:var(--text3)"><div class="sp-sm"></div>Claude analizuje...</div>`;
-  document.getElementById('aiModal').classList.add('open');
-  const sum=evs.map(ev=>{const t=(ev.tm||0)+(ev.eb||0)+(ev.other||0);const p=ev.cap?Math.round(t/ev.cap*100):null;const b=ev.breakEven||(ev.cap?Math.round(ev.cap*.5):0);return`- ${ev.name} @ ${ev.venue} (za ${daysLeft(ev.date)}d): TM=${ev.tm||0}, eB=${ev.eb||0}, T=${t}${ev.cap?`, ${p}% z ${ev.cap}`:''}${b?`, BE=${b}`:''}${ev.notes?', '+ev.notes:''}`;}).join('\n');
-  const nt=nextTue();
-  const prompt=`Jesteś analitykiem agencji koncertowej FOURCE.\n\n${sum}\n\nDzisiaj: ${fd(new Date().toISOString().slice(0,10))}\nNastępny wtorek: ${fd(nt.toISOString().slice(0,10))}\n\nZwięzły raport po polsku:\n1. **Stan ogólny**\n2. **Alerty**\n3. **Pozytywne sygnały**\n4. **Rekomendacje** (2-3 działania)`;
-  try{
-    const res=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-    if(!res.ok)throw new Error();
-    const d=await res.json();
-    const txt=d.content?.map(c=>c.text||'').join('')||'';
-    const html=txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/^(\d+\..+)$/gm,'<div style="margin:8px 0;font-weight:500;color:var(--text)">$1</div>').replace(/^- (.+)$/gm,'<div style="padding:3px 0 3px 10px;border-left:2px solid var(--border2);margin:3px 0">$1</div>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
-    document.getElementById('aiModalContent').innerHTML=`<div class="ai-box"><div class="ai-box-h">⚡ Claude</div><div class="ai-box-t">${html}</div></div><div style="margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--text3)">${new Date().toLocaleString('pl-PL')} · ${evs.length} eventów</div>`;
-  }catch{
-    document.getElementById('aiModalContent').innerHTML=`<p style="color:var(--text2);font-size:13px;margin-bottom:10px">AI działa po wdrożeniu na Netlify.</p><div class="ai-box"><div class="ai-box-h">Dane manualne</div><div class="ai-box-t">${evs.map(ev=>{const t=(ev.tm||0)+(ev.eb||0)+(ev.other||0);const p=ev.cap?Math.round(t/ev.cap*100):null;return`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text)">${ev.name}<span style="color:var(--text3);font-size:10px"> @ ${ev.venue}</span></span><span style="font-family:var(--mono);font-size:12px;color:${pctColor(p||0)}">${t}${p!==null?' / '+p+'%':''}</span></div>`;}).join('')}</div></div>`;
-  }
-}
+
 
 /* ── INIT ── */
 window.addEventListener('DOMContentLoaded',()=>{
   loadUsers();updateStats();renderTable();
   setInterval(updateStats,60000);
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAllPanels();document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open'));}});
+  // Click outside modal to close
+  const mo=document.getElementById('modal-overlay');
+  if(mo)mo.addEventListener('click',e=>{if(e.target===mo)closeModal();});
+  // Enter in new-user-input
+  const nui=document.getElementById('new-user-input');
+  if(nui)nui.addEventListener('keydown',e=>{if(e.key==='Enter')addUser();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAllPanels();if(mo)mo.classList.remove('open');}});
 });
 
-Object.assign(window,{openUserModal,selectUser,addNewUser,togglePanel,closePanel,closeAllPanels,sortBy,renderTable,saveEvent,openEdit,deleteCurrentEvent,iEdit,doCountAll,doCountOne,runAiSummary,notify});
+Object.assign(window,{openModal,closeModal,openUserModal,selectUser,addUser,addNewUser,togglePanel,closePanel,closeAllPanels,sortBy,switchTab,confirmDelete,renderTable,saveEvent,openEdit,deleteCurrentEvent,iEdit,iEditSnap,doCountAll,doCountOne,notify});
 </script>
 
 <!-- UPDATE INDEX.HTML SIDEBAR NOTE: Add Ticketing link to Market module sidebar -->

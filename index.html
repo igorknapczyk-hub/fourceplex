@@ -138,13 +138,19 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .ar-date{font-family:var(--mono);font-size:10px;color:var(--text3);flex-shrink:0}
 
 /* ════════════════════════════════
-   W3 — TICKETING
+   W3 — TICKETING ALERTY
 ════════════════════════════════ */
-.chart-wrap{flex:1;min-height:0;position:relative}
-canvas#tkChart{width:100%!important;height:100%!important}
-.chart-legend{display:flex;gap:10px;flex-wrap:wrap;flex-shrink:0;margin-top:6px}
-.legend-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--text3)}
-.legend-dot{width:10px;height:2px;border-radius:1px;flex-shrink:0}
+.tk-alert-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:0}
+.tk-alert-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border-radius:6px;border-left:3px solid var(--border2);flex-shrink:0}
+.tk-alert-item.alert-5{border-left-color:var(--red)}
+.tk-alert-item.alert-10{border-left-color:var(--amber)}
+.tk-alert-chip{font-family:var(--mono);font-size:9px;font-weight:500;padding:2px 6px;border-radius:3px;flex-shrink:0;white-space:nowrap}
+.tk-alert-chip.chip-5{background:rgba(248,113,113,.15);color:var(--red)}
+.tk-alert-chip.chip-10{background:rgba(251,191,36,.15);color:var(--amber)}
+.tk-alert-body{flex:1;min-width:0}
+.tk-alert-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk-alert-meta{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px}
+.tk-alert-pct{font-family:var(--mono);font-size:13px;font-weight:500;flex-shrink:0}
 
 /* ════════════════════════════════
    W4 — KALENDARZ
@@ -307,8 +313,8 @@ canvas#tkChart{width:100%!important;height:100%!important}
 <div class="main-scroll">
 <div class="widgets-grid">
 
-  <!-- ═══ W1: JASZCZURZE SPRAWY ═══ -->
-  <div class="widget">
+  <!-- ═══ W1: JASZCZURZE SPRAWY — kol 1, pełna wysokość ═══ -->
+  <div class="widget" style="grid-column:1;grid-row:1/3">
     <div class="widget-header">
       <span class="widget-title">Jaszczurze sprawy</span>
       <div class="widget-badges"><span class="wbadge b-lime" id="todo-badge">0 zadań</span></div>
@@ -325,60 +331,29 @@ canvas#tkChart{width:100%!important;height:100%!important}
     </div>
   </div>
 
-  <!-- ═══ W2: WATCHLIST ═══ -->
-  <div class="widget">
+  <!-- ═══ W1: JASZCZURZE SPRAWY — kol 1, pełna wysokość ═══ -->
+  <div class="widget" style="grid-column:1;grid-row:1/3">
     <div class="widget-header">
-      <span class="widget-title">Watchlist</span>
-      <div class="widget-badges">
-        <span class="wbadge b-purple" id="wl-badge-total">–</span>
-        <span class="wbadge b-amber"  id="wl-badge-rem">–</span>
-      </div>
+      <span class="widget-title">Jaszczurze sprawy</span>
+      <div class="widget-badges"><span class="wbadge b-lime" id="todo-badge">0 zadań</span></div>
     </div>
     <div class="widget-body">
-      <div class="stat-row">
-        <div class="stat-box"><div class="stat-num" id="wl-total">–</div><div class="stat-lbl">Artystów</div></div>
-        <div class="stat-box"><div class="stat-num" id="wl-rem" style="color:var(--amber)">–</div><div class="stat-lbl">Reminder</div></div>
-      </div>
-      <div class="wl-lists">
-        <div class="wl-col">
-          <div class="wl-col-lbl">TOP 8 predMax</div>
-          <div class="wl-scroll" id="wl-top8"></div>
+      <div class="todo-add">
+        <div class="todo-input-row">
+          <input class="todo-input" id="todo-input" placeholder="Nowe zadanie…" maxlength="200">
+          <button class="btn" onclick="addTodo()">+</button>
         </div>
-        <div class="wl-col">
-          <div class="wl-col-lbl">Najnowsze</div>
-          <div class="wl-scroll" id="wl-new8"></div>
-        </div>
+        <div class="assignee-row" id="assignee-row"></div>
       </div>
-      <div style="flex-shrink:0;margin-top:6px"><a href="watchlist.html" class="btn-ghost">Otwórz Watchlist →</a></div>
+      <div class="todo-list" id="todo-list"><div class="empty-state">Brak zadań</div></div>
     </div>
   </div>
 
-  <!-- ═══ W3: TICKETING ═══ -->
-  <div class="widget">
-    <div class="widget-header">
-      <span class="widget-title">Ticketing</span>
-      <div class="widget-badges"><span class="wbadge b-teal" id="tk-badge">–</span></div>
-    </div>
-    <div class="widget-body">
-      <div class="stat-row">
-        <div class="stat-box"><div class="stat-num" id="tk-active">–</div><div class="stat-lbl">Aktywne</div></div>
-        <div class="stat-box"><div class="stat-num" id="tk-sales" style="font-size:15px">–</div><div class="stat-lbl">Sprzedaż</div></div>
-        <div class="stat-box"><div class="stat-num" id="tk-be">–</div><div class="stat-lbl">Break Even</div></div>
-      </div>
-      <div class="chart-wrap">
-        <canvas id="tkChart"></canvas>
-      </div>
-      <div class="chart-legend" id="tkLegend"></div>
-    </div>
-  </div>
-
-  <!-- ═══ W4: KALENDARZ ═══ -->
-  <div class="widget">
+  <!-- ═══ W2: KALENDARZ — kol 2, rząd 1 ═══ -->
+  <div class="widget" style="grid-column:2;grid-row:1">
     <div class="widget-header">
       <span class="widget-title">Kalendarz</span>
-      <div class="widget-badges">
-        <span class="wbadge b-blue">Podgląd</span>
-      </div>
+      <div class="widget-badges"><span class="wbadge b-blue">Podgląd</span></div>
     </div>
     <div class="widget-body">
       <div class="cal-header">
@@ -392,8 +367,24 @@ canvas#tkChart{width:100%!important;height:100%!important}
     </div>
   </div>
 
-  <!-- ═══ W5: MARKETING ═══ -->
-  <div class="widget">
+  <!-- ═══ W3: TICKETING ALERTY — kol 3, rząd 1 ═══ -->
+  <div class="widget" style="grid-column:3;grid-row:1">
+    <div class="widget-header">
+      <span class="widget-title">Ticketing — Alerty</span>
+      <div class="widget-badges">
+        <span class="wbadge b-red" id="tk-alert-badge">–</span>
+        <a href="ticketing.html" class="wbadge b-teal" style="text-decoration:none;cursor:pointer">Otwórz →</a>
+      </div>
+    </div>
+    <div class="widget-body">
+      <div class="tk-alert-list" id="tk-alert-list">
+        <div class="empty-state">Ładowanie…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ W4: MARKETING — kol 2, rząd 2 ═══ -->
+  <div class="widget" style="grid-column:2;grid-row:2">
     <div class="widget-header">
       <span class="widget-title">Marketing</span>
       <div class="widget-badges"><span class="wbadge b-red" id="mkt-badge">–</span></div>
@@ -403,8 +394,8 @@ canvas#tkChart{width:100%!important;height:100%!important}
     </div>
   </div>
 
-  <!-- ═══ W6: SPYTAJ BEATĘ ═══ -->
-  <div class="widget">
+  <!-- ═══ W5: SPYTAJ BEATĘ — kol 3, rząd 2 ═══ -->
+  <div class="widget" style="grid-column:3;grid-row:2">
     <div class="widget-header">
       <span class="widget-title">Spytaj Beatę</span>
       <div class="widget-badges"><span class="wbadge b-amber">AI</span></div>
@@ -548,149 +539,72 @@ function renderTodos(todos){
 if(db){db.collection('todos').onSnapshot(snap=>renderTodos(snap.docs.map(d=>({id:d.id,...d.data()}))),e=>{console.error('Todos:',e);document.getElementById('todo-list').innerHTML='<div class="empty-state">Błąd</div>';});}
 
 /* ══════════════════════════════════════
-   W2 — WATCHLIST
+   W3 — TICKETING ALERTY
+   pct = sold/cap*100
+   >=95% → OSTATNIE 5% (czerwony)
+   >=89% → OSTATNIE 10% (bursztyn)
 ══════════════════════════════════════ */
-function fmtDateShort(s){if(!s)return'';try{const d=new Date(s);return`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`;}catch{return'';}}
+let tkEvents=[];
 
-function renderWatchlist(artists){
-  const total=artists.length,rem=artists.filter(a=>a.status==='reminder').length;
-  document.getElementById('wl-total').textContent=total;
-  document.getElementById('wl-rem').textContent=rem;
-  document.getElementById('wl-badge-total').textContent=`${total} artystów`;
-  document.getElementById('wl-badge-rem').textContent=`${rem} rem.`;
-
-  const top8=[...artists].filter(a=>a.predMax!=null).sort((a,b)=>(b.predMax||0)-(a.predMax||0)).slice(0,8);
-  const new8=[...artists].filter(a=>a.dateAdded).sort((a,b)=>new Date(b.dateAdded)-new Date(a.dateAdded)).slice(0,8);
-
-  function fill(id,items,fn){
-    const el=document.getElementById(id);if(!items.length){el.innerHTML='<div class="empty-state">Brak</div>';return;}
-    el.innerHTML='';items.forEach((a,i)=>{
-      const row=document.createElement('div');row.className='artist-row';row.innerHTML=fn(a,i);el.appendChild(row);
-    });
-  }
-  fill('wl-top8',top8,(a,i)=>`<span class="ar-rank">#${i+1}</span><span class="ar-name">${escHtml(a.name||'–')}</span><span class="ar-val">${fmtK(a.predMax)}</span>`);
-  fill('wl-new8',new8,(a,i)=>`<span class="ar-rank">#${i+1}</span><span class="ar-name">${escHtml(a.name||'–')}</span><span class="ar-date">${fmtDateShort(a.dateAdded)}</span>`);
-}
-if(db){db.collection('artists').onSnapshot(snap=>renderWatchlist(snap.docs.map(d=>({id:d.id,...d.data()}))),e=>console.error('Artists:',e));}
-
-/* ══════════════════════════════════════
-   W3 — TICKETING (stats + wykres liniowy SVG)
-══════════════════════════════════════ */
-let tkEvents=[], tkSnaps={};
-
-function renderTicketing(){
+function renderTicketingAlerts(){
   const today=new Date().toISOString().slice(0,10);
+  const list=document.getElementById('tk-alert-list');
+  const badge=document.getElementById('tk-alert-badge');
+  if(!list)return;
+
+  // Tylko aktywne (data >= dziś)
   const active=tkEvents.filter(e=>(e.date||'')>=today);
-  let totalSales=0,beCount=0;
-  active.forEach(e=>{
-    const sold=(e.tm||0)+(e.eb||0)+(e.other||0);totalSales+=sold;
-    const be=e.breakEven||(e.cap?Math.ceil(e.cap*0.5):0);
-    if(sold>=be&&be>0)beCount++;
+
+  // Wylicz pct dla każdego i filtruj alerty
+  const alerts=active
+    .map(e=>{
+      const sold=(e.tm||0)+(e.eb||0)+(e.other||0);
+      const cap=e.cap||0;
+      const pct=cap>0?Math.round(sold/cap*100):0;
+      return{...e,sold,pct};
+    })
+    .filter(e=>e.pct>=89)
+    .sort((a,b)=>b.pct-a.pct); // najwyższy % u góry
+
+  if(badge)badge.textContent=`${alerts.length} alertów`;
+
+  if(!alerts.length){
+    list.innerHTML='<div class="empty-state">Brak alertów sprzedażowych</div>';
+    return;
+  }
+
+  list.innerHTML='';
+  alerts.forEach(e=>{
+    const is5=e.pct>=95;
+    const chipClass=is5?'chip-5':'chip-10';
+    const chipLabel=is5?'OSTATNIE 5%':'OSTATNIE 10%';
+    const itemClass=is5?'alert-5':'alert-10';
+    const pctColor=is5?'var(--red)':'var(--amber)';
+    // Data w formacie DD.MM.YYYY
+    const dateParts=(e.date||'').split('-');
+    const dateStr=dateParts.length===3?`${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`:'–';
+    const venue=e.venue||'';
+
+    const el=document.createElement('div');
+    el.className=`tk-alert-item ${itemClass}`;
+    el.innerHTML=`
+      <div class="tk-alert-body">
+        <div class="tk-alert-name">${escHtml(e.name||'–')}</div>
+        <div class="tk-alert-meta">${escHtml(venue)}${venue?' · ':''}${dateStr}</div>
+      </div>
+      <span class="tk-alert-chip ${chipClass}">${chipLabel}</span>
+      <span class="tk-alert-pct" style="color:${pctColor}">${e.pct}%</span>`;
+    list.appendChild(el);
   });
-  document.getElementById('tk-active').textContent=active.length;
-  document.getElementById('tk-sales').textContent=fmtK(totalSales);
-  document.getElementById('tk-be').textContent=beCount;
-  document.getElementById('tk-badge').textContent=`${active.length} nadchodzących`;
-  drawTicketChart(active);
 }
 
-function drawTicketChart(active){
-  const canvas=document.getElementById('tkChart');
-  if(!canvas)return;
-  const ctx=canvas.getContext('2d');
-
-  // Rozmiar
-  const wrap=canvas.parentElement;
-  canvas.width=wrap.clientWidth;
-  canvas.height=wrap.clientHeight;
-  const W=canvas.width,H=canvas.height;
-  ctx.clearRect(0,0,W,H);
-
-  // Znajdź TOP 5 aktywnych wg cap, wyłącz areny (cap > 2000)
-  const topEvents=[...active].filter(e=>e.cap>0&&e.cap<=2000).sort((a,b)=>(b.cap||0)-(a.cap||0)).slice(0,5);
-  if(!topEvents.length){
-    ctx.fillStyle='rgba(255,255,255,.15)';ctx.font='11px DM Mono, monospace';
-    ctx.textAlign='center';ctx.fillText('Brak danych historycznych',W/2,H/2);return;
-  }
-
-  // Kolory linii
-  const COLORS=['#c8f060','#a78bfa','#34d399','#fbbf24','#60a5fa'];
-
-  // Zbierz snapshoty dla każdego eventu (5 ostatnich tygodni)
-  // ticketing_snapshots: eventId, date (DD.M.YYYY lub DD.MM.YYYY), total
-  const datasets=topEvents.map((ev,ci)=>{
-    const snaps=(tkSnaps[ev.id]||[])
-      .sort((a,b)=>(a.createdAt||0)-(b.createdAt||0))
-      .slice(-5);
-    return{name:ev.name,cap:ev.cap,color:COLORS[ci%COLORS.length],snaps};
-  });
-
-  // Ustal osie
-  const allTotals=datasets.flatMap(d=>d.snaps.map(s=>s.total||0));
-  const maxVal=Math.max(...allTotals,1);
-  const PAD={top:8,right:8,bottom:18,left:32};
-  const cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom;
-
-  // Siatka
-  ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=1;
-  for(let i=0;i<=4;i++){
-    const y=PAD.top+cH*(1-i/4);
-    ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,.2)';ctx.font='8px DM Mono, monospace';ctx.textAlign='right';
-    ctx.fillText(fmtK(Math.round(maxVal*i/4)),PAD.left-3,y+3);
-  }
-
-  // X — etykiety tygodni
-  const xLabels=['5ty','4ty','3ci','2gi','Ost.'];
-  ctx.fillStyle='rgba(255,255,255,.2)';ctx.font='8px DM Mono, monospace';ctx.textAlign='center';
-  for(let i=0;i<5;i++){
-    const x=PAD.left+cW*(i/4);
-    ctx.fillText(xLabels[i],x,H-2);
-  }
-
-  // Linie
-  datasets.forEach(ds=>{
-    if(!ds.snaps.length)return;
-    ctx.strokeStyle=ds.color;ctx.lineWidth=1.5;
-    ctx.shadowColor=ds.color;ctx.shadowBlur=4;
-    ctx.beginPath();
-    const pts=ds.snaps.map((s,i)=>{
-      const n=ds.snaps.length;
-      const xi=5-n+i; // wyrównaj do prawej (ostatni = pozycja 4)
-      return{x:PAD.left+cW*(xi/4),y:PAD.top+cH*(1-(s.total||0)/maxVal)};
-    });
-    pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
-    ctx.stroke();ctx.shadowBlur=0;
-    // Dot na ostatnim punkcie
-    const last=pts[pts.length-1];
-    ctx.fillStyle=ds.color;ctx.beginPath();ctx.arc(last.x,last.y,2.5,0,Math.PI*2);ctx.fill();
-  });
-
-  // Legenda
-  const leg=document.getElementById('tkLegend');
-  leg.innerHTML=datasets.map(d=>`<span class="legend-item"><span class="legend-dot" style="background:${d.color}"></span>${escHtml(d.name)}</span>`).join('');
-}
-
-// Real-time listeners dla ticketingu
 if(db){
   db.collection('ticketing_events').onSnapshot(snap=>{
     tkEvents=snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderTicketing();
+    renderTicketingAlerts();
+    renderCal(); // odśwież kropki na kalendarzu
   },e=>console.error('Events:',e));
-
-  db.collection('ticketing_snapshots').onSnapshot(snap=>{
-    tkSnaps={};
-    snap.docs.forEach(d=>{
-      const data={id:d.id,...d.data()};
-      const eid=data.eventId;
-      if(eid){if(!tkSnaps[eid])tkSnaps[eid]=[];tkSnaps[eid].push(data);}
-    });
-    renderTicketing();
-  },e=>console.error('Snaps:',e));
 }
-
-// Przerysuj wykres przy resize
-window.addEventListener('resize',()=>renderTicketing());
 
 /* ══════════════════════════════════════
    W4 — KALENDARZ (makieta)
