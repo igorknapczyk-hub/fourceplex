@@ -70,13 +70,19 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .show-item.selected{background:rgba(200,240,96,.05);border-left-color:var(--accent)}
 .show-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
 .show-artist{font-size:13px;font-weight:500;color:var(--text)}
-.show-venue{font-size:11px;color:var(--text2);margin-bottom:5px}
+.show-venue{font-size:11px;color:var(--text2);margin-bottom:4px}
 .trash-btn{width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--text3);cursor:pointer;transition:all .15s;flex-shrink:0;opacity:0;border:none;background:none}
 .show-item:hover .trash-btn{opacity:1}
 .trash-btn:hover{color:var(--red);background:rgba(248,113,113,.12)}
 .trash-btn svg{width:11px;height:11px}
 .empty-list{padding:24px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:11px}
 .cp-bar-wrap{flex:1;height:3px;background:var(--bg4);border-radius:2px}
+.pending-cb-wrap{display:flex;align-items:center;gap:5px;margin-bottom:4px}
+.pending-cb{width:13px;height:13px;border:1.5px solid var(--text3);border-radius:3px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;background:none}
+.pending-cb.on{border-color:var(--accent);background:rgba(200,240,96,.15)}
+.pending-cb.on::after{content:'✓';font-size:8px;color:var(--accent);font-weight:700;line-height:1}
+.pending-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;user-select:none}
+.pending-cb.on + .pending-label{color:var(--accent)}
 .cp-bar{height:3px;background:var(--teal);border-radius:2px;transition:width .3s}
 .cp-text{font-family:var(--mono);font-size:9px;color:var(--text3);flex-shrink:0}
 .weekend-badge{font-family:var(--mono);font-size:8px;padding:1px 4px;border-radius:3px;background:rgba(251,191,36,.15);color:var(--amber);border:1px solid rgba(251,191,36,.25);flex-shrink:0}
@@ -90,7 +96,6 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .sec-title{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
 .sec-body{padding:12px 14px}
 .cp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.cp-col-title{display:none}
 .cp-item{margin-bottom:5px}
 .cp-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s;user-select:none}
 .cp-row:hover{border-color:var(--border2)}
@@ -102,36 +107,29 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .cp-row.done .cp-name{color:var(--teal)}
 .cp-note-input{width:100%;margin-top:3px;background:var(--bg4);border:1px solid transparent;border-radius:4px;color:var(--text2);font-family:var(--mono);font-size:10px;padding:3px 7px;outline:none;transition:border-color .15s}
 .cp-note-input:focus{border-color:rgba(200,240,96,.25);color:var(--text)}
-.cp-note-input::placeholder{color:var(--text3)}
+.cp-note-input::placeholder{color:transparent}
 .expenses-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.exp-col-title{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
-.exp-col-sum{color:var(--text);font-size:11px}
-.exp-item{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;margin-bottom:4px}
-.exp-info{flex:1;min-width:0}
-.exp-name{font-size:11px;color:var(--text);font-weight:500}
-.exp-amount{font-family:var(--mono);font-size:10px;color:var(--teal)}
-.exp-note-txt{font-size:10px;color:var(--text3);margin-top:1px}
-.exp-del{color:var(--text3);cursor:pointer;font-size:14px;transition:color .15s;padding:1px 3px;flex-shrink:0;line-height:1;background:none;border:none}
-.exp-table{width:100%;border-collapse:collapse;margin-bottom:6px}
+.exp-col-head{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.exp-col-sum{color:var(--text);font-size:11px;margin-left:auto}
+.exp-table{width:100%;border-collapse:collapse;margin-bottom:4px}
 .exp-table tr{border-bottom:1px solid var(--border)}
 .exp-table tr:last-child{border-bottom:none}
-.etbl-input{width:100%;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--sans);font-size:11px;padding:4px 6px;border-radius:3px;transition:background .1s}
-.etbl-input:focus{background:rgba(255,255,255,.04)}
-.etbl-input::placeholder{color:var(--text3);font-size:10px}
-.eamt{font-family:var(--mono);font-size:11px}
-.exp-del:hover{color:var(--red)}
-.exp-form{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:9px 10px;margin-top:6px}
-.exp-form-row{display:flex;gap:6px;margin-bottom:6px}
-.fl{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px}
-.finput{background:var(--bg4);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:11px;padding:5px 8px;border-radius:5px;outline:none;transition:border-color .15s;width:100%}
-.finput:focus{border-color:rgba(200,240,96,.4)}
-.finput::placeholder{color:var(--text3)}
+.etbl-inp{width:100%;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--sans);font-size:11px;padding:5px 6px;transition:background .1s}
+.etbl-inp[type=number]{-moz-appearance:textfield;appearance:textfield}
+.etbl-inp[type=number]::-webkit-inner-spin-button,.etbl-inp[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.etbl-inp:focus{background:rgba(255,255,255,.04);border-radius:3px}
+.etbl-inp::placeholder{color:var(--text3);font-size:10px}
+.etbl-amt{font-family:var(--mono);font-size:11px;color:var(--teal)}
+.etbl-del{background:none;border:none;color:transparent;cursor:pointer;font-size:13px;padding:2px 4px;transition:color .12s;line-height:1}
+.exp-table tr:hover .etbl-del{color:var(--text3)}
+.etbl-del:hover{color:var(--red) !important}
 .tt-notes-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .notes-textarea{width:100%;min-height:240px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:11px;line-height:1.6;padding:9px 11px;border-radius:6px;outline:none;resize:vertical;transition:border-color .15s}
 .notes-textarea:focus{border-color:rgba(200,240,96,.3)}
 .notes-textarea::placeholder{color:var(--text3)}
 .notes-save-row{display:flex;align-items:center;justify-content:space-between;margin-top:5px}
 .notes-meta{font-family:var(--mono);font-size:9px;color:var(--teal)}
+.fl{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
 #setlist-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 #setlist-overlay.open{display:flex}
 #setlist-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:520px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;animation:modalIn .2s ease}
@@ -239,7 +237,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 <div class="slide-overlay" id="slide-overlay"></div>
 <div class="slide-panel" id="slide-panel">
   <div class="slide-header">
-    <span class="slide-title">Nowy koncert</span>
+    <span class="slide-title" id="slide-title">Nowy koncert</span>
     <button class="slide-close" id="slide-close-btn">×</button>
   </div>
   <div class="slide-body">
@@ -283,20 +281,19 @@ button:disabled{opacity:.35;cursor:not-allowed}
 import{initializeApp,getApps}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getFirestore,collection,doc,onSnapshot,addDoc,updateDoc,deleteDoc,serverTimestamp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-/* ══ FIREBASE ══ */
 const cfg={apiKey:"AIzaSyCUsvjkzYG3AVROysZh9BtN2_vagSSyMww",authDomain:"fourceplex-market.firebaseapp.com",projectId:"fourceplex-market",storageBucket:"fourceplex-market.firebasestorage.app",messagingSenderId:"300062366060",appId:"1:300062366060:web:0cf7bd4128bea35cc63b49"};
-const existing=getApps().find(a=>a.name==='produkcja');
-const app=existing||initializeApp(cfg,'produkcja');
+const app=getApps().find(a=>a.name==='prod')||initializeApp(cfg,'prod');
 const db=getFirestore(app);
 const showsCol=collection(db,'production_shows');
 const expsCol=collection(db,'production_expenses');
-const addShow=(data)=>addDoc(showsCol,{...data,createdAt:serverTimestamp()});
-const updShow=(id,data)=>updateDoc(doc(db,'production_shows',id),data);
-const delShow=(id)=>deleteDoc(doc(db,'production_shows',id));
-const addExp=(data)=>addDoc(expsCol,{...data,createdAt:serverTimestamp()});
-const delExp=(id)=>deleteDoc(doc(db,'production_expenses',id));
+const addShow=d=>addDoc(showsCol,{...d,createdAt:serverTimestamp()});
+const updShow=(id,d)=>updateDoc(doc(db,'production_shows',id),d);
+const delShow=id=>deleteDoc(doc(db,'production_shows',id));
+const addExp=d=>addDoc(expsCol,{...d,createdAt:serverTimestamp()});
+const updExp=(id,d)=>updateDoc(doc(db,'production_expenses',id),d);
+const delExp=id=>deleteDoc(doc(db,'production_expenses',id));
 
-/* ══ HELPERS ══ */
+/* helpers */
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(s){if(!s)return'–';const p=s.split('-');return p[2]+'.'+p[1]+'.'+p[0];}
 function fmtPLN(n){return(+n||0).toLocaleString('pl-PL');}
@@ -305,69 +302,65 @@ function isWeekend(d){if(!d)return false;const w=new Date(d).getDay();return w==
 function dayName(d){return['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'][new Date(d).getDay()];}
 function daysUntil(d){const n=new Date();n.setHours(0,0,0,0);return Math.round((new Date(d)-n)/864e5);}
 
-/* ══ CHECKPOINTS — 21 items, 3 cols of 7, no group titles ══ */
+/* checkpoints — 21, split 7/7/7 */
 const ALL_CPS=[
-  {key:'dosContact',      label:'DoS contact'},
-  {key:'advancingArtist', label:'Advancing artist'},
+  {key:'dosContact',label:'DoS contact'},
+  {key:'advancingArtist',label:'Advancing artist'},
   {key:'advancingSupport',label:'Advancing support'},
-  {key:'advancingVenue',  label:'Advancing venue'},
-  {key:'fohEngineer',     label:'FOH engineer'},
-  {key:'fohDesk',         label:'FOH desk'},
-  {key:'ldEngineer',      label:'LD engineer'},
-  {key:'ldDesk',          label:'LD desk'},
-  {key:'timetable',       label:'Timetable'},
-  {key:'setLength',       label:'Set length'},
-  {key:'curfews',         label:'Curfews'},
-  {key:'parking',         label:'Parking'},
-  {key:'frisco',          label:'Frisco'},
-  {key:'dinner',          label:'Dinner'},
-  {key:'backline',        label:'Backline'},
-  {key:'stagehands',      label:'Stagehands'},
-  {key:'firstAid',        label:'First aid'},
-  {key:'security',        label:'Security'},
-  {key:'ebilet',          label:'eBilet'},
-  {key:'vipMg',           label:'VIP / M&G / EE'},
-  {key:'merch',           label:'Merch'},
+  {key:'advancingVenue',label:'Advancing venue'},
+  {key:'fohEngineer',label:'FOH engineer'},
+  {key:'fohDesk',label:'FOH desk'},
+  {key:'ldEngineer',label:'LD engineer'},
+  {key:'ldDesk',label:'LD desk'},
+  {key:'timetable',label:'Timetable'},
+  {key:'setLength',label:'Set length'},
+  {key:'curfews',label:'Curfews'},
+  {key:'parking',label:'Parking'},
+  {key:'frisco',label:'Frisco'},
+  {key:'dinner',label:'Dinner'},
+  {key:'backline',label:'Backline'},
+  {key:'stagehands',label:'Stagehands'},
+  {key:'firstAid',label:'First aid'},
+  {key:'security',label:'Security'},
+  {key:'ebilet',label:'eBilet'},
+  {key:'vipMg',label:'VIP / M&G / EE'},
+  {key:'merch',label:'Merch'},
 ];
 const ALL_KEYS=ALL_CPS.map(i=>i.key);
 function cpPct(show){const done=ALL_KEYS.filter(k=>(show.checkpoints||{})[k]).length;return{done,total:ALL_KEYS.length,pct:Math.round(done/ALL_KEYS.length*100)};}
 
-/* ══ USERS ══ */
+/* users */
 const USER_COLORS=['#a78bfa','#34d399','#fbbf24','#60a5fa','#f87171','#fb923c','#e879f9','#2dd4bf'];
 const USERS_KEY='fourceplex_users_v1';
 const SESSION_KEY='fourceplex_current_user';
-const DEFAULT_USERS=['Monika','Igor','Mariusz'];
 let currentUser=null;
-function getUsers(){try{const s=localStorage.getItem(USERS_KEY);return s?JSON.parse(s):[...DEFAULT_USERS];}catch{return[...DEFAULT_USERS];}}
+function getUsers(){try{const s=localStorage.getItem(USERS_KEY);return s?JSON.parse(s):['Monika','Igor','Mariusz'];}catch{return['Monika','Igor','Mariusz'];}}
 function saveUsers(u){localStorage.setItem(USERS_KEY,JSON.stringify(u));}
 function getUserColor(n){const u=getUsers();const i=u.indexOf(n);return USER_COLORS[i>=0?i%USER_COLORS.length:0];}
-function renderUserListModal(){
+function renderUML(){
   const el=document.getElementById('user-list-modal');el.innerHTML='';
   getUsers().forEach(name=>{
-    const div=document.createElement('div');
-    div.className='user-option'+(name===currentUser?' selected':'');
-    div.innerHTML=`<div class="user-avatar-sm" style="background:${getUserColor(name)}">${name[0].toUpperCase()}</div><span class="user-option-name">${esc(name)}</span>`;
-    div.onclick=()=>{currentUser=name;sessionStorage.setItem(SESSION_KEY,name);document.getElementById('badge-dot').style.background=getUserColor(name);document.getElementById('badge-name').textContent=name;closeUserModal();};
-    el.appendChild(div);
+    const d=document.createElement('div');
+    d.className='user-option'+(name===currentUser?' selected':'');
+    d.innerHTML='<div class="user-avatar-sm" style="background:'+getUserColor(name)+'">'+name[0].toUpperCase()+'</div><span class="user-option-name">'+esc(name)+'</span>';
+    d.onclick=()=>{currentUser=name;sessionStorage.setItem(SESSION_KEY,name);document.getElementById('badge-dot').style.background=getUserColor(name);document.getElementById('badge-name').textContent=name;closeUM();};
+    el.appendChild(d);
   });
 }
-function openUserModal(){renderUserListModal();document.getElementById('user-modal-overlay').classList.add('open');}
-function closeUserModal(){document.getElementById('user-modal-overlay').classList.remove('open');}
-document.getElementById('user-modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('user-modal-overlay'))closeUserModal();});
-document.getElementById('user-badge-btn').addEventListener('click',openUserModal);
+function openUM(){renderUML();document.getElementById('user-modal-overlay').classList.add('open');}
+function closeUM(){document.getElementById('user-modal-overlay').classList.remove('open');}
+document.getElementById('user-modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('user-modal-overlay'))closeUM();});
+document.getElementById('user-badge-btn').addEventListener('click',openUM);
 document.getElementById('add-user-btn').addEventListener('click',()=>{
   const inp=document.getElementById('new-user-input');const name=inp.value.trim();if(!name)return;
-  const u=getUsers();if(!u.includes(name)){u.push(name);saveUsers(u);}renderUserListModal();inp.value='';
+  const u=getUsers();if(!u.includes(name)){u.push(name);saveUsers(u);}renderUML();inp.value='';
 });
 document.getElementById('new-user-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('add-user-btn').click();});
 
-/* ══ STATE ══ */
-let allShows=[];
-let allExps=[];
-let selectedShowId=null;
-let currentTab='active';
+/* state */
+let allShows=[],allExps=[],selectedShowId=null,currentTab='active';
 
-/* ══ FIRESTORE LISTENERS ══ */
+/* listeners */
 onSnapshot(showsCol,snap=>{
   allShows=snap.docs.map(d=>({id:d.id,...d.data()}));
   allShows.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
@@ -375,28 +368,25 @@ onSnapshot(showsCol,snap=>{
   if(selectedShowId){const s=allShows.find(x=>x.id===selectedShowId);if(s)renderDetail(s);}
   if(allShows.length===0&&!window._prodSeeded){window._prodSeeded=true;seedData();}
 },err=>{
-  console.error('Firestore error:',err);
-  document.getElementById('show-list').innerHTML=`<div class="empty-list">Błąd: ${err.code}</div>`;
+  console.error('shows:',err);
+  document.getElementById('show-list').innerHTML='<div class="empty-list" style="color:var(--red)">Błąd: '+err.code+'</div>';
 });
-
 onSnapshot(expsCol,snap=>{
   allExps=snap.docs.map(d=>({id:d.id,...d.data()}));
   if(selectedShowId){const s=allShows.find(x=>x.id===selectedShowId);if(s)renderDetail(s);}
-},err=>console.error('Expenses error:',err));
+},err=>console.error('exps:',err));
 
-/* ══ SEED ══ */
+/* seed */
 async function seedData(){
   const t=new Date();
-  const addD=(n)=>{const d=new Date(t);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
-  await addShow({artistName:'Dakhabrakha',date:addD(12),venue:'Progresja, Warszawa',checkpoints:{productionManager:true,advancingArtist:true,advancingVenue:true,fohEngineer:true,timetable:true,frisco:true,backline:true,ebilet:true,photoPolicy:true,setLength:true},cpNotes:{fohEngineer:'Własny inżynier — Dmitri'},timetableText:'18:00 Wpuszczenie\n19:30 Support\n21:00 Dakhabrakha\n23:00 Curfew',notesText:'Rider wymaga wegańskiego cateringu.',createdBy:'system'});
-  await addShow({artistName:'INJI',date:addD(5),venue:'Piekło nad Niebem, Kraków',checkpoints:{productionManager:true,advancingArtist:true,advancingVenue:true,advancingSupport:true,fohEngineer:true,fohDesk:true,ldEngineer:true,ldDesk:true,timetable:true,parking:true,frisco:true,dinner:true,backline:true,stagehands:true,ebilet:true,vipMg:true,photoPolicy:true,setLength:true,curfews:true},cpNotes:{},timetableText:'',notesText:'',createdBy:'system'});
+  function addD(n){const d=new Date(t);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+  await addShow({artistName:'Dakhabrakha',date:addD(12),venue:'Progresja, Warszawa',checkpoints:{dosContact:true,advancingArtist:true,advancingVenue:true,fohEngineer:true,timetable:true,frisco:true,backline:true,ebilet:true,setLength:true},cpNotes:{dosContact:'Dmitri Zinchenko',fohEngineer:'Własny inżynier artysty'},timetableText:'18:00 Wpuszczenie\n19:30 Support\n21:00 Dakhabrakha\n23:00 Curfew',notesText:'Rider wymaga wegańskiego cateringu.',createdBy:'system'});
+  await addShow({artistName:'INJI',date:addD(5),venue:'Piekło nad Niebem, Kraków',checkpoints:{dosContact:true,advancingArtist:true,advancingVenue:true,advancingSupport:true,fohEngineer:true,fohDesk:true,ldEngineer:true,ldDesk:true,timetable:true,parking:true,frisco:true,dinner:true,backline:true,stagehands:true,ebilet:true,vipMg:true,setLength:true,curfews:true},cpNotes:{dosContact:'Anna Nowak'},timetableText:'',notesText:'',createdBy:'system'});
   await addShow({artistName:'Hannah Bahng',date:addD(21),venue:'Niebo, Warszawa',checkpoints:{},cpNotes:{},timetableText:'',notesText:'',createdBy:'system'});
-  await addShow({artistName:'Heilung',date:addD(-30),venue:'Torwar, Warszawa',checkpoints:{dosContact:true,advancingArtist:true,advancingSupport:true,advancingVenue:true,fohEngineer:true,fohDesk:true,ldEngineer:true,ldDesk:true,timetable:true,setLength:true,curfews:true,parking:true,frisco:true,dinner:true,backline:true,stagehands:true,firstAid:true,security:true,ebilet:true,vipMg:true,merch:true},cpNotes:{dosContact:'Katarzyna Kowalska'},timetableText:'19:00 Wpuszczenie
-20:30 Heilung
-22:30 Koniec',notesText:'Specjalne wymagania sceniczne — platforma 6x6m.',createdBy:'system'});
+  await addShow({artistName:'Heilung',date:addD(-30),venue:'Torwar, Warszawa',checkpoints:{dosContact:true,advancingArtist:true,advancingSupport:true,advancingVenue:true,fohEngineer:true,fohDesk:true,ldEngineer:true,ldDesk:true,timetable:true,setLength:true,curfews:true,parking:true,frisco:true,dinner:true,backline:true,stagehands:true,firstAid:true,security:true,ebilet:true,vipMg:true,merch:true},cpNotes:{dosContact:'Katarzyna Kowalska'},timetableText:'19:00 Wpuszczenie\n20:30 Heilung\n22:30 Koniec',notesText:'Specjalne wymagania sceniczne.',createdBy:'system'});
 }
 
-/* ══ TABS ══ */
+/* tabs */
 document.getElementById('tab-active').addEventListener('click',()=>switchTab('active'));
 document.getElementById('tab-past').addEventListener('click',()=>switchTab('past'));
 function switchTab(tab){
@@ -406,52 +396,70 @@ function switchTab(tab){
   renderList();
 }
 
-/* ══ RENDER LIST ══ */
+/* render list */
 function renderList(){
   const filtered=allShows.filter(s=>currentTab==='active'?isActive(s):!isActive(s));
   if(currentTab==='past')filtered.reverse();
   document.getElementById('top-count').textContent=allShows.filter(s=>isActive(s)).length;
   const el=document.getElementById('show-list');
-  if(!filtered.length){el.innerHTML=`<div class="empty-list">${currentTab==='active'?'Brak aktywnych koncertów':'Brak przeszłych koncertów'}</div>`;return;}
+  if(!filtered.length){el.innerHTML='<div class="empty-list">'+(currentTab==='active'?'Brak aktywnych':'Brak przeszłych')+'</div>';return;}
   el.innerHTML='';
   filtered.forEach(show=>{
     const{done,total,pct}=cpPct(show);
     const we=isWeekend(show.date);
     const d=daysUntil(show.date);
+    const active=isActive(show);
     let dclr='var(--text3)';
-    if(isActive(show)&&d<=3)dclr='var(--red)';
-    else if(isActive(show)&&d<=7)dclr='var(--amber)';
-    const el2=document.createElement('div');
-    el2.className='show-item'+(show.id===selectedShowId?' selected':'');
+    if(active&&d<=3)dclr='var(--red)';
+    else if(active&&d<=7)dclr='var(--amber)';
+    const dStr=active?(d===0?'Dziś':d===1?'Jutro':'za '+d+'d'):(Math.abs(d)+'d temu');
     const dosVal=(show.cpNotes||{}).dosContact||'';
-    const dStr=isActive(show)?(d===0?'Dziś':d===1?'Jutro':`za ${d}d`):(d<0?`${Math.abs(d)}d temu`:'');
-    el2.innerHTML=`
-      <div class="show-item-top">
-        <span class="show-artist">${esc(show.artistName||'–')}</span>
-        <div style="display:flex;align-items:center;gap:4px">
-          ${we?`<span class="weekend-badge">${dayName(show.date).slice(0,3).toUpperCase()}</span>`:''}
-          <span style="font-family:var(--mono);font-size:10px;color:${dclr}">${fmtDate(show.date)}</span>
-          <button class="trash-btn" data-id="${show.id}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 4h10M6 4V2h4v2M5 4l1 9h4l1-9"/></svg></button>
-        </div>
-      </div>
-      <div class="show-venue">${esc(show.venue||'–')}</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:3px;margin-bottom:4px">
-        ${dosVal?`<span style="font-family:var(--mono);font-size:10px;color:var(--purple)">DoS: ${esc(dosVal)}</span>`:''}
-        ${dStr?`<span style="font-family:var(--mono);font-size:10px;color:${dclr};margin-left:auto">${dStr}</span>`:''}
-      </div>
-      <div style="display:flex;align-items:center;gap:7px">
-        <div class="cp-bar-wrap"><div class="cp-bar" style="width:${pct}%"></div></div>
-        <span class="cp-text">${done}/${total}</span>
-      </div>`;
-    el2.querySelector('.trash-btn').addEventListener('click',e=>{e.stopPropagation();doDelete(show.id);});
-    el2.addEventListener('click',()=>selectShow(show.id));
-    el.appendChild(el2);
+    const div=document.createElement('div');
+    div.className='show-item'+(show.id===selectedShowId?' selected':'');
+    div.innerHTML=
+      '<div class="show-item-top">'+
+        '<span class="show-artist">'+esc(show.artistName||'–')+'</span>'+
+        '<div style="display:flex;align-items:center;gap:4px">'+
+          (we?'<span class="weekend-badge">'+dayName(show.date).slice(0,3).toUpperCase()+'</span>':'')+
+          '<span style="font-family:var(--mono);font-size:10px;color:'+dclr+'">'+fmtDate(show.date)+'</span>'+
+          '<button class="trash-btn" data-id="'+show.id+'"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 4h10M6 4V2h4v2M5 4l1 9h4l1-9"/></svg></button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="show-venue">'+esc(show.venue||'–')+'</div>'+
+      '<div class="pending-cb-wrap">'+
+        '<div class="pending-cb'+(show.advancingPending?' on':'')+'" data-pending="'+show.id+'"></div>'+
+        '<span class="pending-label">Advancing '+(show.advancingPending?'Pending':'–')+'</span>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'+
+        (dosVal?'<span style="font-family:var(--mono);font-size:10px;color:var(--purple)">DoS: '+esc(dosVal)+'</span>':'')+
+        '<span style="font-family:var(--mono);font-size:10px;color:'+dclr+';margin-left:auto">'+dStr+'</span>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:7px">'+
+        '<div class="cp-bar-wrap"><div class="cp-bar" style="width:'+pct+'%"></div></div>'+
+        '<span class="cp-text">'+done+'/'+total+'</span>'+
+      '</div>';
+    div.querySelector('.trash-btn').addEventListener('click',e=>{e.stopPropagation();doDelete(show.id);});
+    div.querySelector('.pending-cb[data-pending]') && div.querySelector('.pending-cb[data-pending]').addEventListener('click',async e=>{
+      e.stopPropagation();
+      await updShow(show.id,{advancingPending:!show.advancingPending});
+    });
+    div.querySelector('.pending-label') && div.querySelector('.pending-label').addEventListener('click',async e=>{
+      e.stopPropagation();
+      await updShow(show.id,{advancingPending:!show.advancingPending});
+    });
+    div.addEventListener('click',()=>selectShow(show.id));
+    el.appendChild(div);
   });
 }
 
-/* ══ ADD / DELETE ══ */
-function openPanel(){
-  ['f-artist','f-date','f-venue'].forEach(id=>document.getElementById(id).value='');
+/* add/edit panel */
+let editingId=null;
+function openPanel(show){
+  editingId=show?show.id:null;
+  document.getElementById('f-artist').value=show?show.artistName||'':'';
+  document.getElementById('f-date').value=show?show.date||'':'';
+  document.getElementById('f-venue').value=show?show.venue||'':'';
+  document.getElementById('slide-title').textContent=show?'Edytuj koncert':'Nowy koncert';
   document.getElementById('slide-panel').classList.add('open');
   document.getElementById('slide-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('f-artist').focus(),220);
@@ -459,10 +467,9 @@ function openPanel(){
 function closePanel(){
   document.getElementById('slide-panel').classList.remove('open');
   document.getElementById('slide-overlay').classList.remove('open');
-  document.getElementById('slide-title').textContent='Nowy koncert';
-  delete document.getElementById('save-btn').dataset.editId;
+  editingId=null;
 }
-document.getElementById('btn-add-show').addEventListener('click',openPanel);
+document.getElementById('btn-add-show').addEventListener('click',()=>openPanel(null));
 document.getElementById('slide-overlay').addEventListener('click',closePanel);
 document.getElementById('slide-close-btn').addEventListener('click',closePanel);
 document.getElementById('slide-cancel-btn').addEventListener('click',closePanel);
@@ -473,11 +480,9 @@ document.getElementById('save-btn').addEventListener('click',async()=>{
   const venue=document.getElementById('f-venue').value.trim();
   if(!artist||!date){alert('Wypełnij Artysta i Data');return;}
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Zapisuję...';
-  const editId=btn.dataset.editId||'';
   try{
-    if(editId){
-      await updShow(editId,{artistName:artist,date,venue:venue||''});
-      delete btn.dataset.editId;
+    if(editingId){
+      await updShow(editingId,{artistName:artist,date,venue:venue||''});
       closePanel();
     } else {
       const ref=await addShow({artistName:artist,date,venue:venue||'',checkpoints:{},cpNotes:{},timetableText:'',notesText:'',createdBy:currentUser||'?'});
@@ -495,7 +500,6 @@ async function doDelete(id){
   }catch(e){console.error(e);}
 }
 
-/* ══ SELECT / DETAIL ══ */
 function selectShow(id){
   selectedShowId=id;
   const show=allShows.find(s=>s.id===id);
@@ -503,6 +507,7 @@ function selectShow(id){
   renderList();
 }
 
+/* render detail */
 function renderDetail(show){
   document.getElementById('detail-empty').style.display='none';
   const dc=document.getElementById('detail-content');
@@ -515,143 +520,107 @@ function renderDetail(show){
   const prodSum=prodE.reduce((a,e)=>a+(+e.amount||0),0);
   const hospSum=hospE.reduce((a,e)=>a+(+e.amount||0),0);
 
-  // Inline expense table: 4 default rows, auto-expand
-  function buildExpTable(existing,cat,sid){
+  function buildExpTable(list,cat){
     const MIN=4;
-    const rows=[...existing];
+    const rows=[...list];
     while(rows.length<MIN)rows.push(null);
-    const rowsHtml=rows.map((e,i)=>`
-      <tr class="exp-tr" data-cat="${cat}" data-idx="${i}" data-eid="${e?e.id:''}">
-        <td><input class="etbl-input ename" data-cat="${cat}" data-idx="${i}" value="${e?esc(e.name||''):''}" placeholder="Nazwa wydatku" ${!e?'style="opacity:.5"':''}></td>
-        <td style="width:80px"><input class="etbl-input eamt" data-cat="${cat}" data-idx="${i}" type="number" value="${e?e.amount:''}" placeholder="PLN" ${!e?'style="opacity:.5"':''}></td>
-        <td style="width:20px;text-align:center">${e?`<button class="exp-del" data-eid="${e.id}" style="font-size:12px;opacity:.5">×</button>`:''}</td>
-      </tr>`).join('');
-    return `<table class="exp-table" data-cat="${cat}" data-sid="${sid}"><tbody>${rowsHtml}</tbody></table>`;
+    return '<table class="exp-table"><tbody>'+rows.map((e,i)=>
+      '<tr class="etr" data-cat="'+cat+'" data-idx="'+i+'" data-eid="'+(e?e.id:'')+'">'
+      +'<td><input class="etbl-inp ename" data-cat="'+cat+'" data-idx="'+i+'" value="'+(e?esc(e.name||''):'')+'" placeholder="Nazwa wydatku"></td>'
+      +'<td style="width:80px"><input class="etbl-inp eamt etbl-amt" data-cat="'+cat+'" data-idx="'+i+'" type="number" value="'+(e&&e.amount?e.amount:'')+'" placeholder="PLN"></td>'
+      +'<td style="width:24px"><button class="etbl-del" data-eid="'+(e?e.id:'')+'">'+(e?'×':'')+'</button></td>'
+      +'</tr>'
+    ).join('')+'</tbody></table>';
   }
 
-  // Split 21 CPs into 3 cols of 7
   const cpCols=[ALL_CPS.slice(0,7),ALL_CPS.slice(7,14),ALL_CPS.slice(14,21)];
-  const cpGrid=cpCols.map(items=>`<div>
-    ${items.map(item=>{
-      const dn=!!((show.checkpoints||{})[item.key]);
-      const note=(show.cpNotes||{})[item.key]||'';
-      return `<div class="cp-item">
-        <div class="cp-row${dn?' done':''}" data-key="${item.key}"><div class="cp-icon${dn?' done':''}"></div><span class="cp-name" title="${esc(item.label)}">${esc(item.label)}</span></div>
-        <input class="cp-note-input" data-nk="${item.key}" placeholder="notatka…" value="${esc(note)}">
-      </div>`;
-    }).join('')}
-  </div>`).join('');
+  const cpGrid=cpCols.map(items=>'<div>'+items.map(item=>{
+    const dn=!!((show.checkpoints||{})[item.key]);
+    const note=(show.cpNotes||{})[item.key]||'';
+    return '<div class="cp-item">'
+      +'<div class="cp-row'+(dn?' done':'')+'" data-key="'+item.key+'"><div class="cp-icon'+(dn?' done':'')+'"></div><span class="cp-name" title="'+esc(item.label)+'">'+esc(item.label)+'</span></div>'
+      +'<input class="cp-note-input" data-nk="'+item.key+'" placeholder="notatka…" value="'+esc(note)+'">'
+      +'</div>';
+  }).join('')+'</div>').join('');
 
-  dc.innerHTML=`
-    <div class="detail-header">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
-        <div>
-          <div class="detail-title">${esc(show.artistName||'–')}</div>
-          <div class="detail-sub">
-            <span>${fmtDate(show.date)} · ${esc(show.venue||'–')}</span>
-            <span style="color:var(--teal)">${pct}% advancing</span>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn btn-sm" id="btn-edit">✏️ Edytuj</button>
-          <button class="btn btn-sm btn-purple" id="btn-setlist" ${!past?'disabled title="Dostępne po koncercie"':''}>🎵 Wygeneruj setlistę</button>
-        </div>
-      </div>
-    </div>
-    <div class="detail-body">
-      ${we?`<div class="weekend-alert">⚠️ Koncert w ${dayName(show.date).toUpperCase()} — pamiętaj o zwiększonych wymaganiach organizacyjnych.</div>`:''}
-      <div class="sec-card">
-        <div class="sec-head"><span class="sec-title">Advancing / Checkpointy</span><span style="font-family:var(--mono);font-size:10px;color:var(--teal)">${done}/${total} · ${pct}%</span></div>
-        <div class="sec-body"><div class="cp-grid">${cpGrid}</div></div>
-      </div>
-      <div class="sec-card">
-        <div class="sec-head"><span class="sec-title">Wydatki</span><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">Razem: <strong style="color:var(--text)">${fmtPLN(prodSum+hospSum)} PLN</strong></span></div>
-        <div class="sec-body">
-          <div class="expenses-grid">
-            <div>
-              <div class="exp-col-title">Production <span class="exp-col-sum">${fmtPLN(prodSum)} PLN</span>
-                <button class="btn btn-sm" style="margin-left:auto;padding:2px 7px;font-size:10px" data-copy="production">Kopiuj</button>
-              </div>
-              ${buildExpTable(prodE,'production',show.id)}
-            </div>
-            <div>
-              <div class="exp-col-title">Hospitality <span class="exp-col-sum">${fmtPLN(hospSum)} PLN</span>
-                <button class="btn btn-sm" style="margin-left:auto;padding:2px 7px;font-size:10px" data-copy="hospitality">Kopiuj</button>
-              </div>
-              ${buildExpTable(hospE,'hospitality',show.id)}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="sec-card">
-        <div class="sec-head"><span class="sec-title">Timetable & Notatki</span></div>
-        <div class="sec-body">
-          <div class="tt-notes-row">
-            <div>
-              <div class="fl" style="margin-bottom:5px">Timetable</div>
-              <textarea class="notes-textarea" rows="15" id="tt-area" placeholder="18:00 Wpuszczenie&#10;21:00 Artysta&#10;23:00 Curfew">${esc(show.timetableText||'')}</textarea>
-              <div class="notes-save-row"><span class="notes-meta" id="tt-meta"></span><button class="btn btn-sm" id="tt-save">Zapisz</button></div>
-            </div>
-            <div>
-              <div class="fl" style="margin-bottom:5px">Notatki</div>
-              <textarea class="notes-textarea" rows="15" id="notes-area" placeholder="Rider notes, informacje specjalne…">${esc(show.notesText||'')}</textarea>
-              <div class="notes-save-row"><span class="notes-meta" id="notes-meta"></span><button class="btn btn-sm" id="notes-save">Zapisz</button></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>`;
+  dc.innerHTML=
+    '<div class="detail-header">'
+    +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">'
+    +'<div>'
+    +'<div class="detail-title">'+esc(show.artistName||'–')+'</div>'
+    +'<div class="detail-sub"><span>'+fmtDate(show.date)+' · '+esc(show.venue||'–')+'</span><span style="color:var(--teal)">'+pct+'% advancing</span></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:6px;flex-shrink:0">'
+    +'<button class="btn btn-sm" id="btn-edit">✏️ Edytuj</button>'
+    +'<button class="btn btn-sm btn-purple" id="btn-setlist"'+(past?'':' disabled title="Dostępne po koncercie"')+'>🎵 Setlista</button>'
+    +'</div>'
+    +'</div>'
+    +'</div>'
+    +'<div class="detail-body">'
+    +(we?'<div class="weekend-alert">⚠️ Koncert w '+dayName(show.date).toUpperCase()+' — pamiętaj o zwiększonych wymaganiach organizacyjnych.</div>':'')
+    +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Advancing / Checkpointy</span><span style="font-family:var(--mono);font-size:10px;color:var(--teal)">'+done+'/'+total+' · '+pct+'%</span></div><div class="sec-body"><div class="cp-grid">'+cpGrid+'</div></div></div>'
+    +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Wydatki</span><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">Razem: <strong style="color:var(--text)">'+fmtPLN(prodSum+hospSum)+' PLN</strong></span></div>'
+    +'<div class="sec-body"><div class="expenses-grid">'
+    +'<div><div class="exp-col-head">Production <span class="exp-col-sum">'+fmtPLN(prodSum)+' PLN</span><button class="btn btn-sm" style="padding:2px 7px;font-size:10px" id="copy-prod">Kopiuj</button></div>'+buildExpTable(prodE,'production')+'</div>'
+    +'<div><div class="exp-col-head">Hospitality <span class="exp-col-sum">'+fmtPLN(hospSum)+' PLN</span><button class="btn btn-sm" style="padding:2px 7px;font-size:10px" id="copy-hosp">Kopiuj</button></div>'+buildExpTable(hospE,'hospitality')+'</div>'
+    +'</div></div></div>'
+    +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Timetable & Notatki</span></div><div class="sec-body"><div class="tt-notes-row">'
+    +'<div><div class="fl" style="margin-bottom:5px">Timetable / Schedule</div><textarea class="notes-textarea" rows="15" id="tt-area" placeholder="18:00 Wpuszczenie&#10;21:00 Artysta&#10;23:00 Curfew">'+esc(show.timetableText||'')+'</textarea><div class="notes-save-row"><span class="notes-meta" id="tt-meta"></span><button class="btn btn-sm" id="tt-save">Zapisz</button></div></div>'
+    +'<div><div class="fl" style="margin-bottom:5px">Notatki</div><textarea class="notes-textarea" rows="15" id="notes-area" placeholder="Rider notes, informacje specjalne…">'+esc(show.notesText||'')+'</textarea><div class="notes-save-row"><span class="notes-meta" id="notes-meta"></span><button class="btn btn-sm" id="notes-save">Zapisz</button></div></div>'
+    +'</div></div></div>'
+    +'</div>';
 
-  /* bind */
+  /* bind checkpoints */
   dc.querySelectorAll('.cp-row[data-key]').forEach(row=>{
     row.addEventListener('click',async()=>{
       const key=row.dataset.key;
       const cur=!!((show.checkpoints||{})[key]);
-      await updShow(show.id,{[`checkpoints.${key}`]:!cur,[`checkpoints.${key}_by`]:!cur?(currentUser||'–'):null});
+      await updShow(show.id,{['checkpoints.'+key]:!cur,['checkpoints.'+key+'_by']:!cur?(currentUser||'–'):null});
     });
   });
   dc.querySelectorAll('.cp-note-input[data-nk]').forEach(inp=>{
-    inp.addEventListener('blur',async()=>{await updShow(show.id,{[`cpNotes.${inp.dataset.nk}`]:inp.value});});
+    inp.addEventListener('blur',async()=>{await updShow(show.id,{['cpNotes.'+inp.dataset.nk]:inp.value});});
     inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}});
   });
-  // Expense table: save on blur if name filled
-  async function saveExpRow(cat,idx,sid){
-    const nameEl=dc.querySelector(`.ename[data-cat="${cat}"][data-idx="${idx}"]`);
-    const amtEl=dc.querySelector(`.eamt[data-cat="${cat}"][data-idx="${idx}"]`);
-    const tr=dc.querySelector(`.exp-tr[data-cat="${cat}"][data-idx="${idx}"]`);
-    if(!nameEl||!amtEl||!tr)return;
-    const name=nameEl.value.trim();
-    const amount=parseFloat(amtEl.value)||0;
+
+  /* bind expense table */
+  async function saveExpRow(cat,idx){
+    const tr=dc.querySelector('.etr[data-cat="'+cat+'"][data-idx="'+idx+'"]');
+    if(!tr)return;
+    const nameEl=dc.querySelector('.ename[data-cat="'+cat+'"][data-idx="'+idx+'"]');
+    const amtEl=dc.querySelector('.eamt[data-cat="'+cat+'"][data-idx="'+idx+'"]');
+    const name=(nameEl&&nameEl.value.trim())||'';
+    const amount=parseFloat(amtEl&&amtEl.value)||0;
     const eid=tr.dataset.eid;
-    if(!name){if(eid){await delExp(eid);}return;}
-    if(eid){
-      await updateDoc(doc(db,'production_expenses',eid),{name,amount});
-    } else {
-      const ref=await addExp({showId:sid,category:cat,name,amount,addedBy:currentUser||'?'});
-      tr.dataset.eid=ref.id;
-    }
+    if(!name){if(eid){await delExp(eid);tr.dataset.eid='';}return;}
+    if(eid){await updExp(eid,{name,amount});}
+    else{const ref=await addExp({showId:show.id,category:cat,name,amount,addedBy:currentUser||'?'});tr.dataset.eid=ref.id;}
   }
-  dc.querySelectorAll('.etbl-input').forEach(inp=>{
-    inp.addEventListener('focus',()=>{inp.style.opacity='1';});
-    inp.addEventListener('blur',async()=>{
-      const cat=inp.dataset.cat;const idx=inp.dataset.idx;
-      await saveExpRow(cat,idx,show.id);
-    });
+  dc.querySelectorAll('.etbl-inp').forEach(inp=>{
+    inp.addEventListener('blur',async()=>{await saveExpRow(inp.dataset.cat,inp.dataset.idx);});
     inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}});
   });
-  dc.querySelectorAll('.exp-del[data-eid]').forEach(btn=>{
-    btn.addEventListener('click',async()=>{if(!confirm('Usunąć?'))return;await delExp(btn.dataset.eid);});
-  });
-  // Copy buttons
-  dc.querySelectorAll('[data-copy]').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const cat=btn.dataset.copy;
-      const exps=allExps.filter(e=>e.showId===show.id&&e.category===cat);
-      if(!exps.length){alert('Brak wydatków do skopiowania.');return;}
-      const txt=exps.map(e=>`${e.name}	${fmtPLN(e.amount)} PLN`).join('\n');
-      navigator.clipboard.writeText(txt).then(()=>{btn.textContent='✓ Skopiowano';setTimeout(()=>btn.textContent='Kopiuj',2000);});
+  dc.querySelectorAll('.etbl-del').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      const eid=btn.dataset.eid;if(!eid)return;
+      if(!confirm('Usunąć?'))return;
+      await delExp(eid);
     });
   });
+
+  /* copy buttons */
+  document.getElementById('copy-prod').addEventListener('click',()=>{
+    const txt=allExps.filter(e=>e.showId===show.id&&e.category==='production').map(e=>e.name+'\t'+fmtPLN(e.amount)).join('\n');
+    if(!txt){alert('Brak wydatków');return;}
+    navigator.clipboard.writeText(txt).then(()=>{const b=document.getElementById('copy-prod');b.textContent='✓';setTimeout(()=>b.textContent='Kopiuj',2000);});
+  });
+  document.getElementById('copy-hosp').addEventListener('click',()=>{
+    const txt=allExps.filter(e=>e.showId===show.id&&e.category==='hospitality').map(e=>e.name+'\t'+fmtPLN(e.amount)).join('\n');
+    if(!txt){alert('Brak wydatków');return;}
+    navigator.clipboard.writeText(txt).then(()=>{const b=document.getElementById('copy-hosp');b.textContent='✓';setTimeout(()=>b.textContent='Kopiuj',2000);});
+  });
+
+  /* timetable/notes */
   document.getElementById('tt-save').addEventListener('click',async()=>{
     await updShow(show.id,{timetableText:document.getElementById('tt-area').value});
     document.getElementById('tt-meta').textContent='Zapisano '+new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
@@ -660,23 +629,12 @@ function renderDetail(show){
     await updShow(show.id,{notesText:document.getElementById('notes-area').value});
     document.getElementById('notes-meta').textContent='Zapisano '+new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
   });
+
+  document.getElementById('btn-edit').addEventListener('click',()=>openPanel(show));
   document.getElementById('btn-setlist').addEventListener('click',()=>openSetlist(show));
-  document.getElementById('btn-edit').addEventListener('click',()=>openEditPanel(show));
 }
 
-/* ══ EDIT PANEL ══ */
-function openEditPanel(show){
-  document.getElementById('f-artist').value=show.artistName||'';
-  document.getElementById('f-date').value=show.date||'';
-  document.getElementById('f-venue').value=show.venue||'';
-  document.getElementById('slide-title').textContent='Edytuj koncert';
-  document.getElementById('save-btn').dataset.editId=show.id;
-  document.getElementById('slide-panel').classList.add('open');
-  document.getElementById('slide-overlay').classList.add('open');
-  setTimeout(()=>document.getElementById('f-artist').focus(),220);
-}
-
-/* ══ SETLIST ══ */
+/* setlist */
 function openSetlist(show){
   document.getElementById('setlist-artist-name').textContent=show.artistName+(show.venue?' — '+show.venue:'');
   document.getElementById('setlist-body').innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px;color:var(--text3);font-family:var(--mono);font-size:11px"><div class="chat-spinner"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><span>Szukam setlisty…</span></div>';
@@ -692,24 +650,23 @@ async function fetchSetlist(show){
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
         system:'Jesteś asystentem szukającym setlist koncertów. Znajdź setlistę wykonawcy z podanej daty i venue, głównie na setlist.fm. Wypisz kolejne numery jako listę numerowaną. Jeśli nie znajdziesz tej daty, podaj ostatnią dostępną i zaznacz to. Odpowiadaj po polsku.',
         tools:[{type:'web_search_20250305',name:'web_search'}],
-        messages:[{role:'user',content:`Znajdź setlistę: ${show.artistName}, ${show.date}, ${show.venue||''}`}]})
+        messages:[{role:'user',content:'Znajdź setlistę: '+show.artistName+', '+show.date+', '+(show.venue||'')}]})
     });
     if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
-    const text=(data?.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n')||'(brak odpowiedzi)';
-    document.getElementById('setlist-body').innerHTML=`<textarea style="width:100%;min-height:280px;background:var(--bg3);border:none;color:var(--text);font-family:var(--mono);font-size:12px;line-height:1.7;padding:12px;border-radius:6px;outline:none;resize:none" readonly>${esc(text)}</textarea>`;
+    const text=(data&&data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n')||'(brak odpowiedzi)';
+    document.getElementById('setlist-body').innerHTML='<textarea style="width:100%;min-height:280px;background:var(--bg3);border:none;color:var(--text);font-family:var(--mono);font-size:12px;line-height:1.7;padding:12px;border-radius:6px;outline:none;resize:none" readonly>'+esc(text)+'</textarea>';
   }catch(e){
-    document.getElementById('setlist-body').innerHTML=`<div style="padding:20px;font-family:var(--mono);font-size:11px;color:var(--red)">Błąd: ${esc(e.message)}</div>`;
+    document.getElementById('setlist-body').innerHTML='<div style="padding:20px;font-family:var(--mono);font-size:11px;color:var(--red)">Błąd: '+esc(e.message)+'</div>';
   }
 }
 
-/* ══ INIT ══ */
-initUser();
-function initUser(){
+/* init */
+(function(){
   const sess=sessionStorage.getItem(SESSION_KEY);const users=getUsers();
   if(sess&&users.includes(sess)){currentUser=sess;document.getElementById('badge-dot').style.background=getUserColor(sess);document.getElementById('badge-name').textContent=sess;}
-  else openUserModal();
-}
+  else openUM();
+})();
 </script>
 </body>
 </html>
