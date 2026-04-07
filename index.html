@@ -331,39 +331,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     </div>
   </div>
 
-  <!-- ═══ W1: JASZCZURZE SPRAWY — kol 1, pełna wysokość ═══ -->
-  <div class="widget" style="grid-column:1;grid-row:1/3">
-    <div class="widget-header">
-      <span class="widget-title">Jaszczurze sprawy</span>
-      <div class="widget-badges"><span class="wbadge b-lime" id="todo-badge">0 zadań</span></div>
-    </div>
-    <div class="widget-body">
-      <div class="todo-add">
-        <div class="todo-input-row">
-          <input class="todo-input" id="todo-input" placeholder="Nowe zadanie…" maxlength="200">
-          <button class="btn" onclick="addTodo()">+</button>
-        </div>
-        <div class="assignee-row" id="assignee-row"></div>
-      </div>
-      <div class="todo-list" id="todo-list"><div class="empty-state">Brak zadań</div></div>
-    </div>
-  </div>
-
-  <!-- ═══ W2: KALENDARZ — kol 2, rząd 1 ═══ -->
+  <!-- ═══ W2: MARKETING ALERTY — kol 2, rząd 1 ═══ -->
   <div class="widget" style="grid-column:2;grid-row:1">
     <div class="widget-header">
-      <span class="widget-title">Kalendarz</span>
-      <div class="widget-badges"><span class="wbadge b-blue">Podgląd</span></div>
+      <span class="widget-title">Marketing — Alerty</span>
+      <div class="widget-badges"><span class="wbadge b-red" id="mkt-badge">–</span></div>
     </div>
     <div class="widget-body">
-      <div class="cal-header">
-        <span class="cal-month" id="cal-month-label">…</span>
-        <div class="cal-nav">
-          <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
-          <button class="cal-nav-btn" onclick="calNav(1)">›</button>
-        </div>
-      </div>
-      <div class="cal-grid" id="cal-grid"></div>
+      <div class="mkt-list" id="mkt-list"><div class="empty-state">Ładowanie…</div></div>
     </div>
   </div>
 
@@ -383,14 +358,21 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     </div>
   </div>
 
-  <!-- ═══ W4: MARKETING — kol 2, rząd 2 ═══ -->
+  <!-- ═══ W4: KALENDARZ — kol 2, rząd 2 ═══ -->
   <div class="widget" style="grid-column:2;grid-row:2">
     <div class="widget-header">
-      <span class="widget-title">Marketing</span>
-      <div class="widget-badges"><span class="wbadge b-red" id="mkt-badge">–</span></div>
+      <span class="widget-title">Kalendarz</span>
+      <div class="widget-badges"><span class="wbadge b-blue">Podgląd</span></div>
     </div>
     <div class="widget-body">
-      <div class="mkt-list" id="mkt-list"><div class="empty-state">Ładowanie…</div></div>
+      <div class="cal-header">
+        <span class="cal-month" id="cal-month-label">…</span>
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+          <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
     </div>
   </div>
 
@@ -467,6 +449,7 @@ function openModal(){renderUserList();document.getElementById('modal-overlay').c
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');document.getElementById('new-user-input').value='';}
 document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.getElementById('new-user-input').addEventListener('keydown',e=>{if(e.key==='Enter')addUser();});
+document.getElementById('todo-input').addEventListener('keydown',e=>{if(e.key==='Enter')addTodo();});
 
 function renderUserList(){
   const el=document.getElementById('user-list');el.innerHTML='';
@@ -477,9 +460,9 @@ function renderUserList(){
     div.onclick=()=>selectUser(name);el.appendChild(div);
   });
 }
-function selectUser(name){currentUser=name;sessionStorage.setItem(SESSION_KEY,name);updateBadge(name);closeModal();}
+function selectUser(name){currentUser=name;localStorage.setItem(SESSION_KEY,name);updateBadge(name);closeModal();}
 function addUser(){const input=document.getElementById('new-user-input');const name=input.value.trim();if(!name)return;const users=getUsers();if(!users.includes(name)){users.push(name);saveUsers(users);}renderUserList();input.value='';}
-function initUser(){const sess=sessionStorage.getItem(SESSION_KEY);const users=getUsers();if(sess&&users.includes(sess)){currentUser=sess;updateBadge(sess);}else openModal();}
+function initUser(){const sess=localStorage.getItem(SESSION_KEY);const users=getUsers();if(sess&&users.includes(sess)){currentUser=sess;updateBadge(sess);}else openModal();}
 
 /* ══════════════════════════════════════
    W1 — JASZCZURZE SPRAWY
@@ -507,7 +490,6 @@ function addTodo(){
   db.collection('todos').add({text,done:false,addedBy:currentUser,assignee:selectedAssignee||null,createdAt:firebase.firestore.FieldValue.serverTimestamp()})
     .then(()=>{input.value='';}).catch(e=>console.error('Todo:',e));
 }
-document.getElementById('todo-input').addEventListener('keydown',e=>{if(e.key==='Enter')addTodo();});
 function toggleTodo(id,done){if(db)db.collection('todos').doc(id).update({done:!done}).catch(console.error);}
 function deleteTodo(id){if(db)db.collection('todos').doc(id).delete().catch(console.error);}
 
@@ -563,7 +545,7 @@ function renderTicketingAlerts(){
       const pct=cap>0?Math.round(sold/cap*100):0;
       return{...e,sold,pct};
     })
-    .filter(e=>e.pct>=89)
+    .filter(e=>e.pct>=89&&e.pct<100)
     .sort((a,b)=>b.pct-a.pct); // najwyższy % u góry
 
   if(badge)badge.textContent=`${alerts.length} alertów`;
@@ -575,7 +557,7 @@ function renderTicketingAlerts(){
 
   list.innerHTML='';
   alerts.forEach(e=>{
-    const is5=e.pct>=95;
+    const is5=e.pct>=95&&e.pct<100;
     const chipClass=is5?'chip-5':'chip-10';
     const chipLabel=is5?'OSTATNIE 5%':'OSTATNIE 10%';
     const itemClass=is5?'alert-5':'alert-10';
