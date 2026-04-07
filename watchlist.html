@@ -15,6 +15,11 @@
   --purple:#a78bfa;--teal:#34d399;--amber:#fbbf24;--red:#f87171;--blue:#60a5fa;
   --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
 }
+/* ── LIGHT MODE ── */
+body.light{--bg:#f0f0f5;--bg2:#ffffff;--bg3:#e6e6ec;--bg4:#d8d8e2;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);--text:#16161e;--text2:#56566a;--text3:#8f8fa0;--accent:#7ab000;--accent2:#5d8a00;}
+body.light img[alt="Fource.Plex"]{filter:invert(1);mix-blend-mode:normal;opacity:.85}
+.theme-toggle{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .15s,border-color .15s,background .15s;line-height:0}
+.theme-toggle:hover{color:var(--text);border-color:rgba(128,128,128,.25)}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px}
@@ -85,9 +90,11 @@ select.filter:focus{border-color:var(--accent)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
 .btn-del{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:5px;border:1px solid rgba(248,113,113,.25);background:rgba(248,113,113,.08);color:var(--red);cursor:pointer;transition:all .15s;flex-shrink:0;padding:0}
 .btn-del:hover{background:rgba(248,113,113,.22);border-color:rgba(248,113,113,.5)}
-.btn-refresh-row{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all .15s;flex-shrink:0;padding:0}
-.btn-refresh-row:hover{color:var(--accent);border-color:rgba(200,240,96,.3);background:rgba(200,240,96,.06)}
-.btn-refresh-row.spinning svg{animation:spin .7s linear infinite}
+.btn-fire{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:5px;border:1px solid var(--border);background:transparent;cursor:pointer;transition:all .15s;flex-shrink:0;padding:0;font-size:14px;line-height:1;opacity:.3}
+.btn-fire:hover{border-color:rgba(251,146,60,.4);background:rgba(251,146,60,.08);opacity:.7}
+.btn-fire.active{border-color:rgba(251,146,60,.8);background:rgba(251,146,60,.15);opacity:1}
+.th-check{padding:0 4px!important;text-align:center}
+#select-all-cb{cursor:pointer;accent-color:var(--accent)}
 .btn-accent{background:var(--accent);border-color:var(--accent);color:#0e0e11;font-weight:500}
 .btn-accent:hover{background:var(--accent2);border-color:var(--accent2);color:#0e0e11}
 .btn-purple{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.3);color:var(--purple)}
@@ -127,9 +134,13 @@ tbody tr.row-ai{border-left:2px solid rgba(167,139,250,.5)}
 tbody tr.row-manual{border-left:2px solid rgba(52,211,153,.4)}
 tbody tr.row-reminder{border-left:2px solid rgba(251,191,36,.7);background:rgba(251,191,36,.015)}
 tbody tr.selected{background:rgba(200,240,96,.05)!important;border-left-color:var(--accent)!important}
+tbody tr.row-hot{background:rgba(251,146,60,.13)!important;border-left:3px solid rgba(251,146,60,.9)!important}
+tbody tr.row-hot td{color:var(--text)!important}
 td{padding:8px 12px;font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
 td.name-cell{color:var(--text);font-weight:500;font-size:13px}
-td.notes-cell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:var(--text3);max-width:280px}
+.art-name-wrap{cursor:default}
+.art-name-wrap.has-notes{border-bottom:1px dotted var(--text3);cursor:help}
+#artist-tooltip{position:fixed;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--text2);max-width:300px;line-height:1.6;z-index:999;pointer-events:none;display:none;box-shadow:0 6px 24px rgba(0,0,0,.35);white-space:pre-wrap;word-break:break-word}
 input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--accent)}
 
 /* SPOTIFY */
@@ -267,6 +278,9 @@ select.form-input{cursor:pointer}
   <div class="topbar-right">
     <div class="refresh-status" id="refreshStatus"><div class="refresh-dot" id="refreshDot"></div><span id="refreshLabel">inicjalizacja...</span></div>
     <div class="topbar-stat"><div class="live-dot"></div>&nbsp;<strong id="topCount">0</strong> artystów</div>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Tryb jasny / ciemny">
+      <svg id="theme-icon" viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+    </button>
     <div class="user-badge" onclick="openUserModal()"><div class="user-dot" id="badge-dot"></div><span id="currentUserLabel">Wybierz użytkownika</span></div>
   </div>
 </div>
@@ -353,8 +367,8 @@ select.form-input{cursor:pointer}
 
       <button class="btn btn-teal" id="cmpBtn" disabled onclick="togglePanel('comparePanel')">Porównaj (0/4)</button>
       <button class="btn btn-accent" onclick="togglePanel('addPanel')">+ Dodaj</button>
-      <button class="btn" onclick="refreshAllTrends()" title="Odśwież trendy dla wszystkich artystów" style="flex-shrink:0">
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="vertical-align:middle;margin-right:4px"><path d="M13 8A5 5 0 112 8" stroke-linecap="round"/><path d="M13 4v4h-4"/></svg>Odśwież trendy
+      <button class="btn" id="refreshBtn" onclick="refreshSelectedOrAll()" title="Odśwież trend zaznaczonych (lub wszystkich)" style="flex-shrink:0">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="vertical-align:middle;margin-right:4px"><path d="M13 8A5 5 0 112 8" stroke-linecap="round"/><path d="M13 4v4h-4"/></svg><span id="refreshBtnLabel">Odśwież trendy</span>
       </button>
       <button class="btn btn-purple" onclick="togglePanel('aiPanel')" style="flex-shrink:0">Odkryj z AI ↗</button>
 
@@ -458,21 +472,21 @@ select.form-input{cursor:pointer}
     <div class="table-scroll">
       <table>
         <colgroup>
-          <col style="width:56px">
+          <col style="width:36px">
           <col style="width:175px">
           <col style="width:30px">
-          <col style="width:165px">
-          <col style="width:175px">
+          <col style="width:160px">
+          <col style="width:170px">
           <col style="width:108px">
           <col style="width:108px">
-          <col style="width:155px">
+          <col style="width:150px">
           <col style="width:80px">
           <col style="width:100px">
-          <col style="width:280px">
-          <col style="width:80px">
+          <col style="width:36px">
+          <col style="width:90px">
         </colgroup>
         <thead><tr>
-          <th></th>
+          <th class="th-check"></th>
           <th id="th-name" onclick="sortBy('name')">Artysta</th>
           <th></th>
           <th>Status</th>
@@ -482,7 +496,7 @@ select.form-input{cursor:pointer}
           <th id="th-plShow" onclick="sortBy('plShow')">PL Show</th>
           <th id="th-addedBy" onclick="sortBy('addedBy')">Dodał</th>
           <th id="th-dateAdded" onclick="sortBy('dateAdded')">Data dodania</th>
-          <th>Notatki</th>
+          <th></th>
           <th></th>
         </tr></thead>
         <tbody id="tbody"></tbody>
@@ -596,7 +610,7 @@ function loadUsers(){
   }else openUserModal();
 }
 
-let artists=[],sortCol='dateAdded',sortDir=-1,selected=[],editId=null;
+let artists=[],sortCol='dateAdded',sortDir=1,selected=[],editId=null,promoterIds=new Set();
 
 function randDate(from,to){return new Date(from+Math.random()*(to-from)).toISOString();}
 const D_FROM=new Date('2024-03-01').getTime();
@@ -681,6 +695,7 @@ async function loadData(){
 function fallbackLoad(){
   _fbInitialized=true;
   try{const d=localStorage.getItem(SK);artists=d?JSON.parse(d):buildSample();}catch(e){artists=buildSample();}
+  promoterIds=new Set(artists.filter(a=>a.hot).map(a=>a.id));
   checkReminders();scheduleWeeklyRefresh();render();
   notify('Tryb offline — zmiany nie będą synchronizowane','err');
 }
@@ -701,6 +716,7 @@ async function initFirebase(){
     }
     _unsubscribe=window._onSnapshot(window._artistsCol,(snapshot)=>{
       artists=snapshot.docs.map(d=>d.data());
+      promoterIds=new Set(artists.filter(a=>a.hot).map(a=>a.id));
       checkReminders();renderStats();renderTable();
       document.getElementById('topCount').textContent=artists.length;
       const banner=document.getElementById('fbConnecting');if(banner)banner.style.display='none';
@@ -771,14 +787,11 @@ Predict solo headliner Warszawa: Chmury<200, Hydrozagadka 200-400, Niebo 401-700
     saveArtistToDb(a);renderTable();
   }catch(e){}
 }
-async function refreshSingleTrend(id){
-  const a=artists.find(x=>x.id===id);if(!a)return;
-  const btn=document.getElementById('rbtn-'+id);
-  if(btn){btn.classList.add('spinning');btn.disabled=true;}
-  await refreshArtistTrend(a);
-  saveData();renderTable();
-  if(btn){btn.classList.remove('spinning');btn.disabled=false;}
-  notify(`Trend zaktualizowany: ${a.name}`);
+async function refreshSelectedOrAll(){
+  const ids=selected.length>0?[...selected]:artists.map(a=>a.id);
+  const label=selected.length>0?`Odświeżam trendy dla ${ids.length} zaznaczonych...`:'Odświeżam trendy dla wszystkich artystów...';
+  notify(label,'info');
+  refreshQueue=[...ids];refreshing=false;processRefreshQueue();
 }
 
 async function refreshAllTrends(){refreshQueue=artists.map(a=>a.id);refreshing=false;notify('Odświeżam trendy dla wszystkich artystów...','info');processRefreshQueue();}
@@ -874,14 +887,11 @@ function renderTable(){
     const sel=selected.includes(a.id);
     let rc=a.status==='reminder'?'row-reminder':a.source==='ai'?'row-ai':'row-manual';
     if(sel)rc+=' selected';
+    const inPromoter=promoterIds.has(a.id);
+    if(inPromoter)rc+=' row-hot';
     return`<tr class="${rc}">
-      <td style="display:flex;align-items:center;gap:4px">
-        <input type="checkbox" ${sel?'checked':''} onchange="toggleSel(${a.id})">
-        <button class="btn-refresh-row" onclick="refreshSingleTrend(${a.id})" id="rbtn-${a.id}" title="Odśwież trend">
-          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 8A5 5 0 112 8" stroke-linecap="round"/><path d="M13 4v4h-4"/></svg>
-        </button>
-      </td>
-      <td class="name-cell">${a.name}</td>
+      <td style="text-align:center;padding:0 4px"><input type="checkbox" ${sel?'checked':''} onchange="toggleSel(${a.id})"></td>
+      <td class="name-cell"><span class="art-name-wrap${a.notes?' has-notes':''}" data-notes="${(a.notes||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" onmouseenter="showTip(event,this)" onmousemove="moveTip(event)" onmouseleave="hideTip()">${a.name}</span></td>
       <td>${spotifyCell(a)}</td>
       <td>${statusSel(a)}</td>
       <td>${predictCell(a)}</td>
@@ -890,7 +900,7 @@ function renderTable(){
       <td>${plShowCell(a)}</td>
       <td>${addedByCell(a)}</td>
       <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${formatDate(a.dateAdded)}</td>
-      <td class="notes-cell">${a.notes||''}</td>
+      <td style="text-align:center"><button class="btn-fire${inPromoter?' active':''}" onclick="togglePromoter(${a.id})" title="Promoter Office">🔥</button></td>
       <td style="display:flex;gap:4px;align-items:center"><button class="btn" style="font-size:10px;padding:3px 7px" onclick="editArtist(${a.id})">edit</button><button class="btn-del" onclick="deleteArtist(${a.id})" title="Usuń artystę"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h12M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4"/></svg></button></td>
     </tr>`;
   }).join('');
@@ -899,13 +909,33 @@ function renderTable(){
 function sortBy(col){sortDir=(sortCol===col)?-sortDir:1;sortCol=col;renderTable();}
 function toggleSel(id){
   if(selected.includes(id))selected=selected.filter(x=>x!==id);
-  else if(selected.length<4)selected.push(id);
-  else{notify('Maksymalnie 4 artystów do porównania','err');return;}
+  else selected.push(id);
+  updateSelUI();
+  renderTable();
+}
+function toggleAllSel(checked){
+  const visible=getFiltered().map(a=>a.id);
+  if(checked)selected=[...new Set([...selected,...visible])];
+  else selected=selected.filter(id=>!visible.includes(id));
+  updateSelUI();
+  renderTable();
+}
+function updateSelUI(){
   const btn=document.getElementById('cmpBtn');
-  btn.textContent=`Porównaj (${selected.length}/4)`;btn.disabled=selected.length<2;
+  const cmpCount=Math.min(selected.length,4);
+  btn.textContent=`Porównaj (${cmpCount}/4)`;btn.disabled=selected.length<2;
   const sd=document.getElementById('sideCompare');
   selected.length>=2?sd.classList.remove('disabled'):sd.classList.add('disabled');
   if(selected.length<2)closePanel('comparePanel');
+  // label przycisku odświeżania
+  const rl=document.getElementById('refreshBtnLabel');
+  if(rl)rl.textContent=selected.length>0?`Odśwież trendy (${selected.length})`:'Odśwież trendy';
+}
+function togglePromoter(id){
+  const a=artists.find(x=>x.id===id);if(!a)return;
+  a.hot=!a.hot;
+  if(a.hot)promoterIds.add(id);else promoterIds.delete(id);
+  saveArtistToDb(a);
   renderTable();
 }
 
@@ -1019,7 +1049,7 @@ function addFromAi(i){
 /* ── AI COMPARE ── */
 async function runAiCompare(){
   if(selected.length<2)return;
-  const sel=selected.map(id=>artists.find(a=>a.id===id)).filter(Boolean);
+  const sel=selected.slice(0,4).map(id=>artists.find(a=>a.id===id)).filter(Boolean);
   document.getElementById('compareGrid').innerHTML='';
   document.getElementById('compareVerdict').style.display='none';
   document.getElementById('compareLoading').style.display='flex';
@@ -1100,7 +1130,45 @@ function deleteArtist(id){
 }
 
 loadUsers();
+/* ── THEME ── */
+(function(){
+  const TK='fourceplex_theme';
+  const MOON='<path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>';
+  const SUN='<path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>';
+  function applyTheme(t){document.body.classList.toggle('light',t==='light');const ic=document.getElementById('theme-icon');if(ic)ic.innerHTML=t==='light'?SUN:MOON;}
+  window.toggleTheme=function(){const n=document.body.classList.contains('light')?'dark':'light';localStorage.setItem(TK,n);applyTheme(n);};
+  applyTheme(localStorage.getItem(TK)||'dark');
+})();
 loadData();
+
+/* ── ARTIST TOOLTIP ── */
+(function(){
+  const tip=document.createElement('div');
+  tip.id='artist-tooltip';
+  document.body.appendChild(tip);
+
+  window.showTip=function(e,el){
+    const notes=el.dataset.notes;
+    if(!notes)return;
+    tip.textContent=notes;
+    tip.style.display='block';
+    placeTip(e);
+  };
+  window.moveTip=function(e){
+    if(tip.style.display==='none')return;
+    placeTip(e);
+  };
+  window.hideTip=function(){tip.style.display='none';};
+
+  function placeTip(e){
+    const pad=14,vw=window.innerWidth,vh=window.innerHeight;
+    let x=e.clientX+pad, y=e.clientY+pad;
+    if(x+tip.offsetWidth>vw)x=e.clientX-tip.offsetWidth-pad;
+    if(y+tip.offsetHeight>vh)y=e.clientY-tip.offsetHeight-pad;
+    tip.style.left=x+'px';
+    tip.style.top=y+'px';
+  }
+})();
 </script>
 </body>
 </html>
