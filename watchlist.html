@@ -246,9 +246,13 @@ select.form-input{cursor:pointer}
   <div class="modal">
     <div class="modal-title">Kto jesteś?</div>
     <div class="user-list" id="userList"></div>
-    <div class="new-user-row">
-      <input class="form-input" type="text" id="newUserInput" placeholder="Dodaj nową osobę..." style="flex:1">
-      <button class="btn btn-accent" onclick="addNewUser()">Dodaj</button>
+    <div id="pin-section" style="display:none">
+      <div style="height:1px;background:var(--border);margin:12px 0"></div>
+      <div class="new-user-row">
+        <input class="form-input" type="password" id="pin-input" placeholder="PIN…" maxlength="4" inputmode="numeric" style="flex:1">
+        <button class="btn btn-accent" onclick="confirmPin()">OK</button>
+      </div>
+      <div id="pin-error" style="display:none;color:#f87171;font-size:11px;margin-top:6px;font-family:var(--mono);letter-spacing:.05em">Nieprawidłowy PIN</div>
     </div>
   </div>
 </div>
@@ -537,20 +541,60 @@ function venueForPredict(max){
   return'duża Arena';
 }
 
-const USER_COLORS=['#a78bfa','#34d399','#fbbf24','#60a5fa','#f87171','#fb923c','#e879f9','#2dd4bf'];
-let users=[],currentUser='';
-function loadUsers(){try{users=JSON.parse(localStorage.getItem(USERS_KEY)||'[]');}catch(e){users=[];}if(!users.length)users=['Monika','Igor','Mariusz'];if(!currentUser)openUserModal();}
-function saveUsers(){localStorage.setItem(USERS_KEY,JSON.stringify(users));}
-function userColor(name){if(!name||name==='AI')return'#a78bfa';const i=users.indexOf(name);return USER_COLORS[i<0?0:i%USER_COLORS.length];}
-function openUserModal(){const list=document.getElementById('userList');list.innerHTML=users.map(u=>`<div class="user-opt ${u===currentUser?'selected-user':''}" onclick="selectUser('${u}')"><div class="user-avatar" style="background:${userColor(u)}22;color:${userColor(u)}">${u[0].toUpperCase()}</div>${u}</div>`).join('');document.getElementById('userModal').classList.add('open');}
-function selectUser(name){
-  currentUser=name;
-  document.getElementById('currentUserLabel').textContent=name;
-  document.getElementById('userModal').classList.remove('open');
-  const dot=document.getElementById('badge-dot');
-  if(dot)dot.style.background=userColor(name);
+const SESSION_KEY_WL='fourceplex_current_user';
+const USERS=[
+  {name:'Igor',    pin:'1111',color:'#34d399'},
+  {name:'Mariusz', pin:'2222',color:'#fbbf24'},
+  {name:'Monika',  pin:'3333',color:'#a78bfa'},
+  {name:'Radek',   pin:'4444',color:'#60a5fa'},
+  {name:'Gość',    pin:'5555',color:'#fb923c'},
+];
+let currentUser='',_loginUser=null;
+function userColor(name){const u=USERS.find(u=>u.name===name);return u?u.color:'#a78bfa';}
+function openUserModal(){
+  _loginUser=null;
+  const list=document.getElementById('userList');
+  list.innerHTML=USERS.map(u=>`<div class="user-opt ${u.name===_loginUser?'selected-user':''}" onclick="selectForPin('${u.name}')"><div class="user-avatar" style="background:${u.color}22;color:${u.color}">${u.name[0].toUpperCase()}</div>${u.name}</div>`).join('');
+  document.getElementById('pin-section').style.display='none';
+  document.getElementById('userModal').classList.add('open');
 }
-function addNewUser(){const v=document.getElementById('newUserInput').value.trim();if(!v)return;if(!users.includes(v))users.push(v);saveUsers();document.getElementById('newUserInput').value='';selectUser(v);}
+function selectForPin(name){
+  _loginUser=name;
+  const list=document.getElementById('userList');
+  list.innerHTML=USERS.map(u=>`<div class="user-opt ${u.name===_loginUser?'selected-user':''}" onclick="selectForPin('${u.name}')"><div class="user-avatar" style="background:${u.color}22;color:${u.color}">${u.name[0].toUpperCase()}</div>${u.name}</div>`).join('');
+  document.getElementById('pin-section').style.display='block';
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-error').style.display='none';
+  document.getElementById('pin-input').focus();
+}
+function confirmPin(){
+  const pin=document.getElementById('pin-input').value;
+  const u=USERS.find(u=>u.name===_loginUser);
+  if(u&&pin===u.pin){
+    currentUser=_loginUser;
+    localStorage.setItem(SESSION_KEY_WL,currentUser);
+    document.getElementById('currentUserLabel').textContent=currentUser;
+    document.getElementById('userModal').classList.remove('open');
+    const dot=document.getElementById('badge-dot');
+    if(dot)dot.style.background=userColor(currentUser);
+    _loginUser=null;
+  }else{
+    document.getElementById('pin-error').style.display='block';
+    document.getElementById('pin-input').value='';
+    document.getElementById('pin-input').focus();
+  }
+}
+document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPin();});
+function loadUsers(){
+  const saved=localStorage.getItem(SESSION_KEY_WL);
+  const u=USERS.find(u=>u.name===saved);
+  if(saved&&u){
+    currentUser=saved;
+    document.getElementById('currentUserLabel').textContent=saved;
+    const dot=document.getElementById('badge-dot');
+    if(dot)dot.style.background=userColor(saved);
+  }else openUserModal();
+}
 
 let artists=[],sortCol='dateAdded',sortDir=-1,selected=[],editId=null;
 
