@@ -208,7 +208,7 @@ textarea.form-input{resize:vertical;min-height:52px}
   white-space: nowrap;
   vertical-align: middle;
   border-bottom: 1px solid var(--border);
-  height: 38px;
+  height: 34px;
 }
 
 /* Row state indicators — left border on first cell of left panel */
@@ -223,7 +223,7 @@ textarea.form-input{resize:vertical;min-height:52px}
 .pan-right table tr.h td{background:rgba(255,255,255,.022)}
 
 /* Cell flavours */
-td.name-c{color:var(--text);font-size:12px;font-weight:500}
+td.name-c{color:var(--text);font-size:11px;font-weight:500}
 td.date-c{font-family:var(--mono);font-size:11px;color:var(--text3)}
 td.num{font-family:var(--mono);font-size:11px;text-align:right;padding-right:9px}
 td.num-b{font-family:var(--mono);font-size:12px;font-weight:500;text-align:right;padding-right:9px;color:var(--text)}
@@ -248,7 +248,7 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
 .vt{font-family:var(--mono);font-size:9px;color:var(--blue);background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);padding:2px 6px;border-radius:3px;display:inline-block;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Calc button */
-.calc-btn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);cursor:pointer;transition:all .15s;font-size:12px;flex-shrink:0}
+.calc-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:3px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);cursor:pointer;transition:all .15s;font-size:10px;flex-shrink:0}
 .calc-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(200,240,96,.06)}
 
 /* Break-even */
@@ -276,9 +276,9 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
 .icon-btn.edit:hover{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.1);color:var(--purple)}
 
 /* ALERT CHIPS */
-.alert-chip{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:500;padding:1px 6px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px}
-.alert-10{background:rgba(251,191,36,.18);color:var(--amber);border:1px solid rgba(251,191,36,.3)}
-.alert-5{background:rgba(248,113,113,.18);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+.alert-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:3px;flex-shrink:0;font-size:10px;line-height:1}
+.alert-10-btn{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:var(--amber)}
+.alert-5-btn{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:var(--red)}
 
 /* MODAL (index.html style) */
 #modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
@@ -743,9 +743,9 @@ function mkPct(pct,cap){
   return`<span style="color:${pctColor(pct)};font-family:var(--mono);font-size:11px">${pct}%</span>`;
 }
 /* ── ALERT CHIP for name cell ── */
-function alertChip(pct){
-  if(pct>=95&&pct<100)return'<span class="alert-chip alert-5">OSTATNIE 5%</span>';
-  if(pct>=89&&pct<95) return'<span class="alert-chip alert-10">OSTATNIE 10%</span>';
+function alertBtn(pct){
+  if(pct>=95&&pct<100)return'<span class="alert-btn alert-5-btn" title="Ostatnie bilety — 5%">⚠</span>';
+  if(pct>=89&&pct<95) return'<span class="alert-btn alert-10-btn" title="Ostatnie bilety — 10%">⚠</span>';
   return'';
 }
 
@@ -792,38 +792,30 @@ function renderTable(){
   });
 
   // Column widths
-  const LW={calc:20,name:360,date:188,t:34,w:26,pct:32,r:30,act:40};
+  const LW={calc:15,name:210,date:93};
   const LEFT_W=Object.values(LW).reduce((s,v)=>s+v,0);
   const SW={dni:52,venue:118,cena:62,cap:48,onsale:60,be:60};
-  const BW={tm:46,eb:46,oth:40,t:50,w:36,pct:44,r:44};
+  const BW={tm:58,eb:58,oth:52,t:62,w:46,pct:46,r:56};
   const BLOCK_W=Object.values(BW).reduce((s,v)=>s+v,0);
   const BCOLS=['TM','eB','Inne','T','W','%','R'];
 
   // LEFT PANEL THEAD
+  const lpW=LW.calc+LW.name+LW.date;
   const lpThead=`
   <colgroup>
     <col style="width:${LW.calc}px"><col style="width:${LW.name}px"><col style="width:${LW.date}px">
-    <col style="width:${LW.t}px"><col style="width:${LW.w}px"><col style="width:${LW.pct}px">
-    <col style="width:${LW.r}px"><col style="width:${LW.act}px">
   </colgroup>
   <tr>
-    <th class="r1" colspan="3"></th>
-    <th class="r1 dg live-hdr" colspan="4"><span style="color:var(--accent)">LIVE ●</span></th>
-    <th class="r1"></th>
+    <th class="r1"></th><th class="r1"></th><th class="r1"></th>
   </tr>
   <tr>
     <th class="r2"></th>
     <th class="r2" style="cursor:pointer" onclick="sortBy('name')">Artysta</th>
     <th class="r2" style="cursor:pointer" onclick="sortBy('date')">Data</th>
-    <th class="r2 live-bg" style="text-align:right;padding-right:8px;border-left:1px solid rgba(200,240,96,.15)">T</th>
-    <th class="r2 live-bg" style="text-align:right;padding-right:8px">W</th>
-    <th class="r2 live-bg" style="text-align:right;padding-right:8px">%</th>
-    <th class="r2 live-bg" style="text-align:right;padding-right:8px">R</th>
-    <th class="r2"></th>
   </tr>`;
   const lpTable=document.querySelector('#panLeft table');
-  if(lpTable){lpTable.querySelector('thead').innerHTML=lpThead;lpTable.style.width=LEFT_W+'px';}
-  document.getElementById('panLeft').style.width=LEFT_W+'px';
+  if(lpTable){lpTable.querySelector('thead').innerHTML=lpThead;lpTable.style.width=lpW+'px';}
+  document.getElementById('panLeft').style.width=lpW+'px';
 
   // MIDDLE PANEL THEAD
   let cg='<colgroup>';
@@ -848,6 +840,24 @@ function renderTable(){
   document.getElementById('thdMid').innerHTML=cg+r1+r2;
   document.getElementById('tblMid').style.width=midW+'px';
   document.getElementById('tblMid').style.minWidth=midW+'px';
+
+  // RIGHT PANEL — LIVE cols same widths as snapshot BW
+  const RL={t:62,w:46,pct:46,r:56,act:52};
+  const RL_W=Object.values(RL).reduce((s,v)=>s+v,0);
+  document.getElementById('panRight').style.width=RL_W+'px';
+  document.getElementById('panRight').style.display='';
+  document.getElementById('panRight').style.borderLeft='2px solid rgba(200,240,96,.22)';
+  document.getElementById('tblRight').style.width=RL_W+'px';
+  const rcg=`<colgroup><col style="width:${RL.t}px"><col style="width:${RL.w}px"><col style="width:${RL.pct}px"><col style="width:${RL.r}px"><col style="width:${RL.act}px"></colgroup>`;
+  const rr1=`<tr><th class="r1 dg live-hdr" colspan="5" style="width:${RL_W}px"><span style="color:var(--accent)">LIVE ●</span></th></tr>`;
+  const rr2=`<tr>
+    <th class="r2 live-bg" style="width:${RL.t}px;text-align:right;padding-right:8px;border-left:1px solid rgba(200,240,96,.15)">T</th>
+    <th class="r2 live-bg" style="width:${RL.w}px;text-align:right;padding-right:8px">W</th>
+    <th class="r2 live-bg" style="width:${RL.pct}px;text-align:right;padding-right:8px">%</th>
+    <th class="r2 live-bg" style="width:${RL.r}px;text-align:right;padding-right:8px">R</th>
+    <th class="r2" style="width:${RL.act}px"></th>
+  </tr>`;
+  document.getElementById('thdRight').innerHTML=rcg+rr1+rr2;
 
   // BUILD ROWS
   let lH='', mH='';
@@ -874,29 +884,18 @@ function renderTable(){
 
     const remColor=rem===0?'var(--teal)':typeof rem==='number'&&rem<50?'var(--amber)':'var(--text3)';
     const pctCol=pctColor(pct);
-    const chip=alertChip(pct);
+    const aBtn=alertBtn(pct);
 
-    // LEFT ROW
+    // LEFT ROW — calc(⊞+alert) | name | date
     lH+=`<tr class="${rc}" data-id="${ev.id}">
       <td style="width:${LW.calc}px;text-align:center;padding:0 3px">
-        <span class="calc-btn" onclick="doCountOne('${ev.id}')" title="Zlicz (wymaga API)">⊞</span>
-      </td>
-      <td class="name-c" style="width:${LW.name}px">${ev.name}${chip}</td>
-      <td class="date-c" style="width:${LW.date}px">${fd(ev.date)}</td>
-      <td class="num-b live-bg" style="width:${LW.t}px;border-left:1px solid rgba(200,240,96,.12)">${tot}</td>
-      <td class="num live-bg" style="width:${LW.w}px">${ev.wraps||0}</td>
-      <td class="num live-bg" style="width:${LW.pct}px;color:${pctCol}">${ev.cap?pct+'%':'—'}</td>
-      <td class="num live-bg" style="width:${LW.r}px;color:${remColor}">${rem}</td>
-      <td style="width:${LW.act}px;padding:0 5px">
-        <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">
-          <span class="icon-btn edit" onclick="openEdit('${ev.id}')" title="Edytuj">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
-          </span>
-          <span class="icon-btn del" onclick="confirmDelete('${ev.id}')" title="Usuń">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9"/></svg>
-          </span>
+        <div style="display:flex;align-items:center;justify-content:center;gap:3px">
+          <span class="calc-btn" onclick="doCountOne('${ev.id}')" title="Zlicz (wymaga API)">⊞</span>
+          ${aBtn}
         </div>
       </td>
+      <td class="name-c" style="width:${LW.name}px">${ev.name}</td>
+      <td class="date-c" style="width:${LW.date}px">${fd(ev.date)}</td>
     </tr>`;
 
     // MIDDLE ROW
@@ -933,8 +932,39 @@ function renderTable(){
 
   document.getElementById('tbLeft').innerHTML=lH;
   document.getElementById('tbMid').innerHTML=mH;
-  const tbRight=document.getElementById('tbRight');
-  if(tbRight)tbRight.innerHTML='';
+  // RIGHT PANEL ROWS
+  let rH='';
+  rows.forEach(ev=>{
+    const days=daysLeft(ev.date);
+    const tot=(ev.tm||0)+(ev.eb||0)+(ev.other||0);
+    const pct=ev.cap?Math.round(tot/ev.cap*100):0;
+    const rem=ev.remains!=null?ev.remains:(ev.cap?ev.cap-tot:'—');
+    let rc2;
+    if(days<-2)rc2='row-past';
+    else if(days<=7)rc2='row-urgent';
+    else if(days<=21)rc2='row-warn';
+    else rc2='row-ok';
+    if(pct>=100)rc2='row-ok';
+    const remColor2=rem===0?'var(--teal)':typeof rem==='number'&&rem<50?'var(--amber)':'var(--text3)';
+    const pctCol2=pctColor(pct);
+    rH+=`<tr class="${rc2}" data-id="${ev.id}">
+      <td class="num-b live-bg" style="width:${RL.t}px;border-left:1px solid rgba(200,240,96,.12)">${tot}</td>
+      <td class="num live-bg" style="width:${RL.w}px">${ev.wraps||0}</td>
+      <td class="num live-bg" style="width:${RL.pct}px;color:${pctCol2}">${ev.cap?pct+'%':'—'}</td>
+      <td class="num live-bg" style="width:${RL.r}px;color:${remColor2}">${rem}</td>
+      <td style="width:${RL.act}px;padding:0 5px">
+        <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">
+          <span class="icon-btn edit" onclick="openEdit('${ev.id}')" title="Edytuj">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
+          </span>
+          <span class="icon-btn del" onclick="confirmDelete('${ev.id}')" title="Usuń">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9"/></svg>
+          </span>
+        </div>
+      </td>
+    </tr>`;
+  });
+  document.getElementById('tbRight').innerHTML=rH;
 
   initScrollSync();
   bindHover();
@@ -946,20 +976,27 @@ function renderTable(){
   }
 }
 
-/* ── SCROLL SYNC — left + mid ── */
+/* ── SCROLL SYNC — left + mid + right ── */
 let _sl=false;
 function initScrollSync(){
   const L=document.getElementById('panLeft');
   const M=document.getElementById('panMid');
+  const R=document.getElementById('panRight');
   if(!L||!M||L._ss)return;
   L._ss=M._ss=true;
-  const sync=(s,others)=>{s.addEventListener('scroll',()=>{if(_sl)return;_sl=true;others.forEach(p=>p.scrollTop=s.scrollTop);_sl=false;});};
-  sync(M,[L]);sync(L,[M]);
+  const panels=[L,M,R].filter(Boolean);
+  panels.forEach(src=>{
+    src.addEventListener('scroll',()=>{
+      if(_sl)return;_sl=true;
+      panels.forEach(p=>{if(p!==src)p.scrollTop=src.scrollTop;});
+      _sl=false;
+    });
+  });
 }
 
 /* ── HOVER SYNC ── */
 function bindHover(){
-  document.querySelectorAll('#tbLeft tr,#tbMid tr').forEach(row=>{
+  document.querySelectorAll('#tbLeft tr,#tbMid tr,#tbRight tr').forEach(row=>{
     const id=row.getAttribute('data-id');
     row.addEventListener('mouseenter',()=>document.querySelectorAll(`tr[data-id="${id}"]`).forEach(r=>r.classList.add('h')));
     row.addEventListener('mouseleave',()=>document.querySelectorAll(`tr[data-id="${id}"]`).forEach(r=>r.classList.remove('h')));
