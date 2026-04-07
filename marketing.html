@@ -453,13 +453,13 @@ select.form-input{cursor:pointer}
   <div id="user-modal">
     <div class="modal-title">Wybierz użytkownika</div>
     <div class="user-list" id="user-list"></div>
-    <div class="modal-divider"></div>
-    <div class="add-user-row">
-      <input class="modal-input" id="new-user-input" placeholder="Nowa osoba..." maxlength="30">
-      <button class="btn btn-accent" onclick="addUser()">+</button>
-    </div>
-    <div style="margin-top:12px;text-align:right">
-      <button class="btn" onclick="closeUserModal()">Zamknij</button>
+    <div id="pin-section" style="display:none">
+      <div class="modal-divider"></div>
+      <div class="add-user-row">
+        <input class="modal-input" id="pin-input" type="password" placeholder="PIN…" maxlength="4" inputmode="numeric">
+        <button class="btn btn-accent" onclick="confirmPin()">OK</button>
+      </div>
+      <div id="pin-error" style="display:none;color:#f87171;font-size:11px;margin-top:6px;font-family:var(--mono);letter-spacing:.05em">Nieprawidłowy PIN</div>
     </div>
   </div>
 </div>
@@ -506,53 +506,54 @@ window.dispatchEvent(new Event('fb-ready'));
 /* ────────────────────────────────────────────────
    USERS / SESSION
    ──────────────────────────────────────────────── */
-const UK='fourceplex_users_v1';
 const SK='fourceplex_current_user';
-const UC=['#a78bfa','#34d399','#fbbf24','#60a5fa','#f87171','#fb923c','#e879f9','#2dd4bf'];
-let users=[], curUser='';
+const USERS=[
+  {name:'Igor',    pin:'1111',color:'#34d399'},
+  {name:'Mariusz', pin:'2222',color:'#fbbf24'},
+  {name:'Monika',  pin:'3333',color:'#a78bfa'},
+  {name:'Radek',   pin:'4444',color:'#60a5fa'},
+  {name:'Gość',    pin:'5555',color:'#fb923c'},
+];
+let curUser='',_loginUser=null;
 window._shows=window._shows||[];
 window._costs=window._costs||[];
 window._selectedShowId=null;
 let aiHistory=[], aiCurrentShow=null;
 
 function loadUsers(){
-  try{users=JSON.parse(localStorage.getItem(UK))||[];}catch{users=[];}
-  if(!users.length){users=[{name:'Monika',color:'#a78bfa'},{name:'Igor',color:'#34d399'},{name:'Mariusz',color:'#fbbf24'}];saveUsers();}
-  curUser=sessionStorage.getItem(SK)||'';
+  const saved=localStorage.getItem(SK)||'';
+  const u=USERS.find(u=>u.name===saved);
+  curUser=u?saved:'';
   updateUserBadge();
+  if(!curUser)openUserModal();
 }
-function saveUsers(){localStorage.setItem(UK,JSON.stringify(users));}
 function updateUserBadge(){
-  const u=users.find(u=>u.name===curUser);
+  const u=USERS.find(u=>u.name===curUser);
   document.getElementById('badge-dot').style.background=u?u.color:'var(--text3)';
   document.getElementById('badge-name').textContent=curUser||'Wybierz użytkownika';
 }
 function openUserModal(){
-  const ol=document.getElementById('user-modal-overlay');
-  ol.classList.add('open');
+  _loginUser=null;
   renderUserList();
+  document.getElementById('pin-section').style.display='none';
+  document.getElementById('user-modal-overlay').classList.add('open');
 }
-function closeUserModal(){document.getElementById('user-modal-overlay').classList.remove('open');}
+function closeUserModal(){document.getElementById('user-modal-overlay').classList.remove('open');_loginUser=null;}
 function renderUserList(){
   const el=document.getElementById('user-list');
   el.innerHTML='';
-  users.forEach(u=>{
+  USERS.forEach(u=>{
     const d=document.createElement('div');
-    d.className='user-option'+(curUser===u.name?' selected':'');
-    d.onclick=()=>selectUser(u.name);
+    d.className='user-option'+(u.name===_loginUser?' selected':'');
+    d.onclick=()=>selectForPin(u.name);
     d.innerHTML=`<div class="user-avatar-sm" style="background:${u.color}">${esc(u.name[0])}</div><span class="user-option-name">${esc(u.name)}</span>`;
     el.appendChild(d);
   });
 }
-function selectUser(name){curUser=name;sessionStorage.setItem(SK,name);updateUserBadge();renderUserList();}
-function addUser(){
-  const inp=document.getElementById('new-user-input');
-  const name=inp.value.trim();
-  if(!name||users.find(u=>u.name===name))return;
-  const color=UC[users.length%UC.length];
-  users.push({name,color});saveUsers();inp.value='';renderUserList();selectUser(name);
-}
-document.getElementById('new-user-input').addEventListener('keydown',e=>{if(e.key==='Enter')addUser();});
+function selectForPin(name){_loginUser=name;renderUserList();document.getElementById('pin-section').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-error').style.display='none';document.getElementById('pin-input').focus();}
+function confirmPin(){const pin=document.getElementById('pin-input').value;const u=USERS.find(u=>u.name===_loginUser);if(u&&pin===u.pin){curUser=_loginUser;localStorage.setItem(SK,curUser);updateUserBadge();closeUserModal();}else{document.getElementById('pin-error').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-input').focus();}}
+document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPin();});
+document.getElementById('user-modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('user-modal-overlay')&&curUser)closeUserModal();});
 
 /* ────────────────────────────────────────────────
    SHOW LIST
