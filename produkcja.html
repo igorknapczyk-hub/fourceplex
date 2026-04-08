@@ -370,7 +370,7 @@ document.getElementById('user-modal-overlay').addEventListener('click',e=>{if(e.
 document.getElementById('user-badge-btn').addEventListener('click',openUM);
 
 /* state */
-let allShows=[],allExps=[],selectedShowId=null,currentTab='active';
+let allShows=[],allExps=[],selectedShowId=null,currentTab='active',_pendingExpFocus=null;
 
 /* listeners */
 onSnapshot(showsCol,snap=>{
@@ -536,6 +536,7 @@ function renderDetail(show){
     const MIN=4;
     const rows=[...list];
     while(rows.length<MIN)rows.push(null);
+    if(rows[rows.length-1]!==null)rows.push(null);
     return '<table class="exp-table"><tbody>'+rows.map((e,i)=>
       '<tr class="etr" data-cat="'+cat+'" data-idx="'+i+'" data-eid="'+(e?e.id:'')+'">'
       +'<td><input class="etbl-inp ename" data-cat="'+cat+'" data-idx="'+i+'" value="'+(e?esc(e.name||''):'')+'" placeholder="Nazwa wydatku"></td>'
@@ -571,10 +572,10 @@ function renderDetail(show){
     +'<div class="detail-body">'
     +(we?'<div class="weekend-alert">⚠️ Koncert w '+dayName(show.date).toUpperCase()+' — pamiętaj o zwiększonych wymaganiach organizacyjnych.</div>':'')
     +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Advancing / Checkpointy</span><span style="font-family:var(--mono);font-size:10px;color:var(--teal)">'+done+'/'+total+' · '+pct+'%</span></div><div class="sec-body"><div class="cp-grid">'+cpGrid+'</div></div></div>'
-    +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Wydatki</span><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">Razem: <strong style="color:var(--text)">'+fmtPLN(prodSum+hospSum)+' PLN</strong></span></div>'
+    +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Wydatki</span><div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">Razem: <strong style="color:var(--text)">'+fmtPLN(prodSum+hospSum)+' PLN</strong></span><button class="btn btn-sm" style="padding:2px 7px;font-size:10px" id="exp-xls-btn">⬇ Eksportuj .xls</button></div></div>'
     +'<div class="sec-body"><div class="expenses-grid">'
-    +'<div><div class="exp-col-head">Production <span class="exp-col-sum">'+fmtPLN(prodSum)+' PLN</span><button class="btn btn-sm" style="padding:2px 7px;font-size:10px" id="copy-prod">Kopiuj</button></div>'+buildExpTable(prodE,'production')+'</div>'
-    +'<div><div class="exp-col-head">Hospitality <span class="exp-col-sum">'+fmtPLN(hospSum)+' PLN</span><button class="btn btn-sm" style="padding:2px 7px;font-size:10px" id="copy-hosp">Kopiuj</button></div>'+buildExpTable(hospE,'hospitality')+'</div>'
+    +'<div><div class="exp-col-head">Production <span class="exp-col-sum">'+fmtPLN(prodSum)+' PLN</span></div>'+buildExpTable(prodE,'production')+'</div>'
+    +'<div><div class="exp-col-head">Hospitality <span class="exp-col-sum">'+fmtPLN(hospSum)+' PLN</span></div>'+buildExpTable(hospE,'hospitality')+'</div>'
     +'</div></div></div>'
     +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Timetable & Notatki</span></div><div class="sec-body"><div class="tt-notes-row">'
     +'<div><div class="fl" style="margin-bottom:5px">Timetable / Schedule</div><textarea class="notes-textarea" rows="15" id="tt-area" placeholder="18:00 Wpuszczenie&#10;21:00 Artysta&#10;23:00 Curfew">'+esc(show.timetableText||'')+'</textarea><div class="notes-save-row"><span class="notes-meta" id="tt-meta"></span><button class="btn btn-sm" id="tt-save">Zapisz</button></div></div>'
@@ -606,11 +607,19 @@ function renderDetail(show){
     const eid=tr.dataset.eid;
     if(!name){if(eid){await delExp(eid);tr.dataset.eid='';}return;}
     if(eid){await updExp(eid,{name,amount});}
-    else{const ref=await addExp({showId:show.id,category:cat,name,amount,addedBy:currentUser||'?'});tr.dataset.eid=ref.id;}
+    else{const ref=await addExp({showId:show.id,category:cat,name,amount,addedBy:currentUser||'?'});tr.dataset.eid=ref.id;_pendingExpFocus={cat,idx:idx+1};}
   }
   dc.querySelectorAll('.etbl-inp').forEach(inp=>{
     inp.addEventListener('blur',async()=>{await saveExpRow(inp.dataset.cat,inp.dataset.idx);});
-    inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}});
+    inp.addEventListener('keydown',async e=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        const cat=inp.dataset.cat,idx=parseInt(inp.dataset.idx);
+        await saveExpRow(cat,idx);
+        const nextInp=dc.querySelector('.ename[data-cat="'+cat+'"][data-idx="'+(idx+1)+'"]');
+        if(nextInp){nextInp.focus();}else{inp.blur();}
+      }
+    });
   });
   dc.querySelectorAll('.etbl-del').forEach(btn=>{
     btn.addEventListener('click',async()=>{
@@ -620,17 +629,16 @@ function renderDetail(show){
     });
   });
 
-  /* copy buttons */
-  document.getElementById('copy-prod').addEventListener('click',()=>{
-    const txt=allExps.filter(e=>e.showId===show.id&&e.category==='production').map(e=>e.name+'\t'+fmtPLN(e.amount)).join('\n');
-    if(!txt){alert('Brak wydatków');return;}
-    navigator.clipboard.writeText(txt).then(()=>{const b=document.getElementById('copy-prod');b.textContent='✓';setTimeout(()=>b.textContent='Kopiuj',2000);});
-  });
-  document.getElementById('copy-hosp').addEventListener('click',()=>{
-    const txt=allExps.filter(e=>e.showId===show.id&&e.category==='hospitality').map(e=>e.name+'\t'+fmtPLN(e.amount)).join('\n');
-    if(!txt){alert('Brak wydatków');return;}
-    navigator.clipboard.writeText(txt).then(()=>{const b=document.getElementById('copy-hosp');b.textContent='✓';setTimeout(()=>b.textContent='Kopiuj',2000);});
-  });
+  /* xls export */
+  document.getElementById('exp-xls-btn').addEventListener('click',()=>{exportXLS(show);});
+
+  /* restore pending focus after re-render */
+  if(_pendingExpFocus){
+    const{cat,idx}=_pendingExpFocus;
+    _pendingExpFocus=null;
+    const el=dc.querySelector('.ename[data-cat="'+cat+'"][data-idx="'+idx+'"]');
+    if(el)setTimeout(()=>el.focus(),0);
+  }
 
   /* timetable/notes */
   document.getElementById('tt-save').addEventListener('click',async()=>{
@@ -644,6 +652,43 @@ function renderDetail(show){
 
   document.getElementById('btn-edit').addEventListener('click',()=>openPanel(show));
   document.getElementById('btn-setlist').addEventListener('click',()=>openSetlist(show));
+}
+
+/* xls export */
+function exportXLS(show){
+  const prodE=allExps.filter(e=>e.showId===show.id&&e.category==='production');
+  const hospE=allExps.filter(e=>e.showId===show.id&&e.category==='hospitality');
+  const prodSum=prodE.reduce((a,e)=>a+(+e.amount||0),0);
+  const hospSum=hospE.reduce((a,e)=>a+(+e.amount||0),0);
+  const rows=e=>`<tr><td>${e.name||''}</td><td>${(+e.amount||0).toFixed(2)}</td></tr>`;
+  const html=`<html><head><meta charset="UTF-8"><style>
+    body{font-family:Arial,sans-serif;font-size:12px}
+    h2{font-size:14px;margin-bottom:4px}h3{font-size:12px;margin:12px 0 4px}
+    table{border-collapse:collapse;min-width:320px}
+    th,td{border:1px solid #ccc;padding:4px 10px;text-align:left}
+    th{background:#f0f0f0;font-weight:bold}
+    .sum td{font-weight:bold;background:#f8f8f8}
+  </style></head><body>
+  <h2>${show.artistName||'–'} — Wydatki produkcyjne · ${show.date||''}</h2>
+  <h3>Production</h3>
+  <table><thead><tr><th>Nazwa</th><th>Kwota (PLN)</th></tr></thead><tbody>
+  ${prodE.map(rows).join('')}
+  <tr class="sum"><td>Suma</td><td>${prodSum.toFixed(2)}</td></tr>
+  </tbody></table>
+  <h3>Hospitality</h3>
+  <table><thead><tr><th>Nazwa</th><th>Kwota (PLN)</th></tr></thead><tbody>
+  ${hospE.map(rows).join('')}
+  <tr class="sum"><td>Suma</td><td>${hospSum.toFixed(2)}</td></tr>
+  </tbody></table>
+  <p style="margin-top:14px;font-weight:bold">Łącznie: ${(prodSum+hospSum).toFixed(2)} PLN</p>
+  </body></html>`;
+  const blob=new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='FOURCE_'+(show.artistName||'wydatki').replace(/\s+/g,'_')+'_'+(show.date||'')+'.xls';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 /* setlist */

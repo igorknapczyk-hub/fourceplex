@@ -148,9 +148,6 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .cp-name{flex:1;font-size:12px;color:var(--text)}
 .cp-row.done .cp-name{color:var(--teal)}
 .cp-meta{font-family:var(--mono);font-size:9px;color:var(--text3);text-align:right}
-.cp-row.late{border-color:rgba(248,113,113,.25);background:rgba(248,113,113,.04)}
-.cp-row.late .cp-name{color:var(--red)}
-.cp-row.late .cp-icon{border-color:var(--red)}
 
 /* ── COSTS ── */
 .cost-table{width:100%;border-collapse:collapse;font-size:12px}
@@ -173,28 +170,15 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .form-input::placeholder{color:var(--text3)}
 select.form-input{cursor:pointer}
 
-/* ── TIMELINE ── */
-.timeline-wrap{display:flex;flex-direction:column;gap:6px}
-.tl-stat{font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:6px}
-.tl-stat strong{color:var(--accent)}
-.tl-row{display:flex;align-items:center;gap:8px;font-size:11px}
-.tl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.tl-ok{background:var(--teal)}
-.tl-warn{background:var(--amber)}
-.tl-late{background:var(--red)}
-.tl-future{background:var(--bg4);border:1px solid var(--border2)}
-.tl-label{color:var(--text2)}
-.tl-label.late{color:var(--red)}
-.tl-label.future{color:var(--text3)}
-.tl-period{font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:auto}
-
-/* ── TIMELINE+NOTES ROW ── */
-.tl-notes-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.notes-textarea{width:100%;min-height:130px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:12px;line-height:1.55;padding:9px 11px;border-radius:6px;outline:none;resize:vertical;transition:border-color .15s}
+/* ── NOTES ── */
+.notes-textarea{width:100%;min-height:240px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:12px;line-height:1.55;padding:9px 11px;border-radius:6px;outline:none;resize:vertical;transition:border-color .15s}
 .notes-textarea:focus{border-color:rgba(200,240,96,.3)}
 .notes-textarea::placeholder{color:var(--text3)}
 .notes-save-row{display:flex;align-items:center;justify-content:space-between;margin-top:7px}
 .notes-meta{font-family:var(--mono);font-size:9px;color:var(--text3)}
+
+/* ── CHART TOOLTIP ── */
+#chart-tooltip{position:fixed;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-size:11px;font-family:var(--mono);color:var(--text2);max-width:260px;line-height:1.65;z-index:999;pointer-events:none;display:none;box-shadow:0 6px 24px rgba(0,0,0,.4);white-space:pre-wrap;word-break:break-word}
 
 /* ── CHART ── */
 .chart-wrap{position:relative;width:100%;height:160px}
@@ -456,6 +440,9 @@ select.form-input{cursor:pointer}
   </div>
 </div>
 
+<!-- ── CHART TOOLTIP ── -->
+<div id="chart-tooltip"></div>
+
 <!-- ── USER MODAL ── -->
 <div id="user-modal-overlay">
   <div id="user-modal">
@@ -498,6 +485,7 @@ onSnapshot(query(showsCol,orderBy('date','asc')),snap=>{
 // Listen costs
 onSnapshot(query(costsCol,orderBy('createdAt','asc')),snap=>{
   window._costs=snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderList();
   if(window._selectedShowId)renderDetail(window._selectedShowId);
 });
 
@@ -633,13 +621,10 @@ function renderList(){
       </div>
       <div class="show-venue">${esc(s.venue||'–')}</div>
       <div class="show-progress-row">
-        <div class="cp-bar-wrap"><div class="cp-bar" style="width:${pct}%"></div></div>
+        <div class="cp-bar-wrap"><div style="height:3px;border-radius:2px;transition:width .3s;width:${Math.min(bpct,100)}%;background:${bpct<80?'var(--teal)':bpct<=100?'var(--amber)':'var(--red)'}"></div></div>
         <span class="cp-text">${done}/${total}</span>
         <span class="budget-text ${bcls}">${fmtPLN(costs)} / ${fmtPLN(budget)}</span>
         <div class="show-item-actions">
-          <div class="ai-btn" title="AI Sugestie" onclick="event.stopPropagation();openAiModal('${s.id}')">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2L10 6H14L11 9L12 13L8 10L4 13L5 9L2 6H6Z"/></svg>
-          </div>
           <div class="trash-btn" title="Usuń kampanię" onclick="event.stopPropagation();deleteShow('${s.id}','${esc(s.artistName||'')}')">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 4h10M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4"/><path d="M7 7v4M9 7v4"/></svg>
           </div>
@@ -797,20 +782,14 @@ function renderDetail(id){
       </div>
     </div>
 
-    <!-- TIMELINE + NOTATKI -->
-    <div class="tl-notes-row">
-      <div class="sec-card">
-        <div class="sec-head"><span class="sec-title">Timeline marketingowy</span></div>
-        <div class="sec-body" id="timeline-${id}"></div>
-      </div>
-      <div class="sec-card">
-        <div class="sec-head"><span class="sec-title">Notatki / Pomysły</span></div>
-        <div class="sec-body">
-          <textarea class="notes-textarea" id="notes-ta-${id}" placeholder="Zapisz pomysły, uwagi, linki…">${esc(show.notes||'')}</textarea>
-          <div class="notes-save-row">
-            <span class="notes-meta" id="notes-meta-${id}">${show.notesMeta||''}</span>
-            <button class="btn btn-sm btn-accent" onclick="saveNotes('${id}')">Zapisz</button>
-          </div>
+    <!-- NOTATKI -->
+    <div class="sec-card">
+      <div class="sec-head"><span class="sec-title">Notatki / Pomysły</span></div>
+      <div class="sec-body">
+        <textarea class="notes-textarea" id="notes-ta-${id}" style="min-height:240px" placeholder="Zapisz pomysły, uwagi, linki…">${esc(show.notes||'')}</textarea>
+        <div class="notes-save-row">
+          <span class="notes-meta" id="notes-meta-${id}">${show.notesMeta||''}</span>
+          <button class="btn btn-sm btn-accent" onclick="saveNotes('${id}')">Zapisz</button>
         </div>
       </div>
     </div>
@@ -839,65 +818,26 @@ function renderDetail(id){
   </div>`;
 
   renderCheckpoints(show);
-  renderTimeline(show);
   renderChart(show);
 }
 
 function renderCheckpoints(show){
   const el=document.getElementById(`cp-list-${show.id}`);
   if(!el)return;
-  const daysLeft=daysUntil(show.date);
-  const shouldBeActive=getExpectedCPs(daysLeft);
   el.innerHTML='';
   CP_KEYS.forEach(k=>{
     const done=show.checkpoints&&show.checkpoints[k];
-    const late=!done&&shouldBeActive.includes(k);
     const div=document.createElement('div');
-    div.className='cp-row'+(done?' done':'')+(late?' late':'');
+    div.className='cp-row'+(done?' done':'');
     const checkedAt=show.checkpoints&&show.checkpoints[k+'_at']?new Date(show.checkpoints[k+'_at'].seconds*1000).toLocaleDateString('pl-PL'):'';
     const checkedBy=show.checkpoints&&show.checkpoints[k+'_by']||'';
     div.innerHTML=`
       <div class="cp-icon${done?' done':''}"></div>
       <span class="cp-name">${esc(CP_NAMES[k])}</span>
-      <span class="cp-meta">${done&&checkedAt?checkedAt+(checkedBy?' · '+checkedBy:''):(late?'⚠ Spóźniony':'—')}</span>`;
+      <span class="cp-meta">${done&&checkedAt?checkedAt+(checkedBy?' · '+checkedBy:''):'—'}</span>`;
     div.addEventListener('click',()=>toggleCheckpoint(show.id,k,!done));
     el.appendChild(div);
   });
-}
-
-function renderTimeline(show){
-  const el=document.getElementById(`timeline-${show.id}`);
-  if(!el)return;
-  const daysLeft=daysUntil(show.date);
-  const expected=getExpectedCPs(daysLeft);
-  const periods=[
-    {label:'>60 dni przed',cps:['adAccess','contentRecorded'],minDays:60},
-    {label:'30–60 dni',cps:['campaignLaunch'],minDays:30},
-    {label:'14–30 dni',cps:['influencers','retargeting'],minDays:14},
-    {label:'<14 dni',cps:['emailBlast'],minDays:0}
-  ];
-  el.innerHTML=`<div class="tl-stat">Do koncertu: <strong>${daysLeft>=0?daysLeft+' dni':'minął'}</strong></div><div class="timeline-wrap">
-  ${periods.map(p=>{
-    const isPast=daysLeft<p.minDays;
-    const cpsHtml=p.cps.map(k=>{
-      const done=show.checkpoints&&show.checkpoints[k];
-      const late=!done&&expected.includes(k);
-      const cls=done?'tl-label':'late'===k?'tl-label late':'tl-label'+(late?' late':'');
-      const dotCls=done?'tl-dot tl-ok':late?'tl-dot tl-late':isPast?'tl-dot tl-warn':'tl-dot tl-future';
-      return `<div class="tl-row"><div class="${dotCls}"></div><span class="${late?'tl-label late':'tl-label'+(done?'':' future')}">${esc(CP_NAMES[k])}</span></div>`;
-    }).join('');
-    return `<div style="margin-bottom:10px"><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:4px;letter-spacing:.06em;text-transform:uppercase">${p.label}</div>${cpsHtml}</div>`;
-  }).join('')}
-  </div>`;
-}
-
-function getExpectedCPs(daysLeft){
-  const active=[];
-  if(daysLeft<=60){active.push('adAccess','contentRecorded');}
-  if(daysLeft<=30){active.push('campaignLaunch');}
-  if(daysLeft<=14){active.push('influencers','retargeting');}
-  if(daysLeft<=7){active.push('emailBlast');}
-  return active;
 }
 
 /* ────────────────────────────────────────────────
@@ -994,6 +934,20 @@ async function saveShow(){
 /* ────────────────────────────────────────────────
    CHART: Koszty vs. Sprzedaż biletów (tygodniowo)
    ──────────────────────────────────────────────── */
+/* ── chart tooltip ── */
+function showChartTip(e,text){
+  const t=document.getElementById('chart-tooltip');
+  t.textContent=text;t.style.display='block';moveChartTip(e);
+}
+function moveChartTip(e){
+  const t=document.getElementById('chart-tooltip');
+  let x=e.clientX+14,y=e.clientY-10;
+  if(x+270>window.innerWidth)x=e.clientX-274;
+  if(y+t.offsetHeight+8>window.innerHeight)y=e.clientY-t.offsetHeight-8;
+  t.style.left=x+'px';t.style.top=y+'px';
+}
+function hideChartTip(){document.getElementById('chart-tooltip').style.display='none';}
+
 function fmtCostDate(ts){
   if(!ts)return'–';
   try{const d=new Date(ts.seconds*1000);return d.toLocaleDateString('pl-PL');}catch{return'–';}
@@ -1121,13 +1075,24 @@ async function renderChart(show){
   const weeklySpend=cumCosts.map((v,i)=>i===0?v:v-cumCosts[i-1]);
   const maxWeeklySpend=Math.max(...weeklySpend,1);
 
+  // Map costs to their week bucket for tooltips
+  const weekCostItems=weeks.map(w=>{
+    const wEnd=new Date(w);wEnd.setDate(wEnd.getDate()+6);wEnd.setHours(23,59,59);
+    return costs.filter(c=>{
+      const d=c.costDate?new Date(c.costDate):(c.createdAt?new Date(c.createdAt.seconds*1000):null);
+      return d&&d>=w&&d<=wEnd;
+    });
+  });
+
   const bars=weeklySpend.map((v,i)=>{
     if(v<=0)return'';
     const bh=((v/maxCost)*chartH);
     const x=(xPos(i)-barW/2).toFixed(1);
     const y=(PT+chartH-bh).toFixed(1);
-    const opacity=0.35+0.55*(v/maxWeeklySpend);
-    return`<rect x="${x}" y="${y}" width="${barW}" height="${bh.toFixed(1)}" rx="2" fill="#c8f060" opacity="${opacity.toFixed(2)}"/>`;
+    const wLabel=`${weeks[i].getDate().toString().padStart(2,'0')}.${(weeks[i].getMonth()+1).toString().padStart(2,'0')}`;
+    const itemList=weekCostItems[i].map(c=>`${c.description||c.category}: ${fmtPLN(c.amount)} zł`).join('\n');
+    const tip=`Tydzień ${wLabel}: ${fmtPLN(v)} zł${itemList?'\n'+itemList:''}`;
+    return`<rect x="${x}" y="${y}" width="${barW}" height="${bh.toFixed(1)}" rx="2" fill="#c8f060" opacity="0.75" data-tip="${tip.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" style="cursor:default"/>`;
   }).join('');
 
   // Ticket line + area
@@ -1150,6 +1115,12 @@ ${xLabels}${tickYLabels}
 <line x1="${PL}" y1="${PT+chartH}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 <line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
 <line x1="${W-PR}" y1="${PT}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+
+  svgEl.querySelectorAll('rect[data-tip]').forEach(r=>{
+    r.addEventListener('mouseenter',e=>showChartTip(e,r.dataset.tip));
+    r.addEventListener('mousemove',moveChartTip);
+    r.addEventListener('mouseleave',hideChartTip);
+  });
 
   const hasTickets=ticketPoints.length>0;
   const hasCosts=cumCosts.some(v=>v>0);

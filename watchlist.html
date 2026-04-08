@@ -1150,7 +1150,7 @@ loadData();
   window.showTip=function(e,el){
     const notes=el.dataset.notes;
     if(!notes)return;
-    tip.textContent=notes;
+    tip.textContent=notes.replace(/<[^>]*>/g,'');
     tip.style.display='block';
     placeTip(e);
   };
