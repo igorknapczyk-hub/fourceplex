@@ -303,6 +303,10 @@ select.form-input{cursor:pointer}
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
     Projekty
   </div>
+  <a class="nav-item" href="promotor-office.html" id="promotor-nav" style="display:none;color:var(--blue)">
+    <svg class="nav-icon" style="opacity:1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
+    Promotor Office
+  </a>
 
   <div class="nav-label" style="margin-top:6px">Szybkie Linki</div>
   <a class="nav-item" href="https://fource.pl" target="_blank" rel="noopener">
@@ -1434,6 +1438,8 @@ loadUsers();
   function applyTheme(t){document.body.classList.toggle('light',t==='light');const ic=document.getElementById('theme-icon');if(ic)ic.innerHTML=t==='light'?SUN:MOON;}
   window.toggleTheme=function(){const n=document.body.classList.contains('light')?'dark':'light';localStorage.setItem(TK,n);applyTheme(n);};
   applyTheme(localStorage.getItem(TK)||'dark');
+  const _pn=document.getElementById('promotor-nav');
+  if(_pn&&['Radek','Igor'].includes(localStorage.getItem('fourceplex_current_user')||''))_pn.style.display='flex';
 })();
 window.addEventListener('fb-ready',()=>{
   setTimeout(()=>{if((window._shows||[]).length===0)seedIfEmpty();},2000);

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fource.Plex — Promotor Office</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0e11;--bg2:#16161a;--bg3:#1e1e24;--bg4:#26262e;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0eff4;--text2:#9998a8;--text3:#5c5b6e;
+  --accent:#c8f060;--accent2:#9de84a;
+  --blue:#60a5fa;--blue2:#3b82f6;
+  --purple:#a78bfa;--teal:#34d399;--amber:#fbbf24;--red:#f87171;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+body.light{--bg:#f0f0f5;--bg2:#ffffff;--bg3:#e6e6ec;--bg4:#d8d8e2;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);--text:#16161e;--text2:#56566a;--text3:#8f8fa0;--accent:#7ab000;--accent2:#5d8a00;}
+body.light img[alt="Fource.Plex"]{filter:invert(1);mix-blend-mode:normal;opacity:.85}
+.theme-toggle{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .15s,border-color .15s,background .15s;line-height:0}
+.theme-toggle:hover{color:var(--text);border-color:rgba(128,128,128,.25)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:54px 1fr;height:100vh;overflow:hidden}
+
+/* ── TOPBAR ── */
+.topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:200}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.brand-logo{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--text);letter-spacing:.06em}
+.brand-tag{font-size:10px;color:var(--text3);font-family:var(--mono);border:1px solid var(--border2);padding:2px 7px;border-radius:4px;margin-left:8px}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--blue);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar-stat{font-family:var(--mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
+.topbar-stat strong{color:var(--blue)}
+.user-badge{background:var(--bg3);border:1px solid var(--border2);padding:4px 10px;border-radius:6px;font-size:12px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px}
+.user-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:18px 0;display:flex;flex-direction:column;gap:1px;overflow:hidden}
+.nav-label{font-family:var(--mono);font-size:9px;font-weight:500;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;padding:12px 18px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 18px;font-size:13px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all .15s;text-decoration:none}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--blue);background:rgba(96,165,250,.06);border-left-color:var(--blue)}
+.nav-icon{width:14px;height:14px;flex-shrink:0;opacity:.6}
+.nav-item.active .nav-icon,.nav-item:hover .nav-icon{opacity:1}
+.sidebar-footer{margin-top:auto;padding:14px 18px;border-top:1px solid var(--border)}
+.sidebar-footer-logo{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.18em;color:var(--text3);text-transform:uppercase;margin-bottom:3px}
+.sidebar-footer-logo span{color:var(--blue)}
+.sidebar-footer-text{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+/* ── MAIN ── */
+.main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.content-area{flex:1;display:flex;overflow:hidden;min-height:0}
+
+/* ── LIST PANEL ── */
+.list-panel{width:42%;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.list-header{padding:10px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.list-header-title{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.show-list{flex:1;overflow-y:auto}
+
+/* ── ARTIST ITEM ── */
+.artist-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;position:relative}
+.artist-item:hover{background:var(--bg3)}
+.artist-item.selected{background:rgba(96,165,250,.05);border-left:2px solid var(--blue)}
+.artist-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.artist-name{font-size:13px;font-weight:500;color:var(--text)}
+.artist-genre{font-size:11px;color:var(--text2);margin-bottom:5px}
+.artist-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border2);color:var(--text3)}
+.badge-blue{background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.3);color:var(--blue)}
+.badge-teal{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--teal)}
+.badge-amber{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.3);color:var(--amber)}
+.badge-red{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.3);color:var(--red)}
+.trend-up{color:var(--teal);font-family:var(--mono);font-size:11px}
+.trend-down{color:var(--red);font-family:var(--mono);font-size:11px}
+.trend-flat{color:var(--text3);font-family:var(--mono);font-size:11px}
+.remove-btn{width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--text3);background:none;border:none;cursor:pointer;transition:all .15s;flex-shrink:0;opacity:0}
+.artist-item:hover .remove-btn{opacity:1}
+.remove-btn:hover{color:var(--red);background:rgba(248,113,113,.12)}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-family:var(--mono);font-size:11px;gap:10px;padding:40px}
+.empty-state svg{opacity:.15}
+
+/* ── DETAIL PANEL ── */
+.detail-panel{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.detail-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-family:var(--mono);font-size:11px;gap:10px}
+.detail-header{padding:16px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.detail-title{font-size:18px;font-weight:500;color:var(--text);margin-bottom:4px}
+.detail-sub{font-family:var(--mono);font-size:10px;color:var(--text3);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.detail-body{flex:1;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+
+/* ── SECTION CARD ── */
+.sec-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.sec-head{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sec-title{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.sec-body{padding:13px 14px}
+
+/* ── PREDICT BAR ── */
+.predict-wrap{display:flex;align-items:center;gap:8px}
+.predict-track{flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.predict-fill{height:5px;background:linear-gradient(90deg,var(--blue),var(--blue2));border-radius:3px}
+.predict-num{font-family:var(--mono);font-size:11px;color:var(--text2);white-space:nowrap}
+.venue-tag{font-family:var(--mono);font-size:9px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.25);color:var(--blue);padding:2px 6px;border-radius:3px}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.toolbar-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-right:4px}
+.search-wrap{position:relative;flex:1;min-width:140px;max-width:280px}
+.search-wrap svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:12px;height:12px;color:var(--text3);pointer-events:none}
+.search-wrap input{width:100%;padding:5px 9px 5px 26px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:12px;outline:none;transition:border-color .15s}
+.search-wrap input::placeholder{color:var(--text3)}
+.search-wrap input:focus{border-color:var(--blue)}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:5px 12px;border-radius:6px;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--bg4);color:var(--text)}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-blue{background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.3);color:var(--blue)}
+.btn-blue:hover{background:rgba(96,165,250,.2)}
+
+/* ── NOTES ── */
+.notes-textarea{width:100%;min-height:120px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:12px;line-height:1.55;padding:9px 11px;border-radius:6px;outline:none;resize:vertical;transition:border-color .15s}
+.notes-textarea:focus{border-color:rgba(96,165,250,.3)}
+.notes-textarea::placeholder{color:var(--text3)}
+.notes-save-row{display:flex;align-items:center;justify-content:space-between;margin-top:7px}
+.notes-meta{font-family:var(--mono);font-size:9px;color:var(--text3)}
+
+/* ── INFO GRID ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.info-row{display:flex;flex-direction:column;gap:3px}
+.info-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.07em;text-transform:uppercase}
+.info-val{font-size:12px;color:var(--text2)}
+
+/* ── USER MODAL ── */
+#user-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:center;justify-content:center}
+#user-modal-overlay.open{display:flex}
+#user-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:320px;max-width:95vw}
+.modal-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:16px}
+.user-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.user-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s}
+.user-option:hover{border-color:rgba(255,255,255,.18)}
+.user-option.selected{border-color:var(--blue);background:rgba(96,165,250,.06)}
+.user-avatar-sm{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#0e0e11;flex-shrink:0}
+.user-option-name{font-size:14px;font-weight:500}
+.modal-divider{height:1px;background:var(--border);margin:14px 0}
+.add-user-row{display:flex;gap:8px}
+.modal-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;outline:none;transition:border-color .15s}
+.modal-input:focus{border-color:rgba(96,165,250,.4)}
+.modal-input::placeholder{color:var(--text3)}
+
+/* ── ACCESS DENIED ── */
+#access-denied{display:none;position:fixed;inset:0;background:var(--bg);z-index:700;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#access-denied.open{display:flex}
+.access-icon{font-size:48px;opacity:.3}
+.access-title{font-family:var(--mono);font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--text2)}
+.access-sub{font-size:12px;color:var(--text3);font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<!-- ── ACCESS DENIED ── -->
+<div id="access-denied">
+  <div class="access-icon">🎯</div>
+  <div class="access-title">Promotor Office</div>
+  <div class="access-sub">Dostęp tylko dla klasy PROMOTOR</div>
+  <button class="btn" onclick="location.href='watchlist.html'" style="margin-top:8px">← Wróć do Watchlist</button>
+</div>
+
+<!-- ── USER MODAL ── -->
+<div id="user-modal-overlay">
+  <div id="user-modal">
+    <div class="modal-title">Kto jesteś?</div>
+    <div class="user-list" id="user-list"></div>
+    <div id="pin-section" style="display:none">
+      <div class="modal-divider"></div>
+      <div class="add-user-row">
+        <input class="modal-input" id="pin-input" type="password" placeholder="PIN…" maxlength="4" inputmode="numeric">
+        <button class="btn btn-blue" onclick="confirmPin()">OK</button>
+      </div>
+      <div id="pin-error" style="display:none;color:#f87171;font-size:11px;margin-top:6px;font-family:var(--mono);letter-spacing:.05em">Nieprawidłowy PIN</div>
+    </div>
+  </div>
+</div>
+
+<div class="layout" id="app-layout" style="display:none">
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <img src="fourceplex.png" alt="Fource.Plex" style="height:52px;mix-blend-mode:screen;opacity:.92;margin-right:4px">
+    <div>
+      <span class="brand-logo" style="color:var(--blue)">PROMOTOR</span>
+      <span class="brand-logo" style="font-size:14px;color:var(--text2);margin-left:4px">OFFICE</span>
+      <span class="brand-tag">Fource.Plex</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-stat"><div class="live-dot"></div>&nbsp;<strong id="top-count">0</strong> artystów</div>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Tryb jasny / ciemny">
+      <svg id="theme-icon" viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+    </button>
+    <div class="user-badge" onclick="openModal()">
+      <div class="user-dot" id="badge-dot"></div>
+      <span id="badge-name">–</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── SIDEBAR ── -->
+<div class="sidebar">
+  <div class="nav-label">Moduły</div>
+  <a class="nav-item" href="index.html">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M1 6h14M5 6v8"/></svg>
+    Terrarium
+  </a>
+  <a class="nav-item" href="watchlist.html">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="5" r="2.5"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+    Watchlist
+  </a>
+  <a class="nav-item" href="ticketing.html">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="4" width="14" height="10" rx="1.5"/><path d="M5 4V2M11 4V2"/><path d="M1 8h14"/></svg>
+    Ticketing
+  </a>
+  <a class="nav-item" href="marketing.html">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 6h2v4H2zM4 7l7-4v10L4 9"/><path d="M11 6.5c1 .5 1 2.5 0 3"/></svg>
+    Marketing
+  </a>
+  <a class="nav-item" href="produkcja.html">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="3" width="14" height="10" rx="1.5"/><circle cx="8" cy="8" r="2.5"/><circle cx="8" cy="8" r="1"/></svg>
+    Produkcja
+  </a>
+  <a class="nav-item" href="listy-gosci.html">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 4h8M4 7h8M4 10h5"/><rect x="1" y="1" width="14" height="14" rx="1.5"/></svg>
+    Listy Gości
+  </a>
+  <a class="nav-item" href="projekty.html">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    Projekty
+  </a>
+  <a class="nav-item active" href="promotor-office.html">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
+    Promotor Office
+  </a>
+
+  <div class="nav-label" style="margin-top:6px">Szybkie Linki</div>
+  <a class="nav-item" href="https://fource.pl" target="_blank" rel="noopener">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 2c-2 2-3 4-3 6s1 4 3 6M8 2c2 2 3 4 3 6s-1 4-3 6M2 8h12"/></svg>
+    Fource.pl
+    <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
+  </a>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-footer-logo"><span>F</span>OURCE</div>
+    <div class="sidebar-footer-text">Agency Hub © 2026</div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="toolbar">
+    <span class="toolbar-title">Artyści</span>
+    <div class="search-wrap">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="6.5" cy="6.5" r="4"/><path d="M10 10l3 3" stroke-linecap="round"/></svg>
+      <input type="text" id="search-input" placeholder="Szukaj artysty, gatunku..." oninput="renderList()">
+    </div>
+  </div>
+
+  <div class="content-area">
+    <!-- LIST -->
+    <div class="list-panel">
+      <div class="list-header">
+        <span class="list-header-title">W Promotor Office</span>
+        <span id="list-count" style="font-family:var(--mono);font-size:9px;color:var(--text3)">0</span>
+      </div>
+      <div class="show-list" id="artist-list">
+        <div class="empty-state">
+          <svg viewBox="0 0 16 16" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
+          Ładowanie...
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAIL -->
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-empty" id="detail-empty">
+        <svg viewBox="0 0 16 16" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
+        <span>Wybierz artystę z listy</span>
+      </div>
+      <div id="detail-content" style="display:none;flex-direction:column;flex:1"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end layout -->
+
+<!-- ── FIREBASE ── -->
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getFirestore,collection,doc,onSnapshot,setDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+const cfg={apiKey:"AIzaSyCUsvjkzYG3AVROysZh9BtN2_vagSSyMww",authDomain:"fourceplex-market.firebaseapp.com",projectId:"fourceplex-market",storageBucket:"fourceplex-market.firebasestorage.app",messagingSenderId:"300062366060",appId:"1:300062366060:web:0cf7bd4128bea35cc63b49"};
+const app=initializeApp(cfg);
+const db=getFirestore(app);
+const artistsCol=collection(db,'artists');
+window._poDb=db;
+window._poArtistsCol=artistsCol;
+window._poSetDoc=setDoc;
+window._poDoc=doc;
+window._poReady=true;
+onSnapshot(artistsCol,snap=>{
+  window._poArtists=snap.docs.map(d=>d.data()).filter(a=>a.inPromotor);
+  window._poLoaded=true;
+  if(window.renderList)window.renderList();
+});
+window.dispatchEvent(new Event('po-firebase-ready'));
+</script>
+
+<script>
+const SK_PO='fourceplex_current_user';
+const PROMOTOR_USERS=['Radek','Igor'];
+const USERS=[
+  {name:'Igor',    pin:'1111',color:'#34d399'},
+  {name:'Mariusz', pin:'2222',color:'#fbbf24'},
+  {name:'Monika',  pin:'3333',color:'#a78bfa'},
+  {name:'Radek',   pin:'4444',color:'#60a5fa'},
+  {name:'Gość',    pin:'5555',color:'#fb923c'},
+];
+let curUser='',_loginUser=null,selectedId=null;
+window._poArtists=window._poArtists||[];
+window._poLoaded=false;
+
+/* ── AUTH ── */
+function openModal(){
+  _loginUser=null;
+  renderUserList();
+  document.getElementById('pin-section').style.display='none';
+  document.getElementById('user-modal-overlay').classList.add('open');
+}
+function closeModal(){
+  if(!curUser)return;
+  document.getElementById('user-modal-overlay').classList.remove('open');
+}
+function renderUserList(){
+  const el=document.getElementById('user-list');
+  el.innerHTML='';
+  USERS.forEach(u=>{
+    const d=document.createElement('div');
+    d.className='user-option'+(u.name===_loginUser?' selected':'');
+    d.onclick=()=>selectForPin(u.name);
+    d.innerHTML=`<div class="user-avatar-sm" style="background:${u.color}">${u.name[0]}</div><span class="user-option-name">${u.name}</span>`;
+    el.appendChild(d);
+  });
+}
+function selectForPin(name){
+  _loginUser=name;
+  renderUserList();
+  document.getElementById('pin-section').style.display='block';
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-error').style.display='none';
+  document.getElementById('pin-input').focus();
+}
+function confirmPin(){
+  const pin=document.getElementById('pin-input').value;
+  const u=USERS.find(u=>u.name===_loginUser);
+  if(u&&pin===u.pin){
+    curUser=_loginUser;
+    localStorage.setItem(SK_PO,curUser);
+    updateBadge();
+    closeModal();
+    checkAccess();
+    renderList();
+  }else{
+    document.getElementById('pin-error').style.display='block';
+    document.getElementById('pin-input').value='';
+    document.getElementById('pin-input').focus();
+  }
+}
+document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPin();});
+document.getElementById('user-modal-overlay').addEventListener('click',function(e){if(e.target===this&&curUser)closeModal();});
+
+function updateBadge(){
+  const u=USERS.find(u=>u.name===curUser);
+  document.getElementById('badge-dot').style.background=u?u.color:'var(--text3)';
+  document.getElementById('badge-name').textContent=curUser||'–';
+}
+function checkAccess(){
+  const isPromotor=PROMOTOR_USERS.includes(curUser);
+  document.getElementById('app-layout').style.display=isPromotor?'grid':'none';
+  const denied=document.getElementById('access-denied');
+  denied.classList.toggle('open',!isPromotor&&!!curUser);
+}
+function initUser(){
+  const saved=localStorage.getItem(SK_PO);
+  const u=USERS.find(u=>u.name===saved);
+  if(saved&&u){
+    curUser=saved;
+    updateBadge();
+    checkAccess();
+    if(PROMOTOR_USERS.includes(curUser))renderList();
+  }else{
+    openModal();
+  }
+}
+
+/* ── HELPERS ── */
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function venueForPredict(max){
+  if(!max||max<100)return null;
+  if(max<200)return'Chmury';if(max<=400)return'Hydrozagadka';
+  if(max<=700)return'Niebo';if(max<=1000)return'Proxima';
+  if(max<=1800)return'Progresja';if(max<=5000)return'COS Torwar';
+  return'Atlas Arena+';
+}
+function userColor(name){const u=USERS.find(u=>u.name===name);return u?u.color:'#a78bfa';}
+function fmtDate(iso){if(!iso)return'—';try{return new Date(iso).toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});}catch{return'—';}}
+
+/* ── LIST ── */
+function renderList(){
+  if(!PROMOTOR_USERS.includes(curUser))return;
+  const q=(document.getElementById('search-input')?.value||'').toLowerCase();
+  const artists=(window._poArtists||[]).filter(a=>
+    !q||(a.name||'').toLowerCase().includes(q)||(a.genre||'').toLowerCase().includes(q)
+  );
+  document.getElementById('top-count').textContent=(window._poArtists||[]).length;
+  document.getElementById('list-count').textContent=artists.length+' artystów';
+  const el=document.getElementById('artist-list');
+  if(!artists.length){
+    el.innerHTML=`<div class="empty-state"><svg viewBox="0 0 16 16" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg><span>${q?'Brak wyników':'Brak artystów w Promotor Office'}</span>${q?'':'<span style="font-size:10px;color:var(--text3)">Dodaj artystów celownikiem w Watchlist</span>'}</div>`;
+    return;
+  }
+  el.innerHTML='';
+  artists.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  artists.forEach(a=>{
+    const isSelected=a.id===selectedId;
+    const trendIcon=a.trend==='up'?'<span class="trend-up">↑</span>':a.trend==='down'?'<span class="trend-down">↓</span>':'<span class="trend-flat">→</span>';
+    const venue=venueForPredict(a.predMax);
+    const div=document.createElement('div');
+    div.className='artist-item'+(isSelected?' selected':'');
+    div.innerHTML=`
+      <div class="artist-item-top">
+        <span class="artist-name">${esc(a.name||'–')}</span>
+        <button class="remove-btn" title="Usuń z Promotor Office" onclick="event.stopPropagation();removeFromOffice(${a.id})">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+        </button>
+      </div>
+      <div class="artist-genre">${esc(a.genre||'–')}</div>
+      <div class="artist-meta">
+        ${trendIcon}
+        <span class="badge">${(a.listeners||'—')}</span>
+        ${a.predMax?`<span class="badge badge-blue">${(a.predMin||0).toLocaleString()}–${(a.predMax||0).toLocaleString()}</span>`:''}
+        ${venue?`<span class="badge badge-blue">${venue}</span>`:''}
+        ${a.status==='sent'?'<span class="badge badge-teal">Wysłano</span>':a.status==='reminder'?'<span class="badge badge-amber">Przypomnienie</span>':''}
+        ${a.hot?'<span style="font-size:11px" title="HOT!">🔥</span>':''}
+      </div>`;
+    div.addEventListener('click',()=>selectArtist(a.id));
+    el.appendChild(div);
+  });
+}
+
+function selectArtist(id){
+  selectedId=id;
+  renderList();
+  renderDetail(id);
+}
+
+/* ── DETAIL ── */
+function renderDetail(id){
+  const a=(window._poArtists||[]).find(x=>x.id===id);
+  if(!a){
+    document.getElementById('detail-empty').style.display='flex';
+    document.getElementById('detail-content').style.display='none';
+    return;
+  }
+  document.getElementById('detail-empty').style.display='none';
+  const dc=document.getElementById('detail-content');
+  dc.style.display='flex';
+
+  const venue=venueForPredict(a.predMax);
+  const pct=Math.min(100,Math.round((a.predMax||0)/5000*100));
+  const trendIcon=a.trend==='up'?'↑ Rosnący':a.trend==='down'?'↓ Spadkowy':'→ Stabilny';
+  const trendCls=a.trend==='up'?'trend-up':a.trend==='down'?'trend-down':'trend-flat';
+
+  dc.innerHTML=`
+  <div class="detail-header">
+    <div class="detail-title">${esc(a.name||'–')}</div>
+    <div class="detail-sub">
+      <span>${esc(a.genre||'–')}</span>
+      <span class="${trendCls}">${trendIcon}</span>
+      ${a.hot?'<span>🔥 HOT!</span>':''}
+      ${a.spotifyUrl?`<a href="${esc(a.spotifyUrl)}" target="_blank" rel="noopener" style="color:var(--blue);font-size:11px;font-family:var(--mono)">Spotify ↗</a>`:''}
+    </div>
+  </div>
+  <div class="detail-body">
+
+    <!-- PREDICT -->
+    <div class="sec-card">
+      <div class="sec-head"><span class="sec-title">Market Predict</span></div>
+      <div class="sec-body">
+        <div class="predict-wrap" style="margin-bottom:10px">
+          <div class="predict-track"><div class="predict-fill" style="width:${pct}%"></div></div>
+          <span class="predict-num">${(a.predMin||0).toLocaleString()}–${(a.predMax||0).toLocaleString()} osób</span>
+          ${venue?`<span class="venue-tag">${venue}</span>`:''}
+        </div>
+        <div class="info-grid">
+          <div class="info-row"><span class="info-label">Monthly listeners</span><span class="info-val">${esc(a.listeners||'—')}</span></div>
+          <div class="info-row"><span class="info-label">PL Show</span><span class="info-val">${esc(a.plShow||'NIE')}</span></div>
+          <div class="info-row"><span class="info-label">Status</span><span class="info-val">${esc(a.status||'—')}</span></div>
+          <div class="info-row"><span class="info-label">Dodał/a</span><span class="info-val" style="color:${userColor(a.addedBy||'')}">${esc(a.addedBy||'—')}</span></div>
+          <div class="info-row"><span class="info-label">Data dodania</span><span class="info-val">${fmtDate(a.dateAdded)}</span></div>
+          <div class="info-row"><span class="info-label">Trend</span><span class="info-val ${trendCls}">${trendIcon}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTATKI WATCHLIST -->
+    <div class="sec-card">
+      <div class="sec-head"><span class="sec-title">Notatki (Watchlist)</span></div>
+      <div class="sec-body">
+        <div style="font-size:12px;color:var(--text2);line-height:1.65;white-space:pre-wrap;min-height:40px">${a.notes?esc(a.notes.replace(/<[^>]*>/g,'')):'<span style="color:var(--text3);font-style:italic">Brak notatek</span>'}</div>
+      </div>
+    </div>
+
+    <!-- NOTATKI PROMOTOR -->
+    <div class="sec-card">
+      <div class="sec-head">
+        <span class="sec-title">Notatki Promotora</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text3)" id="pnotes-meta-${a.id}">${a.promotorNotesMeta||''}</span>
+      </div>
+      <div class="sec-body">
+        <textarea class="notes-textarea" id="pnotes-ta-${a.id}" placeholder="Notatki wewnętrzne — widoczne tylko dla Promotorów…">${esc(a.promotorNotes||'')}</textarea>
+        <div class="notes-save-row">
+          <span class="notes-meta"></span>
+          <button class="btn btn-sm btn-blue" onclick="savePromotorNotes(${a.id})">Zapisz</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AKCJE -->
+    <div style="display:flex;justify-content:flex-end">
+      <button class="btn btn-sm" style="border-color:rgba(248,113,113,.3);color:var(--red);background:rgba(248,113,113,.08)" onclick="removeFromOffice(${a.id})">
+        Usuń z Promotor Office
+      </button>
+    </div>
+
+  </div>`;
+}
+
+/* ── ACTIONS ── */
+async function removeFromOffice(id){
+  if(!confirm('Usunąć artystę z Promotor Office?\nArtysta pozostanie w Watchlist.'))return;
+  if(!window._poReady)return;
+  const a=(window._poArtists||[]).find(x=>x.id===id);
+  if(!a)return;
+  const updated={...a,inPromotor:false};
+  try{
+    await window._poSetDoc(window._poDoc(window._poArtistsCol,String(id)),updated);
+    if(selectedId===id){
+      selectedId=null;
+      document.getElementById('detail-empty').style.display='flex';
+      document.getElementById('detail-content').style.display='none';
+    }
+  }catch(e){console.error(e);}
+}
+
+async function savePromotorNotes(id){
+  if(!window._poReady)return;
+  const ta=document.getElementById(`pnotes-ta-${id}`);
+  if(!ta)return;
+  const a=(window._poArtists||[]).find(x=>x.id===id);
+  if(!a)return;
+  const now=new Date().toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const meta=`${curUser} · ${now}`;
+  const updated={...a,promotorNotes:ta.value,promotorNotesMeta:meta};
+  try{
+    await window._poSetDoc(window._poDoc(window._poArtistsCol,String(id)),updated);
+    const metaEl=document.getElementById(`pnotes-meta-${id}`);
+    if(metaEl)metaEl.textContent=meta;
+    const btn=ta.closest('.sec-body')?.querySelector('button');
+    if(btn){const orig=btn.textContent;btn.textContent='✓ Zapisano';setTimeout(()=>{btn.textContent=orig;},1500);}
+  }catch(e){console.error(e);}
+}
+
+/* ── THEME ── */
+(function(){
+  const TK='fourceplex_theme';
+  const MOON='<path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>';
+  const SUN='<path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>';
+  function applyTheme(t){document.body.classList.toggle('light',t==='light');const ic=document.getElementById('theme-icon');if(ic)ic.innerHTML=t==='light'?SUN:MOON;}
+  window.toggleTheme=function(){const n=document.body.classList.contains('light')?'dark':'light';localStorage.setItem(TK,n);applyTheme(n);};
+  applyTheme(localStorage.getItem(TK)||'dark');
+})();
+
+/* ── INIT ── */
+window.addEventListener('po-firebase-ready',()=>{
+  if(PROMOTOR_USERS.includes(curUser))renderList();
+});
+initUser();
+</script>
+</body>
+</html>
