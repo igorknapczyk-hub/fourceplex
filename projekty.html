@@ -45,6 +45,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .nav-item{display:flex;align-items:center;gap:10px;padding:8px 18px;font-size:13px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all .15s;text-decoration:none}
 .nav-item:hover{color:var(--text);background:var(--bg3)}
 .nav-item.active{color:var(--accent);background:rgba(200,240,96,.06);border-left-color:var(--accent)}
+.nav-item.disabled{opacity:.28;cursor:not-allowed;pointer-events:none}
 .nav-icon{width:14px;height:14px;flex-shrink:0;opacity:.6}
 .nav-item.active .nav-icon,.nav-item:hover .nav-icon{opacity:1}
 .sidebar-footer{margin-top:auto;padding:14px 18px;border-top:1px solid var(--border)}
@@ -217,7 +218,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
   <div class="nav-item" onclick="location.href='watchlist.html'"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="5" r="2.5"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Watchlist</div>
   <div class="nav-item" onclick="location.href='ticketing.html'"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="4" width="14" height="10" rx="1.5"/><path d="M5 4V2M11 4V2"/><path d="M1 8h14"/></svg>Ticketing</div>
   <div class="nav-item" onclick="location.href='marketing.html'"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 6h2v4H2zM4 7l7-4v10L4 9"/><path d="M11 6.5c1 .5 1 2.5 0 3"/></svg>Marketing</div>
-  <div class="nav-item" onclick="location.href='produkcja.html'"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="3" width="14" height="10" rx="1.5"/><circle cx="8" cy="8" r="2.5"/><circle cx="8" cy="8" r="1"/></svg>Produkcja</div>
+  <div class="nav-item" id="nav-produkcja" onclick="location.href='produkcja.html'"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="3" width="14" height="10" rx="1.5"/><circle cx="8" cy="8" r="2.5"/><circle cx="8" cy="8" r="1"/></svg>Produkcja</div>
   <div class="nav-item" onclick="location.href='listy-gosci.html'"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 4h8M4 7h8M4 10h5"/><rect x="1" y="1" width="14" height="14" rx="1.5"/></svg>Listy Gości</div>
   <div class="nav-item active"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>Projekty</div>
   <a class="nav-item" href="promotor-office.html" id="promotor-nav" style="display:none;color:var(--blue)">
@@ -399,7 +400,7 @@ function renderUsers(){
   });
 }
 function selectForPin(name){_loginUser=name;renderUsers();document.getElementById('pin-section').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-error').style.display='none';document.getElementById('pin-input').focus();}
-function confirmPin(){const pin=document.getElementById('pin-input').value;const u=USERS.find(u=>u.name===_loginUser);if(u&&pin===u.pin){currentUser=_loginUser;localStorage.setItem(SESSION_KEY_P,currentUser);setBadge(currentUser);closeModal();}else{document.getElementById('pin-error').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-input').focus();}}
+function confirmPin(){const pin=document.getElementById('pin-input').value;const u=USERS.find(u=>u.name===_loginUser);if(u&&pin===u.pin){currentUser=_loginUser;localStorage.setItem(SESSION_KEY_P,currentUser);setBadge(currentUser);closeModal();const _np=document.getElementById('nav-produkcja');if(_np){const _ip=['Radek','Igor'].includes(currentUser);_np.classList.toggle('disabled',!_ip);_np.title=_ip?'':'Dostępne tylko dla Promotora';}}else{document.getElementById('pin-error').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-input').focus();}}
 document.getElementById('btn-pin-ok').addEventListener('click',confirmPin);
 document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPin();});
 document.getElementById('user-badge-btn').onclick=openModal;
@@ -642,6 +643,8 @@ document.getElementById('ai-btn').onclick=async()=>{
   applyTheme(localStorage.getItem(TK)||'dark');
   const _pn=document.getElementById('promotor-nav');
   if(_pn&&['Radek','Igor'].includes(localStorage.getItem('fourceplex_current_user')||''))_pn.style.display='flex';
+  const _np=document.getElementById('nav-produkcja');
+  if(_np&&!['Radek','Igor'].includes(localStorage.getItem('fourceplex_current_user')||'')){_np.classList.add('disabled');_np.title='Dostępne tylko dla Promotora';}
 })();
 </script>
 </body>

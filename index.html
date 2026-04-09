@@ -54,6 +54,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .nav-item{display:flex;align-items:center;gap:10px;padding:8px 18px;font-size:13px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all .15s;text-decoration:none}
 .nav-item:hover{color:var(--text);background:var(--bg3)}
 .nav-item.active{color:var(--accent);background:rgba(200,240,96,.06);border-left-color:var(--accent)}
+.nav-item.disabled{opacity:.28;cursor:not-allowed;pointer-events:none}
 .nav-icon{width:14px;height:14px;flex-shrink:0;opacity:.6}
 .nav-item.active .nav-icon,.nav-item:hover .nav-icon{opacity:1}
 .sidebar-footer{margin-top:auto;padding:14px 18px;border-top:1px solid var(--border)}
@@ -128,6 +129,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .author-tag{font-family:var(--mono);font-size:9px;color:var(--text3)}
 .todo-del{width:16px;height:16px;display:flex;align-items:center;justify-content:center;color:var(--text3);cursor:pointer;font-size:11px;border-radius:3px;transition:color .15s;flex-shrink:0;margin-top:2px}
 .todo-del:hover{color:var(--red)}
+.todo-date-input{background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-family:var(--mono);font-size:11px;padding:4px 8px;outline:none;margin-top:5px;width:100%;transition:border-color .15s;cursor:pointer;appearance:none;-webkit-appearance:none}
+.todo-date-input:focus{border-color:rgba(200,240,96,.4)}
+.todo-date-input::-webkit-calendar-picker-indicator{filter:invert(.45);cursor:pointer;opacity:.7}
+.todo-item.overdue{border-color:rgba(248,113,113,.45)!important;background:rgba(248,113,113,.04)}
+.todo-due{font-family:var(--mono);font-size:9px;color:var(--text3)}
+.todo-due.urgent{color:var(--red)}
 
 /* ════════════════════════════════
    W2 — WATCHLIST
@@ -275,7 +282,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 6h2v4H2zM4 7l7-4v10L4 9"/><path d="M11 6.5c1 .5 1 2.5 0 3"/></svg>
     Marketing
   </div>
-  <div class="nav-item" onclick="location.href='produkcja.html'">
+  <div class="nav-item" id="nav-produkcja" onclick="location.href='produkcja.html'">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="3" width="14" height="10" rx="1.5"/><circle cx="8" cy="8" r="2.5"/><circle cx="8" cy="8" r="1"/></svg>
     Produkcja
   </div>
@@ -338,6 +345,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
           <button class="btn" onclick="addTodo()">+</button>
         </div>
         <div class="assignee-row" id="assignee-row"></div>
+        <input class="todo-date-input" id="todo-date" type="date" title="Termin wykonania (opcjonalnie)">
       </div>
       <div class="todo-list" id="todo-list"><div class="empty-state">Brak zadań</div></div>
     </div>
@@ -474,7 +482,9 @@ function renderUserList(){
   });
 }
 function selectForPin(name){_loginUser=name;renderUserList();document.getElementById('pin-section').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-error').style.display='none';document.getElementById('pin-input').focus();}
-function confirmPin(){const pin=document.getElementById('pin-input').value;const u=USERS.find(u=>u.name===_loginUser);if(u&&pin===u.pin){currentUser=_loginUser;localStorage.setItem(SESSION_KEY,currentUser);updateBadge(currentUser);closeModal();}else{document.getElementById('pin-error').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-input').focus();}}
+function confirmPin(){const pin=document.getElementById('pin-input').value;const u=USERS.find(u=>u.name===_loginUser);if(u&&pin===u.pin){currentUser=_loginUser;localStorage.setItem(SESSION_KEY,currentUser);updateBadge(currentUser);closeModal();renderTodos(_latestTodos);
+    const _pn=document.getElementById('promotor-nav');if(_pn)_pn.style.display=PROMOTOR_USERS.includes(currentUser)?'flex':'none';
+    const _np=document.getElementById('nav-produkcja');if(_np){if(PROMOTOR_USERS.includes(currentUser)){_np.classList.remove('disabled');_np.title='';}else{_np.classList.add('disabled');_np.title='Dostępne tylko dla Promotora';}}}else{document.getElementById('pin-error').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-input').focus();}}
 document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPin();});
 function initUser(){const sess=localStorage.getItem(SESSION_KEY);const u=USERS.find(u=>u.name===sess);if(sess&&u){currentUser=sess;updateBadge(sess);}else openModal();}
 
@@ -482,27 +492,65 @@ function initUser(){const sess=localStorage.getItem(SESSION_KEY);const u=USERS.f
    W1 — JASZCZURZE SPRAWY
 ══════════════════════════════════════ */
 const ASSIGNEES={'Monika':'#a78bfa','Igor':'#34d399','Mariusz':'#fbbf24','Radek':'#60a5fa'};
-let selectedAssignee = null;
+const PROMOTOR_USERS=['Radek','Igor'];
+let selectedAssignees=new Set();
+
+function getAssignees(t){
+  if(Array.isArray(t.assignees))return t.assignees;
+  if(t.assignee)return[t.assignee];
+  return[];
+}
+
+function isVisibleTodo(t){
+  if(!currentUser)return false;
+  if(PROMOTOR_USERS.includes(currentUser))return true;
+  const asgns=getAssignees(t);
+  if(asgns.length===0)return true; // ogólne
+  return asgns.includes(currentUser);
+}
+
+function getDueDays(dueDate){
+  if(!dueDate)return null;
+  const today=new Date();today.setHours(0,0,0,0);
+  return Math.round((new Date(dueDate)-today)/86400000);
+}
 
 function renderAssigneeButtons(){
   const row=document.getElementById('assignee-row');row.innerHTML='';
+  const noneActive=selectedAssignees.size===0;
   const none=document.createElement('span');
-  none.className='a-btn'+(selectedAssignee===null?' sel':'');
-  if(selectedAssignee===null)none.style.cssText='background:rgba(255,255,255,.06);color:var(--text2)';
-  none.textContent='ogólne';none.onclick=()=>{selectedAssignee=null;renderAssigneeButtons();};row.appendChild(none);
+  none.className='a-btn'+(noneActive?' sel':'');
+  if(noneActive)none.style.cssText='background:rgba(255,255,255,.06);color:var(--text2)';
+  none.textContent='ogólne';
+  none.onclick=()=>{selectedAssignees.clear();renderAssigneeButtons();};
+  row.appendChild(none);
   Object.entries(ASSIGNEES).forEach(([name,color])=>{
     const btn=document.createElement('span');
-    btn.className='a-btn'+(selectedAssignee===name?' sel':'');
-    if(selectedAssignee===name)btn.style.background=color;
-    btn.textContent=name;btn.onclick=()=>{selectedAssignee=(selectedAssignee===name)?null:name;renderAssigneeButtons();};row.appendChild(btn);
+    const sel=selectedAssignees.has(name);
+    btn.className='a-btn'+(sel?' sel':'');
+    if(sel)btn.style.background=color;
+    btn.textContent=name;
+    btn.onclick=()=>{
+      if(selectedAssignees.has(name))selectedAssignees.delete(name);
+      else selectedAssignees.add(name);
+      renderAssigneeButtons();
+    };
+    row.appendChild(btn);
   });
 }
 
 function addTodo(){
   const input=document.getElementById('todo-input');const text=input.value.trim();
+  const dateEl=document.getElementById('todo-date');const dueDate=dateEl&&dateEl.value?dateEl.value:null;
   if(!text||!currentUser)return;if(!db){alert('Brak bazy.');return;}
-  db.collection('todos').add({text,done:false,addedBy:currentUser,assignee:selectedAssignee||null,createdAt:firebase.firestore.FieldValue.serverTimestamp()})
-    .then(()=>{input.value='';}).catch(e=>console.error('Todo:',e));
+  const assignees=Array.from(selectedAssignees);
+  db.collection('todos').add({
+    text,done:false,addedBy:currentUser,
+    assignees,
+    assignee:assignees[0]||null,
+    dueDate,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{input.value='';if(dateEl)dateEl.value='';}).catch(e=>console.error('Todo:',e));
 }
 function toggleTodo(id,done){if(db)db.collection('todos').doc(id).update({done:!done}).catch(console.error);}
 function deleteTodo(id){if(db)db.collection('todos').doc(id).delete().catch(console.error);}
@@ -511,28 +559,57 @@ function renderTodos(todos){
   const list=document.getElementById('todo-list');
   const badge=document.getElementById('todo-badge');
   const topCnt=document.getElementById('todo-top-count');
-  const pending=todos.filter(t=>!t.done).length;
+
+  const visible=todos.filter(t=>isVisibleTodo(t));
+  const pending=visible.filter(t=>!t.done).length;
   if(badge)badge.textContent=`${pending} zadań`;if(topCnt)topCnt.textContent=pending;
-  if(!todos.length){list.innerHTML='<div class="empty-state">Brak zadań</div>';return;}
-  const sorted=[...todos].sort((a,b)=>(b.createdAt?.toMillis?.()??0)-(a.createdAt?.toMillis?.()??0)).slice(0,10);
+  if(!visible.length){list.innerHTML='<div class="empty-state">Brak zadań</div>';return;}
+
+  // Sort: active first (by dueDate asc, no-date last), then done
+  const active=visible.filter(t=>!t.done);
+  const done=visible.filter(t=>t.done);
+  const withDate=active.filter(t=>t.dueDate).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate));
+  const noDate=active.filter(t=>!t.dueDate).sort((a,b)=>(b.createdAt?.toMillis?.()??0)-(a.createdAt?.toMillis?.()??0));
+  const sorted=[...withDate,...noDate,...done];
+
   list.innerHTML='';
   sorted.forEach(t=>{
-    const ac=getUserColor(t.addedBy||'');const asgC=t.assignee?(ASSIGNEES[t.assignee]||'#888'):null;
-    const el=document.createElement('div');el.className='todo-item';
+    const ac=getUserColor(t.addedBy||'');
+    const asgns=getAssignees(t);
+    const dueDays=getDueDays(t.dueDate);
+    const isUrgent=dueDays!==null&&dueDays<=3&&!t.done;
+
+    const asgHtml=asgns.map(n=>{
+      const c=ASSIGNEES[n]||'#888';
+      return`<span class="assignee-tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${escHtml(n)}</span>`;
+    }).join('');
+
+    let dueHtml='';
+    if(t.dueDate){
+      const parts=t.dueDate.split('-');
+      const formatted=parts.length===3?`${parts[2]}.${parts[1]}.${parts[0]}`:t.dueDate;
+      const dueLabel=dueDays<0?`${-dueDays}d po terminie`:dueDays===0?'Dziś!':dueDays===1?'Jutro':`za ${dueDays}d`;
+      dueHtml=`<span class="todo-due${isUrgent?' urgent':''}" title="${formatted}">${formatted} · ${dueLabel}</span>`;
+    }
+
+    const el=document.createElement('div');
+    el.className='todo-item'+(isUrgent?' overdue':'');
     el.innerHTML=`
       <div class="todo-cb ${t.done?'done':''}" onclick="toggleTodo('${t.id}',${t.done})"></div>
       <div class="todo-meta">
         <div class="todo-text ${t.done?'done':''}">${escHtml(t.text)}</div>
         <div class="todo-sub">
-          ${t.assignee?`<span class="assignee-tag" style="background:${asgC}22;color:${asgC};border:1px solid ${asgC}44">→${escHtml(t.assignee)}</span>`:''}
-          <span class="author-tag">od <span style="color:${ac}">${escHtml(getInitial(t.addedBy||'?'))}</span></span>
+          ${asgHtml}
+          ${dueHtml}
+          <span class="author-tag">od <span style="color:${ac}">${escHtml(t.addedBy||'?')}</span></span>
         </div>
       </div>
       <div class="todo-del" onclick="deleteTodo('${t.id}')">✕</div>`;
     list.appendChild(el);
   });
 }
-if(db){db.collection('todos').onSnapshot(snap=>renderTodos(snap.docs.map(d=>({id:d.id,...d.data()}))),e=>{console.error('Todos:',e);document.getElementById('todo-list').innerHTML='<div class="empty-state">Błąd</div>';});}
+let _latestTodos=[];
+if(db){db.collection('todos').onSnapshot(snap=>{_latestTodos=snap.docs.map(d=>({id:d.id,...d.data()}));renderTodos(_latestTodos);},e=>{console.error('Todos:',e);document.getElementById('todo-list').innerHTML='<div class="empty-state">Błąd</div>';});}
 
 /* ══════════════════════════════════════
    W3 — TICKETING ALERTY
@@ -818,6 +895,7 @@ function fmtK(n){if(n==null)return'–';if(n>=1000000)return(n/1000000).toFixed(
 /* ── START — initCal jako pierwsze, żeby kalendarz nie pokazywał "..." ── */
 initCal();
 initUser();
+renderAssigneeButtons();
 /* ── THEME ── */
 (function(){
   const TK='fourceplex_theme';
@@ -828,8 +906,9 @@ initUser();
   applyTheme(localStorage.getItem(TK)||'dark');
   const _pn=document.getElementById('promotor-nav');
   if(_pn&&['Radek','Igor'].includes(localStorage.getItem('fourceplex_current_user')||''))_pn.style.display='flex';
+  const _np=document.getElementById('nav-produkcja');
+  if(_np&&!['Radek','Igor'].includes(localStorage.getItem('fourceplex_current_user')||'')){_np.classList.add('disabled');_np.title='Dostępne tylko dla Promotora';}
 })();
-renderAssigneeButtons();
 </script>
 </body>
 </html>

@@ -130,6 +130,23 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .notes-save-row{display:flex;align-items:center;justify-content:space-between;margin-top:7px}
 .notes-meta{font-family:var(--mono);font-size:9px;color:var(--text3)}
 
+/* ── PIPELINE STEPS ── */
+.steps-row{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border)}
+.steps-row:last-child{border-bottom:none}
+.step-cb{width:15px;height:15px;border:1.5px solid var(--text3);border-radius:3px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.step-cb.done{border-color:var(--blue);background:rgba(96,165,250,.15)}
+.step-cb.done::after{content:'';width:7px;height:4px;border-left:1.5px solid var(--blue);border-bottom:1.5px solid var(--blue);transform:rotate(-45deg) translateY(-1px);display:block}
+.step-lbl{font-family:var(--mono);font-size:10px;color:var(--text2);width:68px;flex-shrink:0;transition:color .15s}
+.step-lbl.done{color:var(--blue)}
+.step-date{font-family:var(--mono);font-size:9px;color:var(--text3);width:74px;flex-shrink:0}
+.step-note-in{flex:1;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text2);font-family:var(--sans);font-size:11px;padding:2px 4px;outline:none;transition:border-color .15s;min-width:0}
+.step-note-in:focus{border-bottom-color:rgba(96,165,250,.5)}
+.step-note-in::placeholder{color:var(--text3)}
+/* list dots */
+.step-dots{display:flex;gap:3px;align-items:center;margin-left:2px}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);flex-shrink:0;transition:all .15s}
+.sdot.done{background:var(--blue);border-color:rgba(96,165,250,.7)}
+
 /* ── INFO GRID ── */
 .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .info-row{display:flex;flex-direction:column;gap:3px}
@@ -230,7 +247,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 6h2v4H2zM4 7l7-4v10L4 9"/><path d="M11 6.5c1 .5 1 2.5 0 3"/></svg>
     Marketing
   </a>
-  <a class="nav-item" href="produkcja.html">
+  <a class="nav-item" id="nav-produkcja" href="produkcja.html">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="3" width="14" height="10" rx="1.5"/><circle cx="8" cy="8" r="2.5"/><circle cx="8" cy="8" r="1"/></svg>
     Produkcja
   </a>
@@ -436,8 +453,11 @@ function renderList(){
   artists.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
   artists.forEach(a=>{
     const isSelected=a.id===selectedId;
-    const trendIcon=a.trend==='up'?'<span class="trend-up">↑</span>':a.trend==='down'?'<span class="trend-down">↓</span>':'<span class="trend-flat">→</span>';
-    const venue=venueForPredict(a.predMax);
+    const steps=getSteps(a);
+    const stepBadges=STEPS.map(s=>{
+      const done=!!(steps[s.key]||{}).done;
+      return`<span class="badge${done?' badge-blue':''}" style="${done?'':'opacity:.4'}">${s.label}</span>`;
+    }).join('');
     const div=document.createElement('div');
     div.className='artist-item'+(isSelected?' selected':'');
     div.innerHTML=`
@@ -448,14 +468,7 @@ function renderList(){
         </button>
       </div>
       <div class="artist-genre">${esc(a.genre||'–')}</div>
-      <div class="artist-meta">
-        ${trendIcon}
-        <span class="badge">${(a.listeners||'—')}</span>
-        ${a.predMax?`<span class="badge badge-blue">${(a.predMin||0).toLocaleString()}–${(a.predMax||0).toLocaleString()}</span>`:''}
-        ${venue?`<span class="badge badge-blue">${venue}</span>`:''}
-        ${a.status==='sent'?'<span class="badge badge-teal">Wysłano</span>':a.status==='reminder'?'<span class="badge badge-amber">Przypomnienie</span>':''}
-        ${a.hot?'<span style="font-size:11px" title="HOT!">🔥</span>':''}
-      </div>`;
+      <div class="artist-meta">${stepBadges}</div>`;
     div.addEventListener('click',()=>selectArtist(a.id));
     el.appendChild(div);
   });
@@ -515,6 +528,9 @@ function renderDetail(id){
         </div>
       </div>
     </div>
+
+    <!-- PIPELINE -->
+    ${renderPipeline(a)}
 
     <!-- NOTATKI WATCHLIST -->
     <div class="sec-card">
@@ -581,6 +597,75 @@ async function savePromotorNotes(id){
     if(metaEl)metaEl.textContent=meta;
     const btn=ta.closest('.sec-body')?.querySelector('button');
     if(btn){const orig=btn.textContent;btn.textContent='✓ Zapisano';setTimeout(()=>{btn.textContent=orig;},1500);}
+  }catch(e){console.error(e);}
+}
+
+/* ── PIPELINE ── */
+const STEPS=[
+  {key:'avails',  label:'Avails'},
+  {key:'oferta',  label:'Oferta'},
+  {key:'followup',label:'Follow up'},
+  {key:'period',  label:'Period'},
+];
+function getSteps(a){return a.steps||{};}
+function renderStepDots(a){
+  const steps=getSteps(a);
+  return`<span class="step-dots">${STEPS.map(s=>`<span class="sdot${(steps[s.key]||{}).done?' done':''}" title="${s.label}"></span>`).join('')}</span>`;
+}
+function renderPipeline(a){
+  const steps=getSteps(a);
+  const rows=STEPS.map(s=>{
+    const sd=steps[s.key]||{};
+    const done=!!sd.done;
+    return`<div class="steps-row">
+      <div class="step-cb${done?' done':''}" onclick="toggleStep(${a.id},'${s.key}',this)"></div>
+      <span class="step-lbl${done?' done':''}">${s.label}</span>
+      <span class="step-date">${done&&sd.date?sd.date:''}</span>
+      <input class="step-note-in" value="${esc(sd.note||'')}" placeholder="notatka…" onchange="saveStepNote(${a.id},'${s.key}',this.value)">
+    </div>`;
+  }).join('');
+  return`<div class="sec-card">
+    <div class="sec-head"><span class="sec-title">Akcje</span></div>
+    <div class="sec-body" style="padding:5px 14px">${rows}</div>
+  </div>`;
+}
+async function toggleStep(id,key,el){
+  if(!window._poReady)return;
+  const a=(window._poArtists||[]).find(x=>x.id===id);
+  if(!a)return;
+  const steps={...(getSteps(a))};
+  const cur=steps[key]||{};
+  const newDone=!cur.done;
+  const now=new Date().toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});
+  steps[key]={...cur,done:newDone,date:newDone?now:(cur.date||''),note:cur.note||''};
+  /* optimistic UI */
+  el.classList.toggle('done',newDone);
+  const row=el.closest('.steps-row');
+  if(row){
+    const lbl=row.querySelector('.step-lbl');if(lbl)lbl.classList.toggle('done',newDone);
+    const dateEl=row.querySelector('.step-date');if(dateEl)dateEl.textContent=newDone?now:'';
+  }
+  /* update local cache */
+  const idx=(window._poArtists||[]).findIndex(x=>x.id===id);
+  if(idx>=0)window._poArtists[idx]={...window._poArtists[idx],steps};
+  /* persist */
+  try{
+    await window._poSetDoc(window._poDoc(window._poArtistsCol,String(id)),{...a,steps});
+  }catch(e){console.error(e);}
+  /* update list dots without re-rendering detail (to preserve focus) */
+  renderList();
+}
+async function saveStepNote(id,key,value){
+  if(!window._poReady)return;
+  const a=(window._poArtists||[]).find(x=>x.id===id);
+  if(!a)return;
+  const steps={...(getSteps(a))};
+  const cur=steps[key]||{};
+  steps[key]={...cur,note:value};
+  const idx=(window._poArtists||[]).findIndex(x=>x.id===id);
+  if(idx>=0)window._poArtists[idx]={...window._poArtists[idx],steps};
+  try{
+    await window._poSetDoc(window._poDoc(window._poArtistsCol,String(id)),{...a,steps});
   }catch(e){console.error(e);}
 }
 
