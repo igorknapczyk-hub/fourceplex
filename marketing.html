@@ -188,12 +188,25 @@ select.form-input{cursor:pointer}
 .chart-legend-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--text3)}
 .chart-legend-dot{width:8px;height:2px;border-radius:1px;flex-shrink:0}
 
-/* ── META ADS PLACEHOLDER ── */
-.meta-placeholder{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:10px}
-.meta-title{font-family:var(--mono);font-size:11px;color:var(--text2);display:flex;align-items:center;gap:7px}
-.meta-list{display:flex;flex-direction:column;gap:5px}
-.meta-list li{font-size:12px;color:var(--text3);list-style:none;display:flex;align-items:center;gap:7px}
-.meta-list li::before{content:'•';color:var(--text3)}
+/* ── META ADS ── */
+.meta-loading{display:flex;align-items:center;gap:8px;color:var(--text3);font-family:var(--mono);font-size:11px;padding:14px 0}
+.meta-error{color:var(--red);font-family:var(--mono);font-size:11px;padding:10px 0;line-height:1.5}
+.meta-empty{color:var(--text3);font-family:var(--mono);font-size:11px;padding:10px 0}
+.meta-fetch-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.meta-fetch-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.06em}
+.meta-table{width:100%;border-collapse:collapse;font-size:11px}
+.meta-table th{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:4px 6px 6px;border-bottom:1px solid var(--border2);text-align:left;white-space:nowrap}
+.meta-table th:not(:first-child){text-align:right}
+.meta-table td{padding:6px 6px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
+.meta-table td:not(:first-child){text-align:right;font-family:var(--mono);font-size:10px}
+.meta-table tr:last-child td{border-bottom:none}
+.meta-table tr:hover td{background:var(--bg3)}
+.meta-status{display:inline-block;font-family:var(--mono);font-size:8px;padding:2px 5px;border-radius:3px;border:1px solid;white-space:nowrap}
+.meta-status.active{color:var(--teal);border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.08)}
+.meta-status.paused{color:var(--amber);border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.08)}
+.meta-status.archived{color:var(--text3);border-color:var(--border2);background:transparent}
+.meta-name{color:var(--text);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta-null{color:var(--text3)}
 
 /* ── SLIDE PANEL (add show) ── */
 .slide-panel{position:fixed;top:0;right:-480px;width:420px;height:100vh;background:var(--bg2);border-left:1px solid var(--border2);z-index:400;transition:right .25s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;overflow:hidden}
@@ -799,23 +812,19 @@ function renderDetail(id){
       </div>
     </div>
 
-    <!-- META ADS PLACEHOLDER -->
+    <!-- META ADS -->
     <div class="sec-card">
-      <div class="sec-head"><span class="sec-title">Meta Ads</span></div>
+      <div class="sec-head">
+        <span class="sec-title">Meta Ads</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text3)" id="meta-fetched-${id}"></span>
+      </div>
       <div class="sec-body">
-        <div class="meta-placeholder">
-          <div class="meta-title">🔌 Integracja Meta Ads API</div>
-          <div class="meta-list">
-            <ul>
-              <li>Aktywne kampanie dla tego artysty</li>
-              <li>Wydatki, zasięg, CPM, CTR</li>
-              <li>Rekomendacje AI na podstawie wyników</li>
-              <li>Możliwość zatwierdzania zmian budżetu</li>
-            </ul>
+        <div id="meta-body-${id}">
+          <div class="meta-fetch-row">
+            <span class="meta-fetch-label">ostatnie 30 dni · filtruj po nazwie artysty</span>
+            <button class="btn btn-sm" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}')">Pobierz z Meta</button>
           </div>
-          <div>
-            <button class="btn btn-sm" disabled title="Integracja w przygotowaniu">Podłącz Meta Ads</button>
-          </div>
+          <div style="color:var(--text3);font-family:var(--mono);font-size:11px">Kliknij „Pobierz z Meta" aby załadować dane kampanii.</div>
         </div>
       </div>
     </div>
@@ -1427,6 +1436,102 @@ function daysUntil(dateStr){
   const now=new Date();now.setHours(0,0,0,0);
   const target=new Date(dateStr);
   return Math.round((target-now)/(1000*60*60*24));
+}
+
+/* ── META ADS ── */
+async function loadMetaAds(showId, artistName){
+  const bodyEl=document.getElementById(`meta-body-${showId}`);
+  const fetchedEl=document.getElementById(`meta-fetched-${showId}`);
+  if(!bodyEl)return;
+
+  /* stan ładowania */
+  bodyEl.innerHTML=`<div class="meta-loading"><div class="live-dot"></div>Pobieranie danych z Meta Ads…</div>`;
+
+  const search=encodeURIComponent((artistName||'').trim());
+  const url=`/.netlify/functions/meta-campaigns${search?`?search=${search}`:''}`;
+
+  let data;
+  try{
+    const res=await fetch(url);
+    data=await res.json();
+  }catch(e){
+    bodyEl.innerHTML=`<div class="meta-error">Błąd połączenia z funkcją Netlify.<br>${e.message}</div>`;
+    return;
+  }
+
+  if(data.error){
+    bodyEl.innerHTML=`<div class="meta-error">⚠ ${esc(data.error)}</div>`;
+    return;
+  }
+
+  const campaigns=data.campaigns||[];
+  if(fetchedEl){
+    const d=new Date(data.fetched_at);
+    fetchedEl.textContent=d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'})+' · '+d.toLocaleDateString('pl-PL');
+  }
+
+  if(!campaigns.length){
+    bodyEl.innerHTML=`
+      <div class="meta-fetch-row">
+        <span class="meta-fetch-label">ostatnie 30 dni${search?' · filtr: '+esc(decodeURIComponent(search)):''}</span>
+        <button class="btn btn-sm" onclick="loadMetaAds('${showId}','${esc(artistName||'')}')">↺ Odśwież</button>
+      </div>
+      <div class="meta-empty">Brak kampanii${search?' dla „'+esc(decodeURIComponent(search))+'"':''} w ostatnich 30 dniach.</div>`;
+    return;
+  }
+
+  /* kalkulacja sum */
+  const totSpend=campaigns.reduce((s,c)=>s+(c.spend||0),0);
+  const totReach=campaigns.reduce((s,c)=>s+(c.reach||0),0);
+  const totImpr=campaigns.reduce((s,c)=>s+(c.impressions||0),0);
+  const totClicks=campaigns.reduce((s,c)=>s+(c.clicks||0),0);
+  const avgCpm=totImpr>0?(totSpend/totImpr*1000):null;
+  const avgCtr=totImpr>0?(totClicks/totImpr*100):null;
+
+  function fmt(v,dec=2){return v!=null?v.toLocaleString('pl-PL',{minimumFractionDigits:dec,maximumFractionDigits:dec}):'<span class="meta-null">—</span>';}
+  function fmtInt(v){return v!=null?v.toLocaleString('pl-PL'):'<span class="meta-null">—</span>';}
+
+  const rows=campaigns.map(c=>{
+    const cls=c.status==='ACTIVE'?'active':c.status==='PAUSED'?'paused':'archived';
+    const lbl={'ACTIVE':'Aktywna','PAUSED':'Wstrzymana','ARCHIVED':'Archiwum'}[c.status]||c.status;
+    return`<tr>
+      <td>
+        <div class="meta-name" title="${esc(c.name)}">${esc(c.name)}</div>
+        <span class="meta-status ${cls}">${lbl}</span>
+      </td>
+      <td>${c.spend!=null?fmt(c.spend)+' zł':'<span class="meta-null">—</span>'}</td>
+      <td>${fmtInt(c.reach)}</td>
+      <td>${c.cpm!=null?fmt(c.cpm)+' zł':'<span class="meta-null">—</span>'}</td>
+      <td>${c.ctr!=null?fmt(c.ctr)+'%':'<span class="meta-null">—</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  bodyEl.innerHTML=`
+    <div class="meta-fetch-row">
+      <span class="meta-fetch-label">${campaigns.length} kampanii · ostatnie 30 dni</span>
+      <button class="btn btn-sm" onclick="loadMetaAds('${showId}','${esc(artistName||'')}')">↺ Odśwież</button>
+    </div>
+    <table class="meta-table">
+      <thead>
+        <tr>
+          <th>Kampania</th>
+          <th>Wydatki</th>
+          <th>Zasięg</th>
+          <th>CPM</th>
+          <th>CTR</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+      <tfoot>
+        <tr style="border-top:1px solid var(--border2)">
+          <td style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Suma / Śr.</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text);text-align:right">${fmt(totSpend)} zł</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text);text-align:right">${fmtInt(totReach)}</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text);text-align:right">${avgCpm!=null?fmt(avgCpm)+' zł':'<span class="meta-null">—</span>'}</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text);text-align:right">${avgCtr!=null?fmt(avgCtr)+'%':'<span class="meta-null">—</span>'}</td>
+        </tr>
+      </tfoot>
+    </table>`;
 }
 
 /* ── START ── */
