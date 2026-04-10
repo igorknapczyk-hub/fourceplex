@@ -65,6 +65,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .list-header{padding:10px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .list-header-title{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
 .show-list{flex:1;overflow-y:auto}
+/* taby */
+.po-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.po-tab{flex:1;padding:8px 0;font-family:var(--mono);font-size:10px;text-align:center;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;letter-spacing:.05em}
+.po-tab:hover{color:var(--text)}
+.po-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+/* deal done star */
+.deal-star{font-size:22px;cursor:pointer;line-height:1;transition:transform .15s;user-select:none;flex-shrink:0}
+.deal-star:hover{transform:scale(1.15)}
 
 /* ── ARTIST ITEM ── */
 .artist-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;position:relative}
@@ -290,9 +298,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
   <div class="content-area">
     <!-- LIST -->
     <div class="list-panel">
-      <div class="list-header">
-        <span class="list-header-title">W Promotor Office</span>
-        <span id="list-count" style="font-family:var(--mono);font-size:9px;color:var(--text3)">0</span>
+      <div class="po-tabs">
+        <div class="po-tab active" id="tab-progress" onclick="switchTab('progress')">In Progress</div>
+        <div class="po-tab" id="tab-done" onclick="switchTab('done')">Deal Done</div>
       </div>
       <div class="show-list" id="artist-list">
         <div class="empty-state">
@@ -346,7 +354,7 @@ const USERS=[
   {name:'Radek',   pin:'4444',color:'#60a5fa'},
   {name:'Gość',    pin:'5555',color:'#fb923c'},
 ];
-let curUser='',_loginUser=null,selectedId=null;
+let curUser='',_loginUser=null,selectedId=null,currentTab='progress';
 window._poArtists=window._poArtists||[];
 window._poLoaded=false;
 
@@ -439,14 +447,27 @@ function fmtDate(iso){if(!iso)return'—';try{return new Date(iso).toLocaleDateS
 function renderList(){
   if(!PROMOTOR_USERS.includes(curUser))return;
   const q=(document.getElementById('search-input')?.value||'').toLowerCase();
-  const artists=(window._poArtists||[]).filter(a=>
+  const allFiltered=(window._poArtists||[]).filter(a=>
     !q||(a.name||'').toLowerCase().includes(q)||(a.genre||'').toLowerCase().includes(q)
   );
+  const artists=allFiltered.filter(a=>currentTab==='done'?!!a.dealDone:!a.dealDone);
   document.getElementById('top-count').textContent=(window._poArtists||[]).length;
-  document.getElementById('list-count').textContent=artists.length+' artystów';
+
+  /* aktualizuj taby */
+  const allProgress=allFiltered.filter(a=>!a.dealDone).length;
+  const allDone=allFiltered.filter(a=>!!a.dealDone).length;
+  const tabP=document.getElementById('tab-progress');
+  const tabD=document.getElementById('tab-done');
+  if(tabP)tabP.textContent=`In Progress${allProgress?` (${allProgress})`:''}`;
+  if(tabD)tabD.textContent=`Deal Done${allDone?` (${allDone})`:''}`;
+  if(tabP)tabP.classList.toggle('active',currentTab==='progress');
+  if(tabD)tabD.classList.toggle('active',currentTab==='done');
+
   const el=document.getElementById('artist-list');
   if(!artists.length){
-    el.innerHTML=`<div class="empty-state"><svg viewBox="0 0 16 16" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg><span>${q?'Brak wyników':'Brak artystów w Promotor Office'}</span>${q?'':'<span style="font-size:10px;color:var(--text3)">Dodaj artystów celownikiem w Watchlist</span>'}</div>`;
+    const emptyMsg=currentTab==='done'?'Brak dealów':'Brak artystów w Promotor Office';
+    const emptyHint=currentTab==='done'?'Oznacz gwiazdką artystę aby dodać do Deal Done':'Dodaj artystów celownikiem w Watchlist';
+    el.innerHTML=`<div class="empty-state"><svg viewBox="0 0 16 16" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg><span>${q?'Brak wyników':emptyMsg}</span>${q?'':'<span style="font-size:10px;color:var(--text3)">'+emptyHint+'</span>'}</div>`;
     return;
   }
   el.innerHTML='';
@@ -462,7 +483,7 @@ function renderList(){
     div.className='artist-item'+(isSelected?' selected':'');
     div.innerHTML=`
       <div class="artist-item-top">
-        <span class="artist-name">${esc(a.name||'–')}</span>
+        <span class="artist-name">${a.dealDone?'⭐ ':''}${esc(a.name||'–')}</span>
         <button class="remove-btn" title="Usuń z Promotor Office" onclick="event.stopPropagation();removeFromOffice(${a.id})">
           <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg>
         </button>
@@ -472,6 +493,14 @@ function renderList(){
     div.addEventListener('click',()=>selectArtist(a.id));
     el.appendChild(div);
   });
+}
+
+function switchTab(tab){
+  currentTab=tab;
+  selectedId=null;
+  document.getElementById('detail-empty').style.display='flex';
+  document.getElementById('detail-content').style.display='none';
+  renderList();
 }
 
 function selectArtist(id){
@@ -498,14 +527,17 @@ function renderDetail(id){
   const trendCls=a.trend==='up'?'trend-up':a.trend==='down'?'trend-down':'trend-flat';
 
   dc.innerHTML=`
-  <div class="detail-header">
-    <div class="detail-title">${esc(a.name||'–')}</div>
-    <div class="detail-sub">
-      <span>${esc(a.genre||'–')}</span>
-      <span class="${trendCls}">${trendIcon}</span>
-      ${a.hot?'<span>🔥 HOT!</span>':''}
-      ${a.spotifyUrl?`<a href="${esc(a.spotifyUrl)}" target="_blank" rel="noopener" style="color:var(--blue);font-size:11px;font-family:var(--mono)">Spotify ↗</a>`:''}
+  <div class="detail-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+    <div>
+      <div class="detail-title">${esc(a.name||'–')}</div>
+      <div class="detail-sub">
+        <span>${esc(a.genre||'–')}</span>
+        <span class="${trendCls}">${trendIcon}</span>
+        ${a.hot?'<span>🔥 HOT!</span>':''}
+        ${a.spotifyUrl?`<a href="${esc(a.spotifyUrl)}" target="_blank" rel="noopener" style="color:var(--blue);font-size:11px;font-family:var(--mono)">Spotify ↗</a>`:''}
+      </div>
     </div>
+    <div title="${a.dealDone?'Deal Done! Kliknij aby cofnąć':'Oznacz jako Deal Done'}" class="deal-star" onclick="toggleDealDone(${a.id})">${a.dealDone?'⭐':'☆'}</div>
   </div>
   <div class="detail-body">
 
@@ -597,6 +629,23 @@ async function savePromotorNotes(id){
     if(metaEl)metaEl.textContent=meta;
     const btn=ta.closest('.sec-body')?.querySelector('button');
     if(btn){const orig=btn.textContent;btn.textContent='✓ Zapisano';setTimeout(()=>{btn.textContent=orig;},1500);}
+  }catch(e){console.error(e);}
+}
+
+async function toggleDealDone(id){
+  if(!window._poReady)return;
+  const a=(window._poArtists||[]).find(x=>x.id===id);
+  if(!a)return;
+  const newVal=!a.dealDone;
+  /* optimistic — update cache */
+  const idx=(window._poArtists||[]).findIndex(x=>x.id===id);
+  if(idx>=0)window._poArtists[idx]={...window._poArtists[idx],dealDone:newVal};
+  /* re-render detail (gwiazdka) */
+  renderDetail(id);
+  /* re-render list (przenosi do drugiego taba) */
+  renderList();
+  try{
+    await window._poSetDoc(window._poDoc(window._poArtistsCol,String(id)),{...a,dealDone:newVal});
   }catch(e){console.error(e);}
 }
 

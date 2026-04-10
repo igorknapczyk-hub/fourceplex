@@ -828,11 +828,11 @@ function renderDetail(id){
         <div id="meta-body-${id}">
           <div class="meta-fetch-row">
             <div class="meta-range-btns">
-              <button class="btn active-range" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}','90d')">90 dni</button>
-              <button class="btn" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}','6m')">6 mies.</button>
-              <button class="btn" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}','12m')">12 mies.</button>
+              <button class="btn active-range" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}','30d')">30 dni</button>
+              <button class="btn" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}','90d')">90 dni</button>
+              <button class="btn" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}','12m')">ostatni rok</button>
             </div>
-            <button class="btn btn-sm" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}','90d')">Pobierz z Meta</button>
+            <button class="btn btn-sm" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}','30d')">Pobierz z Meta</button>
           </div>
           <div style="color:var(--text3);font-family:var(--mono);font-size:11px">Kliknij „Pobierz z Meta" aby załadować dane kampanii.</div>
         </div>
@@ -1449,7 +1449,7 @@ function daysUntil(dateStr){
 }
 
 /* ── META ADS ── */
-const META_RANGE_LABELS={'90d':'ostatnie 90 dni','6m':'ostatnie 6 miesięcy','12m':'ostatnie 12 miesięcy'};
+const META_RANGE_LABELS={'30d':'ostatnie 30 dni','90d':'ostatnie 90 dni','12m':'ostatni rok'};
 
 /* progi alertów: [próg_dobry, próg_zły, tryb]
    tryb 'asc'  = niższa wartość lepsza (CPM, Frequency)
@@ -1473,18 +1473,18 @@ function metaCls(key,val){
   }
 }
 
-async function loadMetaAds(showId, artistName, range='90d'){
+async function loadMetaAds(showId, artistName, range='30d'){
   const bodyEl=document.getElementById(`meta-body-${showId}`);
   const fetchedEl=document.getElementById(`meta-fetched-${showId}`);
   if(!bodyEl)return;
 
   const safeArtist=esc(artistName||'');
-  const rangeLabel=META_RANGE_LABELS[range]||'ostatnie 90 dni';
+  const rangeLabel=META_RANGE_LABELS[range]||'ostatnie 30 dni';
 
   /* ── przyciski zakresu (zawsze widoczne) ── */
   function rangeBar(activeRange){
     return`<div class="meta-range-btns">
-      ${['90d','6m','12m'].map(r=>`<button class="btn${r===activeRange?' active-range':''}" onclick="loadMetaAds('${showId}','${safeArtist}','${r}')">${{'90d':'90 dni','6m':'6 mies.','12m':'12 mies.'}[r]||r}</button>`).join('')}
+      ${['30d','90d','12m'].map(r=>`<button class="btn${r===activeRange?' active-range':''}" onclick="loadMetaAds('${showId}','${safeArtist}','${r}')">${{'30d':'30 dni','90d':'90 dni','12m':'ostatni rok'}[r]||r}</button>`).join('')}
     </div>`;
   }
 
@@ -1565,15 +1565,45 @@ async function loadMetaAds(showId, artistName, range='90d'){
   }
 
   /* ── alerty / sugestie ── */
+  /* zbieramy problemy: zbiorcze (avg) + per kampania */
   const alertTips=[];
-  if(metaCls('cpm',avgCpm)==='mv-bad')
-    alertTips.push(`📌 <strong>CPM (${fmt(avgCpm)} zł)</strong> — koszt dotarcia do 1000 osób jest wysoki. Sprawdź grupę docelową — zbyt szeroka lub zbyt wąska audience winduje CPM. Rozważ zawężenie targetowania lub przetestuj nowe kreacje.`);
-  if(metaCls('ctr',avgCtr)==='mv-bad')
-    alertTips.push(`📌 <strong>CTR (${fmt(avgCtr)}%)</strong> — współczynnik klikalności jest niski. Kreacje prawdopodobnie nie przyciągają uwagi lub CTA jest za słabe. Odśwież grafiki, przetestuj mocniejszy nagłówek albo zamień statyczne banery na wideo.`);
-  if(metaCls('frequency',avgFreq)==='mv-bad')
-    alertTips.push(`📌 <strong>Frequency (${fmt(avgFreq)})</strong> — ta sama osoba widzi reklamę zbyt często, co prowadzi do ad fatigue. Rozszerz grupę odbiorców, wprowadź nowe kreacje lub ustaw cap na częstotliwość wyświetleń w ustawieniach kampanii.`);
+
+  /* helper: dodaj alert tylko raz per klucz per źródło */
+  function addAlert(key,val,label,suffix){
+    if(metaCls(key,val)!=='mv-bad')return;
+    const texts={
+      cpm:`CPM (${fmt(val)} zł) — koszt dotarcia jest wysoki. Sprawdź grupę docelową — zbyt szeroka lub zbyt wąska audience winduje CPM. Rozważ zawężenie targetowania lub przetestuj nowe kreacje.`,
+      ctr:`CTR (${fmt(val)}%) — współczynnik klikalności jest niski. Kreacje prawdopodobnie nie przyciągają uwagi lub CTA jest za słabe. Odśwież grafiki, przetestuj mocniejszy nagłówek albo zamień statyczne banery na wideo.`,
+      frequency:`Frequency (${fmt(val)}) — ta sama osoba widzi reklamę zbyt często, co prowadzi do ad fatigue. Rozszerz grupę odbiorców, wprowadź nowe kreacje lub ustaw cap na częstotliwość wyświetleń w ustawieniach kampanii.`,
+    };
+    alertTips.push({label,key,text:texts[key]||''});
+  }
+
+  /* zbiorcze średnie */
+  addAlert('cpm',avgCpm,'Średnia konta','zł');
+  addAlert('ctr',avgCtr,'Średnia konta','%');
+  addAlert('frequency',avgFreq,'Średnia konta','');
+
+  /* per kampania — tylko te których nie ma już w zbiorczych */
+  campaigns.forEach(c=>{
+    const cname=c.name.length>30?c.name.slice(0,28)+'…':c.name;
+    ['cpm','ctr','frequency'].forEach(key=>{
+      const val=c[key];
+      if(metaCls(key,val)!=='mv-bad')return;
+      /* jeśli zbiorcza też jest zła — nie duplikuj tego samego klucza per kampania */
+      const alreadyGlobal=alertTips.find(a=>a.key===key&&a.label==='Średnia konta');
+      if(alreadyGlobal)return;
+      const texts={
+        cpm:`CPM (${fmt(val)} zł) w kampanii „${cname}" jest wysoki. Sprawdź ustawienia targetowania tej kampanii i rozważ testowanie nowych kreacji.`,
+        ctr:`CTR (${fmt(val)}%) w kampanii „${cname}" jest niski. Odśwież kreacje lub przetestuj inne CTA dla tego zestawu reklam.`,
+        frequency:`Frequency (${fmt(val)}) w kampanii „${cname}" wskazuje na ad fatigue. Rozszerz audience lub wprowadź rotację kreacji.`,
+      };
+      alertTips.push({label:cname,key,text:texts[key]||''});
+    });
+  });
+
   const alertsHtml=alertTips.length
-    ? `<div style="margin-top:12px;display:flex;flex-direction:column;gap:7px">${alertTips.map(t=>`<div style="background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--text2);line-height:1.6;font-family:var(--sans)">${t}</div>`).join('')}</div>`
+    ? `<div style="margin-top:12px;display:flex;flex-direction:column;gap:7px">${alertTips.map(a=>`<div style="background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--text2);line-height:1.6;font-family:var(--sans)">📌 <strong>${esc(a.label)}</strong> — ${a.text}</div>`).join('')}</div>`
     : '';
 
   bodyEl.innerHTML=`
