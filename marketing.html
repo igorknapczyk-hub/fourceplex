@@ -1564,6 +1564,18 @@ async function loadMetaAds(showId, artistName, range='90d'){
     return`<td style="text-align:right;font-family:var(--mono);font-size:10px"><span class="${cls||''}" style="${!cls?'color:var(--text)':''}">${fmt(val)}${suffix}</span></td>`;
   }
 
+  /* ── alerty / sugestie ── */
+  const alertTips=[];
+  if(metaCls('cpm',avgCpm)==='mv-bad')
+    alertTips.push(`📌 <strong>CPM (${fmt(avgCpm)} zł)</strong> — koszt dotarcia do 1000 osób jest wysoki. Sprawdź grupę docelową — zbyt szeroka lub zbyt wąska audience winduje CPM. Rozważ zawężenie targetowania lub przetestuj nowe kreacje.`);
+  if(metaCls('ctr',avgCtr)==='mv-bad')
+    alertTips.push(`📌 <strong>CTR (${fmt(avgCtr)}%)</strong> — współczynnik klikalności jest niski. Kreacje prawdopodobnie nie przyciągają uwagi lub CTA jest za słabe. Odśwież grafiki, przetestuj mocniejszy nagłówek albo zamień statyczne banery na wideo.`);
+  if(metaCls('frequency',avgFreq)==='mv-bad')
+    alertTips.push(`📌 <strong>Frequency (${fmt(avgFreq)})</strong> — ta sama osoba widzi reklamę zbyt często, co prowadzi do ad fatigue. Rozszerz grupę odbiorców, wprowadź nowe kreacje lub ustaw cap na częstotliwość wyświetleń w ustawieniach kampanii.`);
+  const alertsHtml=alertTips.length
+    ? `<div style="margin-top:12px;display:flex;flex-direction:column;gap:7px">${alertTips.map(t=>`<div style="background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--text2);line-height:1.6;font-family:var(--sans)">${t}</div>`).join('')}</div>`
+    : '';
+
   bodyEl.innerHTML=`
     ${rangeBar(range)}
     <div style="display:flex;align-items:center;justify-content:space-between;margin:8px 0 2px">
@@ -1597,7 +1609,8 @@ async function loadMetaAds(showId, artistName, range='90d'){
       <span><span class="mv-good">■</span> Dobry wynik</span>
       <span><span class="mv-warn" style="color:var(--text2)">■</span> Normalny</span>
       <span><span class="mv-bad">■</span> Wymaga uwagi</span>
-    </div>`;
+    </div>
+    ${alertsHtml}`;
 }
 
 /* ── START ── */
