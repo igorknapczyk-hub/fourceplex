@@ -8,12 +8,12 @@
  *
  * Query params:
  *   search – opcjonalny filtr po nazwie kampanii
- *   range  – zakres czasowy: 90d (domyślnie) | 6m | 12m
+ *   range  – zakres czasowy: 30d (domyślnie) | 90d | 12m
  */
 
 const DATE_PRESETS = {
+  '30d': 'last_30d',
   '90d': 'last_90d',
-  '6m':  'last_6_months',
   '12m': 'last_year',
 };
 
@@ -35,8 +35,8 @@ exports.handler = async function (event) {
   }
 
   const search    = (event.queryStringParameters?.search || '').trim().toLowerCase();
-  const rangeKey  = event.queryStringParameters?.range || '90d';
-  const preset    = DATE_PRESETS[rangeKey] || 'last_90d';
+  const rangeKey  = event.queryStringParameters?.range || '30d';
+  const preset    = DATE_PRESETS[rangeKey] || 'last_30d';
 
   const fields = [
     'id',
