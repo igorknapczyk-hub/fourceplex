@@ -5,7 +5,17 @@
  * Wymagane zmienne środowiskowe w Netlify:
  *   META_ACCESS_TOKEN  – token dostępu (ads_read)
  *   META_AD_ACCOUNT_ID – ID konta reklamowego (bez prefiksu "act_")
+ *
+ * Query params:
+ *   search – opcjonalny filtr po nazwie kampanii
+ *   range  – zakres czasowy: 90d (domyślnie) | 6m | 12m
  */
+
+const DATE_PRESETS = {
+  '90d': 'last_90d',
+  '6m':  'last_6_months',
+  '12m': 'last_year',
+};
 
 exports.handler = async function (event) {
   /* ── CORS preflight ── */
@@ -17,23 +27,23 @@ exports.handler = async function (event) {
     };
   }
 
-  const token      = process.env.META_ACCESS_TOKEN;
-  const accountId  = process.env.META_AD_ACCOUNT_ID;
+  const token     = process.env.META_ACCESS_TOKEN;
+  const accountId = process.env.META_AD_ACCOUNT_ID;
 
   if (!token || !accountId) {
     return err(500, 'Brak META_ACCESS_TOKEN lub META_AD_ACCOUNT_ID w zmiennych środowiskowych Netlify.');
   }
 
-  /* Opcjonalny filtr po nazwie kampanii (np. imię artysty) */
-  const search = (event.queryStringParameters?.search || '').trim().toLowerCase();
+  const search    = (event.queryStringParameters?.search || '').trim().toLowerCase();
+  const rangeKey  = event.queryStringParameters?.range || '90d';
+  const preset    = DATE_PRESETS[rangeKey] || 'last_90d';
 
-  /* Pola kampanii + insights za ostatnie 30 dni */
   const fields = [
     'id',
     'name',
     'status',
     'objective',
-    'insights.date_preset(last_30d){spend,reach,impressions,clicks,cpm,ctr}',
+    `insights.date_preset(${preset}){spend,reach,impressions,clicks,cpm,ctr,frequency}`,
   ].join(',');
 
   const apiUrl =
@@ -57,7 +67,7 @@ exports.handler = async function (event) {
     return {
       id:          c.id,
       name:        c.name,
-      status:      c.status,       // ACTIVE | PAUSED | ARCHIVED
+      status:      c.status,
       objective:   c.objective || null,
       spend:       ins.spend       ? parseFloat(ins.spend)       : null,
       reach:       ins.reach       ? parseInt(ins.reach)         : null,
@@ -65,15 +75,15 @@ exports.handler = async function (event) {
       clicks:      ins.clicks      ? parseInt(ins.clicks)        : null,
       cpm:         ins.cpm         ? parseFloat(ins.cpm)         : null,
       ctr:         ins.ctr         ? parseFloat(ins.ctr)         : null,
+      frequency:   ins.frequency   ? parseFloat(ins.frequency)   : null,
     };
   });
 
-  /* Filtr po nazwie artysty jeśli podany */
   if (search) {
     campaigns = campaigns.filter(c => c.name.toLowerCase().includes(search));
   }
 
-  /* Sortuj: aktywne pierwsze, potem wg wydatków malejąco */
+  /* aktywne pierwsze, potem wg wydatków malejąco */
   campaigns.sort((a, b) => {
     if (a.status === 'ACTIVE' && b.status !== 'ACTIVE') return -1;
     if (b.status === 'ACTIVE' && a.status !== 'ACTIVE') return  1;
@@ -83,11 +93,10 @@ exports.handler = async function (event) {
   return {
     statusCode: 200,
     headers: { 'Content-Type': 'application/json', ...corsHeaders() },
-    body: JSON.stringify({ campaigns, fetched_at: new Date().toISOString() }),
+    body: JSON.stringify({ campaigns, range: rangeKey, fetched_at: new Date().toISOString() }),
   };
 };
 
-/* ── helpers ── */
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin':  '*',
