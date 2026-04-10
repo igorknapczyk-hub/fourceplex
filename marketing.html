@@ -192,8 +192,10 @@ select.form-input{cursor:pointer}
 .meta-loading{display:flex;align-items:center;gap:8px;color:var(--text3);font-family:var(--mono);font-size:11px;padding:14px 0}
 .meta-error{color:var(--red);font-family:var(--mono);font-size:11px;padding:10px 0;line-height:1.5}
 .meta-empty{color:var(--text3);font-family:var(--mono);font-size:11px;padding:10px 0}
-.meta-fetch-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.meta-fetch-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.06em}
+.meta-fetch-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}
+.meta-range-btns{display:flex;gap:3px}
+.meta-range-btns .btn{padding:2px 8px;font-size:10px}
+.meta-range-btns .btn.active-range{background:rgba(96,165,250,.15);border-color:rgba(96,165,250,.4);color:var(--blue)}
 .meta-table{width:100%;border-collapse:collapse;font-size:11px}
 .meta-table th{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:4px 6px 6px;border-bottom:1px solid var(--border2);text-align:left;white-space:nowrap}
 .meta-table th:not(:first-child){text-align:right}
@@ -207,6 +209,10 @@ select.form-input{cursor:pointer}
 .meta-status.archived{color:var(--text3);border-color:var(--border2);background:transparent}
 .meta-name{color:var(--text);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .meta-null{color:var(--text3)}
+/* alerty metryczne */
+.mv-good{color:var(--teal)}
+.mv-warn{color:var(--text2)}
+.mv-bad{color:var(--red)}
 
 /* ── SLIDE PANEL (add show) ── */
 .slide-panel{position:fixed;top:0;right:-480px;width:420px;height:100vh;background:var(--bg2);border-left:1px solid var(--border2);z-index:400;transition:right .25s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;overflow:hidden}
@@ -821,8 +827,12 @@ function renderDetail(id){
       <div class="sec-body">
         <div id="meta-body-${id}">
           <div class="meta-fetch-row">
-            <span class="meta-fetch-label">ostatnie 30 dni · filtruj po nazwie artysty</span>
-            <button class="btn btn-sm" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}')">Pobierz z Meta</button>
+            <div class="meta-range-btns">
+              <button class="btn active-range" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}','90d')">90 dni</button>
+              <button class="btn" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}','6m')">6 mies.</button>
+              <button class="btn" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}','12m')">12 mies.</button>
+            </div>
+            <button class="btn btn-sm" onclick="loadMetaAds('${id}','${esc(show.artistName||'')}','90d')">Pobierz z Meta</button>
           </div>
           <div style="color:var(--text3);font-family:var(--mono);font-size:11px">Kliknij „Pobierz z Meta" aby załadować dane kampanii.</div>
         </div>
@@ -1439,28 +1449,63 @@ function daysUntil(dateStr){
 }
 
 /* ── META ADS ── */
-async function loadMetaAds(showId, artistName){
+const META_RANGE_LABELS={'90d':'ostatnie 90 dni','6m':'ostatnie 6 miesięcy','12m':'ostatnie 12 miesięcy'};
+
+/* progi alertów: [próg_dobry, próg_zły, tryb]
+   tryb 'asc'  = niższa wartość lepsza (CPM, Frequency)
+   tryb 'desc' = wyższa wartość lepsza (CTR)                */
+const META_THRESHOLDS={
+  cpm:       {good:8,  bad:15, mode:'asc'},   // < 8 zł = świetnie, > 15 zł = źle
+  ctr:       {good:2,  bad:1,  mode:'desc'},  // > 2% = świetnie, < 1% = źle
+  frequency: {good:5,  bad:10, mode:'asc'},   // < 5 = świetnie, > 10 = źle
+};
+function metaCls(key,val){
+  if(val==null)return '';
+  const t=META_THRESHOLDS[key]; if(!t)return '';
+  if(t.mode==='asc'){
+    if(val<=t.good)return 'mv-good';
+    if(val>=t.bad) return 'mv-bad';
+    return 'mv-warn';
+  }else{
+    if(val>=t.good)return 'mv-good';
+    if(val<=t.bad) return 'mv-bad';
+    return 'mv-warn';
+  }
+}
+
+async function loadMetaAds(showId, artistName, range='90d'){
   const bodyEl=document.getElementById(`meta-body-${showId}`);
   const fetchedEl=document.getElementById(`meta-fetched-${showId}`);
   if(!bodyEl)return;
 
-  /* stan ładowania */
-  bodyEl.innerHTML=`<div class="meta-loading"><div class="live-dot"></div>Pobieranie danych z Meta Ads…</div>`;
+  const safeArtist=esc(artistName||'');
+  const rangeLabel=META_RANGE_LABELS[range]||'ostatnie 90 dni';
 
-  const search=encodeURIComponent((artistName||'').trim());
-  const url=`/.netlify/functions/meta-campaigns${search?`?search=${search}`:''}`;
+  /* ── przyciski zakresu (zawsze widoczne) ── */
+  function rangeBar(activeRange){
+    return`<div class="meta-range-btns">
+      ${['90d','6m','12m'].map(r=>`<button class="btn${r===activeRange?' active-range':''}" onclick="loadMetaAds('${showId}','${safeArtist}','${r}')">${{'90d':'90 dni','6m':'6 mies.','12m':'12 mies.'}[r]||r}</button>`).join('')}
+    </div>`;
+  }
+
+  bodyEl.innerHTML=`${rangeBar(range)}<div class="meta-loading" style="margin-top:10px"><div class="live-dot"></div>Pobieranie danych…</div>`;
+
+  const params=new URLSearchParams({range});
+  const trimmed=(artistName||'').trim();
+  if(trimmed)params.set('search',trimmed);
+  const url=`/.netlify/functions/meta-campaigns?${params}`;
 
   let data;
   try{
     const res=await fetch(url);
     data=await res.json();
   }catch(e){
-    bodyEl.innerHTML=`<div class="meta-error">Błąd połączenia z funkcją Netlify.<br>${e.message}</div>`;
+    bodyEl.innerHTML=`${rangeBar(range)}<div class="meta-error" style="margin-top:10px">Błąd połączenia z funkcją Netlify.<br>${e.message}</div>`;
     return;
   }
 
   if(data.error){
-    bodyEl.innerHTML=`<div class="meta-error">⚠ ${esc(data.error)}</div>`;
+    bodyEl.innerHTML=`${rangeBar(range)}<div class="meta-error" style="margin-top:10px">⚠ ${esc(data.error)}</div>`;
     return;
   }
 
@@ -1472,44 +1517,58 @@ async function loadMetaAds(showId, artistName){
 
   if(!campaigns.length){
     bodyEl.innerHTML=`
-      <div class="meta-fetch-row">
-        <span class="meta-fetch-label">ostatnie 30 dni${search?' · filtr: '+esc(decodeURIComponent(search)):''}</span>
-        <button class="btn btn-sm" onclick="loadMetaAds('${showId}','${esc(artistName||'')}')">↺ Odśwież</button>
-      </div>
-      <div class="meta-empty">Brak kampanii${search?' dla „'+esc(decodeURIComponent(search))+'"':''} w ostatnich 30 dniach.</div>`;
+      ${rangeBar(range)}
+      <div class="meta-empty" style="margin-top:10px">Brak kampanii${trimmed?' dla „'+esc(trimmed)+'"':''} w zakresie: ${rangeLabel}.</div>`;
     return;
   }
 
-  /* kalkulacja sum */
-  const totSpend=campaigns.reduce((s,c)=>s+(c.spend||0),0);
-  const totReach=campaigns.reduce((s,c)=>s+(c.reach||0),0);
-  const totImpr=campaigns.reduce((s,c)=>s+(c.impressions||0),0);
+  /* ── kalkulacja sum / średnich ── */
+  const totSpend =campaigns.reduce((s,c)=>s+(c.spend||0),0);
+  const totReach =campaigns.reduce((s,c)=>s+(c.reach||0),0);
+  const totImpr  =campaigns.reduce((s,c)=>s+(c.impressions||0),0);
   const totClicks=campaigns.reduce((s,c)=>s+(c.clicks||0),0);
-  const avgCpm=totImpr>0?(totSpend/totImpr*1000):null;
-  const avgCtr=totImpr>0?(totClicks/totImpr*100):null;
+  const avgCpm   =totImpr>0?(totSpend/totImpr*1000):null;
+  const avgCtr   =totImpr>0?(totClicks/totImpr*100):null;
+  /* frequency: ważona przez impressions */
+  const freqImpr =campaigns.filter(c=>c.frequency!=null&&c.impressions);
+  const avgFreq  =freqImpr.length>0
+    ? freqImpr.reduce((s,c)=>s+c.frequency*c.impressions,0)/freqImpr.reduce((s,c)=>s+c.impressions,0)
+    : null;
 
   function fmt(v,dec=2){return v!=null?v.toLocaleString('pl-PL',{minimumFractionDigits:dec,maximumFractionDigits:dec}):'<span class="meta-null">—</span>';}
   function fmtInt(v){return v!=null?v.toLocaleString('pl-PL'):'<span class="meta-null">—</span>';}
+  function cell(key,val,suffix=''){
+    if(val==null)return'<span class="meta-null">—</span>';
+    return`<span class="${metaCls(key,val)}">${fmt(val)}${suffix}</span>`;
+  }
 
   const rows=campaigns.map(c=>{
-    const cls=c.status==='ACTIVE'?'active':c.status==='PAUSED'?'paused':'archived';
+    const scls=c.status==='ACTIVE'?'active':c.status==='PAUSED'?'paused':'archived';
     const lbl={'ACTIVE':'Aktywna','PAUSED':'Wstrzymana','ARCHIVED':'Archiwum'}[c.status]||c.status;
     return`<tr>
       <td>
         <div class="meta-name" title="${esc(c.name)}">${esc(c.name)}</div>
-        <span class="meta-status ${cls}">${lbl}</span>
+        <span class="meta-status ${scls}">${lbl}</span>
       </td>
-      <td>${c.spend!=null?fmt(c.spend)+' zł':'<span class="meta-null">—</span>'}</td>
+      <td>${c.spend!=null?`<span>${fmt(c.spend)} zł</span>`:'<span class="meta-null">—</span>'}</td>
       <td>${fmtInt(c.reach)}</td>
-      <td>${c.cpm!=null?fmt(c.cpm)+' zł':'<span class="meta-null">—</span>'}</td>
-      <td>${c.ctr!=null?fmt(c.ctr)+'%':'<span class="meta-null">—</span>'}</td>
+      <td>${cell('cpm',c.cpm,' zł')}</td>
+      <td>${cell('ctr',c.ctr,'%')}</td>
+      <td>${cell('frequency',c.frequency,'')}</td>
     </tr>`;
   }).join('');
 
+  function footCell(key,val,suffix=''){
+    if(val==null)return'<td style="text-align:right;font-family:var(--mono);font-size:10px"><span class="meta-null">—</span></td>';
+    const cls=metaCls(key,val);
+    return`<td style="text-align:right;font-family:var(--mono);font-size:10px"><span class="${cls||''}" style="${!cls?'color:var(--text)':''}">${fmt(val)}${suffix}</span></td>`;
+  }
+
   bodyEl.innerHTML=`
-    <div class="meta-fetch-row">
-      <span class="meta-fetch-label">${campaigns.length} kampanii · ostatnie 30 dni</span>
-      <button class="btn btn-sm" onclick="loadMetaAds('${showId}','${esc(artistName||'')}')">↺ Odśwież</button>
+    ${rangeBar(range)}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:8px 0 2px">
+      <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${campaigns.length} kampanii · ${rangeLabel}</span>
+      <button class="btn btn-sm" style="padding:2px 7px;font-size:10px" onclick="loadMetaAds('${showId}','${safeArtist}','${range}')">↺ Odśwież</button>
     </div>
     <table class="meta-table">
       <thead>
@@ -1519,19 +1578,26 @@ async function loadMetaAds(showId, artistName){
           <th>Zasięg</th>
           <th>CPM</th>
           <th>CTR</th>
+          <th>Freq.</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
       <tfoot>
         <tr style="border-top:1px solid var(--border2)">
           <td style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Suma / Śr.</td>
-          <td style="font-family:var(--mono);font-size:10px;color:var(--text);text-align:right">${fmt(totSpend)} zł</td>
-          <td style="font-family:var(--mono);font-size:10px;color:var(--text);text-align:right">${fmtInt(totReach)}</td>
-          <td style="font-family:var(--mono);font-size:10px;color:var(--text);text-align:right">${avgCpm!=null?fmt(avgCpm)+' zł':'<span class="meta-null">—</span>'}</td>
-          <td style="font-family:var(--mono);font-size:10px;color:var(--text);text-align:right">${avgCtr!=null?fmt(avgCtr)+'%':'<span class="meta-null">—</span>'}</td>
+          <td style="text-align:right;font-family:var(--mono);font-size:10px;color:var(--text)">${fmt(totSpend)} zł</td>
+          <td style="text-align:right;font-family:var(--mono);font-size:10px;color:var(--text)">${fmtInt(totReach)}</td>
+          ${footCell('cpm',avgCpm,' zł')}
+          ${footCell('ctr',avgCtr,'%')}
+          ${footCell('frequency',avgFreq,'')}
         </tr>
       </tfoot>
-    </table>`;
+    </table>
+    <div style="display:flex;gap:14px;margin-top:8px;font-family:var(--mono);font-size:9px;color:var(--text3)">
+      <span><span class="mv-good">■</span> Dobry wynik</span>
+      <span><span class="mv-warn" style="color:var(--text2)">■</span> Normalny</span>
+      <span><span class="mv-bad">■</span> Wymaga uwagi</span>
+    </div>`;
 }
 
 /* ── START ── */
