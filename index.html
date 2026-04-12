@@ -66,7 +66,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
 .main-scroll{flex:1;overflow:hidden;padding:14px 18px}
 
-/* ── 6-WIDGET GRID ── */
+/* ── WIDGET GRID ── */
 .widgets-grid{
   display:grid;
   grid-template-columns:1fr 1fr 1fr;
@@ -149,6 +149,32 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .todo-item.overdue{border-color:rgba(248,113,113,.45)!important;background:rgba(248,113,113,.04)}
 .todo-due{font-family:var(--mono);font-size:9px;color:var(--text3)}
 .todo-due.urgent{color:var(--red)}
+/* priority toggle */
+.pilne-toggle{background:transparent;border:1px solid var(--border2);border-radius:4px;padding:2px 10px;font-size:9px;font-family:var(--mono);color:var(--text3);cursor:pointer;transition:all .12s;letter-spacing:.05em;margin-top:5px;display:inline-block}
+.pilne-toggle.on{background:rgba(248,113,113,.15);border-color:rgba(248,113,113,.45);color:var(--red);font-weight:600}
+/* priority badge */
+.prio-badge{font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:3px;letter-spacing:.03em;flex-shrink:0;background:rgba(248,113,113,.13);color:var(--red);border:1px solid rgba(248,113,113,.28)}
+/* PILNE highlight */
+.todo-item.pilne{border-left:2px solid var(--red)!important;background:rgba(248,113,113,.03)}
+/* todo note */
+.todo-note{font-size:11px;color:var(--text3);margin-top:3px;font-style:italic;line-height:1.4;word-break:break-word}
+.todo-note-input{width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text2);font-family:var(--sans);font-size:11px;padding:3px 0;outline:none;transition:border-color .15s;font-style:italic}
+.todo-note-input:focus{border-bottom-color:rgba(200,240,96,.35)}
+.todo-note-input::placeholder{color:var(--text3)}
+/* status badges (clickable) */
+.status-badge{font-family:var(--mono);font-size:8px;padding:1px 6px;border-radius:3px;cursor:pointer;flex-shrink:0;border:1px solid;transition:all .12s;user-select:none}
+.status-badge.todo{color:var(--text3);border-color:var(--border);background:transparent}
+.status-badge.wtoku{color:var(--blue);border-color:rgba(96,165,250,.35);background:rgba(96,165,250,.09)}
+.status-badge.zablokowane{color:var(--red);border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.09)}
+.status-badge.zrobione{color:var(--teal);border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.09)}
+/* section headers */
+.todo-section-hdr{font-family:var(--mono);font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:var(--text3);padding:7px 0 4px;flex-shrink:0;display:flex;align-items:center;gap:6px}
+.todo-section-hdr::after{content:'';flex:1;height:1px;background:var(--border)}
+/* PROMOTOR filter row */
+.todo-filter-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:7px;flex-shrink:0}
+.filter-btn{background:transparent;border:1px solid var(--border);border-radius:12px;padding:2px 9px;font-size:10px;font-family:var(--mono);color:var(--text3);cursor:pointer;transition:all .12s}
+.filter-btn:hover{border-color:var(--border2);color:var(--text2)}
+.filter-btn.active{background:var(--bg4);border-color:var(--border2);color:var(--text)}
 
 /* ════════════════════════════════
    W2 — WATCHLIST
@@ -255,6 +281,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .modal-input:focus{border-color:rgba(200,240,96,.4)}
 .modal-input::placeholder{color:var(--text3)}
 </style>
+<link rel="stylesheet" href="fourceplex-theme.css">
 </head>
 <body>
 <div class="layout">
@@ -346,11 +373,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 <div class="main-scroll">
 <div class="widgets-grid">
 
-  <!-- ═══ W1: JASZCZURZE SPRAWY — kol 1, pełna wysokość ═══ -->
-  <div class="widget" style="grid-column:1;grid-row:1/3">
+  <!-- ═══ W1: JASZCZURZE SPRAWY — kol 1-2, pełna wysokość ═══ -->
+  <div class="widget" style="grid-column:1/3;grid-row:1/3">
     <div class="widget-header">
       <span class="widget-title">Jaszczurze sprawy</span>
-      <div class="widget-badges"><span class="wbadge b-lime" id="todo-badge">0 zadań</span></div>
+      <div class="widget-badges">
+        <span class="wbadge b-red" id="todo-badge-pilne" style="display:none">0 pilnych</span>
+        <span class="wbadge b-lime" id="todo-badge">0 zadań</span>
+      </div>
     </div>
     <div class="widget-body">
       <div class="todo-add">
@@ -359,14 +389,20 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
           <button class="btn" onclick="addTodo()">+</button>
         </div>
         <div class="assignee-row" id="assignee-row"></div>
-        <input class="todo-date-input" id="todo-date" type="date" title="Termin wykonania (opcjonalnie)">
+        <input class="todo-note-input" id="todo-note" placeholder="Krótka notatka… (opcjonalnie)" maxlength="300" style="margin-top:5px">
+        <div style="display:flex;align-items:center;gap:8px;margin-top:5px">
+          <span class="pilne-toggle" id="pilne-toggle" onclick="togglePilne()">⚡ PILNE</span>
+          <input class="todo-date-input" id="todo-date" type="date" title="Termin wykonania (opcjonalnie)" style="flex:1;margin-top:0"></div>
+      </div>
+      <div id="todo-filter-wrap" style="display:none">
+        <div class="todo-filter-row" id="todo-filter-row"></div>
       </div>
       <div class="todo-list" id="todo-list"><div class="empty-state">Brak zadań</div></div>
     </div>
   </div>
 
-  <!-- ═══ W2: MARKETING ALERTY — kol 2, rząd 1 ═══ -->
-  <div class="widget" style="grid-column:2;grid-row:1">
+  <!-- ═══ W2: MARKETING ALERTY — kol 3, rząd 1 ═══ -->
+  <div class="widget" style="grid-column:3;grid-row:1">
     <div class="widget-header">
       <span class="widget-title">Marketing — Alerty</span>
       <div class="widget-badges"><span class="wbadge b-red" id="mkt-badge">–</span></div>
@@ -376,8 +412,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     </div>
   </div>
 
-  <!-- ═══ W3: TICKETING ALERTY — kol 3, rząd 1 ═══ -->
-  <div class="widget" style="grid-column:3;grid-row:1">
+  <!-- ═══ W3: TICKETING ALERTY — kol 3, rząd 2 ═══ -->
+  <div class="widget" style="grid-column:3;grid-row:2">
     <div class="widget-header">
       <span class="widget-title">Ticketing — Alerty</span>
       <div class="widget-badges">
@@ -388,44 +424,6 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     <div class="widget-body">
       <div class="tk-alert-list" id="tk-alert-list">
         <div class="empty-state">Ładowanie…</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ W4: KALENDARZ — kol 2, rząd 2 ═══ -->
-  <div class="widget" style="grid-column:2;grid-row:2">
-    <div class="widget-header">
-      <span class="widget-title">Kalendarz</span>
-      <div class="widget-badges"><span class="wbadge b-blue">Podgląd</span></div>
-    </div>
-    <div class="widget-body">
-      <div class="cal-header">
-        <span class="cal-month" id="cal-month-label">…</span>
-        <div class="cal-nav">
-          <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
-          <button class="cal-nav-btn" onclick="calNav(1)">›</button>
-        </div>
-      </div>
-      <div class="cal-grid" id="cal-grid"></div>
-    </div>
-  </div>
-
-  <!-- ═══ W5: SPYTAJ BEATĘ — kol 3, rząd 2 ═══ -->
-  <div class="widget" style="grid-column:3;grid-row:2">
-    <div class="widget-header">
-      <span class="widget-title">Spytaj Beatę</span>
-      <div class="widget-badges"><span class="wbadge b-amber">AI</span></div>
-    </div>
-    <div class="widget-body">
-      <div class="chat-messages" id="chat-messages">
-        <div class="chat-msg beata">
-          <div class="msg-sender">Beata</div>
-          <div class="msg-bubble">Cześć, tu Beata — wirtualna office managerka Fource! Mogę Ci jakoś pomóc?</div>
-        </div>
-      </div>
-      <div class="chat-input-row">
-        <textarea class="chat-input" id="chat-input" placeholder="Napisz do Beaty…" rows="1"></textarea>
-        <button class="btn" id="chat-send" onclick="sendChat()">↑</button>
       </div>
     </div>
   </div>
@@ -441,8 +439,21 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
   <div id="todo-edit-box">
     <div class="edit-modal-title">Edytuj zadanie</div>
     <textarea id="edit-todo-text" rows="3"></textarea>
+    <input class="todo-note-input" id="edit-todo-note" placeholder="Krótka notatka… (opcjonalnie)" maxlength="300">
     <div class="edit-assignee-row" id="edit-assignee-row"></div>
-    <input class="edit-date" id="edit-todo-date" type="date" title="Termin wykonania (opcjonalnie)">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="pilne-toggle" id="edit-pilne-toggle" onclick="toggleEditPilne()">⚡ PILNE</span>
+      <input class="edit-date" id="edit-todo-date" type="date" title="Termin wykonania" style="flex:1;margin:0">
+    </div>
+    <div style="flex:1">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:4px;letter-spacing:.08em">STATUS</div>
+      <select id="edit-status" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-family:var(--mono);font-size:11px;padding:3px 6px;outline:none">
+        <option value="todo">Do zrobienia</option>
+        <option value="wtoku">W toku</option>
+        <option value="zablokowane">Zablokowane</option>
+        <option value="zrobione">Zrobione</option>
+      </select>
+    </div>
     <div class="edit-actions">
       <button class="btn btn-sm" onclick="closeEditModal()">Anuluj</button>
       <button class="btn btn-sm" style="background:rgba(200,240,96,.12);border-color:rgba(200,240,96,.35);color:var(--accent)" onclick="saveEditTodo()">Zapisz</button>
@@ -510,11 +521,11 @@ function renderUserList(){
   });
 }
 function selectForPin(name){_loginUser=name;renderUserList();document.getElementById('pin-section').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-error').style.display='none';document.getElementById('pin-input').focus();}
-function confirmPin(){const pin=document.getElementById('pin-input').value;const u=USERS.find(u=>u.name===_loginUser);if(u&&pin===u.pin){currentUser=_loginUser;localStorage.setItem(SESSION_KEY,currentUser);updateBadge(currentUser);closeModal();renderTodos(_latestTodos);
+function confirmPin(){const pin=document.getElementById('pin-input').value;const u=USERS.find(u=>u.name===_loginUser);if(u&&pin===u.pin){currentUser=_loginUser;localStorage.setItem(SESSION_KEY,currentUser);updateBadge(currentUser);closeModal();promotorFilterAssignee=null;renderFilterRow();renderTodos(_latestTodos);
     const _pn=document.getElementById('promotor-nav');if(_pn)_pn.style.display=PROMOTOR_USERS.includes(currentUser)?'flex':'none';
     const _np=document.getElementById('nav-produkcja');if(_np){if(PROMOTOR_USERS.includes(currentUser)){_np.classList.remove('disabled');_np.title='';}else{_np.classList.add('disabled');_np.title='Dostępne tylko dla Promotora';}}}else{document.getElementById('pin-error').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-input').focus();}}
 document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPin();});
-function initUser(){const sess=localStorage.getItem(SESSION_KEY);const u=USERS.find(u=>u.name===sess);if(sess&&u){currentUser=sess;updateBadge(sess);}else openModal();}
+function initUser(){const sess=localStorage.getItem(SESSION_KEY);const u=USERS.find(u=>u.name===sess);if(sess&&u){currentUser=sess;updateBadge(sess);renderFilterRow();}else openModal();}
 
 /* ══════════════════════════════════════
    W1 — JASZCZURZE SPRAWY
@@ -522,6 +533,22 @@ function initUser(){const sess=localStorage.getItem(SESSION_KEY);const u=USERS.f
 const ASSIGNEES={'Monika':'#a78bfa','Igor':'#34d399','Mariusz':'#fbbf24','Radek':'#60a5fa'};
 const PROMOTOR_USERS=['Radek','Igor'];
 let selectedAssignees=new Set();
+let isPilne=false;        // stan togglea w formularzu dodawania
+let promotorFilterAssignee=null;
+
+/* ── status helpers ── */
+const STATUSES=['todo','wtoku','zablokowane','zrobione'];
+const STATUS_LABELS={todo:'Do zrobienia',wtoku:'W toku',zablokowane:'Zablokowane',zrobione:'Zrobione'};
+
+function getTodoStatus(t){return t.status||(t.done?'zrobione':'todo');}
+function isTodoPilne(t){return!!t.pilne;}
+
+/* ── toggle PILNE (add form) ── */
+function togglePilne(){
+  isPilne=!isPilne;
+  const el=document.getElementById('pilne-toggle');
+  if(el)el.classList.toggle('on',isPilne);
+}
 
 function getAssignees(t){
   if(Array.isArray(t.assignees))return t.assignees;
@@ -533,8 +560,10 @@ function isVisibleTodo(t){
   if(!currentUser)return false;
   if(PROMOTOR_USERS.includes(currentUser))return true;
   const asgns=getAssignees(t);
-  if(asgns.length===0)return true; // ogólne
-  return asgns.includes(currentUser);
+  if(asgns.length===0)return true;           // ogólne — każdy widzi
+  if(asgns.includes(currentUser))return true; // przypisane do mnie
+  if(t.addedBy===currentUser)return true;     // moje zlecone
+  return false;
 }
 
 function getDueDays(dueDate){
@@ -543,6 +572,7 @@ function getDueDays(dueDate){
   return Math.round((new Date(dueDate)-today)/86400000);
 }
 
+/* ── UI: assignee buttons (add form) ── */
 function renderAssigneeButtons(){
   const row=document.getElementById('assignee-row');row.innerHTML='';
   const noneActive=selectedAssignees.size===0;
@@ -567,39 +597,104 @@ function renderAssigneeButtons(){
   });
 }
 
+/* ── EDIT modal PILNE toggle ── */
+let _editIsPilne=false;
+function toggleEditPilne(){
+  _editIsPilne=!_editIsPilne;
+  const el=document.getElementById('edit-pilne-toggle');
+  if(el)el.classList.toggle('on',_editIsPilne);
+}
+
+/* ── UI: PROMOTOR filter row ── */
+function renderFilterRow(){
+  const isPromotor=PROMOTOR_USERS.includes(currentUser);
+  const wrap=document.getElementById('todo-filter-wrap');
+  if(!wrap)return;
+  if(!isPromotor){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  const row=document.getElementById('todo-filter-row');row.innerHTML='';
+  const all=document.createElement('button');
+  all.className='filter-btn'+(promotorFilterAssignee===null?' active':'');
+  all.textContent='Wszyscy';
+  all.onclick=()=>{promotorFilterAssignee=null;renderFilterRow();renderTodos(_latestTodos);};
+  row.appendChild(all);
+  Object.entries(ASSIGNEES).forEach(([name,color])=>{
+    const btn=document.createElement('button');
+    btn.className='filter-btn'+(promotorFilterAssignee===name?' active':'');
+    btn.style.setProperty('--fc',color);
+    btn.innerHTML=`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};margin-right:4px;vertical-align:middle"></span>${name}`;
+    btn.onclick=()=>{promotorFilterAssignee=name;renderFilterRow();renderTodos(_latestTodos);};
+    row.appendChild(btn);
+  });
+}
+
+/* ── SORT ── */
+function sortTodoSection(list){
+  const active=list.filter(t=>getTodoStatus(t)!=='zrobione');
+  const done=list.filter(t=>getTodoStatus(t)==='zrobione');
+  active.sort((a,b)=>{
+    // PILNE na górze
+    const pa=isTodoPilne(a)?0:1, pb=isTodoPilne(b)?0:1;
+    if(pa!==pb)return pa-pb;
+    if(a.dueDate&&b.dueDate)return new Date(a.dueDate)-new Date(b.dueDate);
+    if(a.dueDate)return -1;if(b.dueDate)return 1;
+    return(b.createdAt?.toMillis?.()??0)-(a.createdAt?.toMillis?.()??0);
+  });
+  return[...active,...done];
+}
+
+/* ── ACTIONS ── */
 function addTodo(){
   const input=document.getElementById('todo-input');const text=input.value.trim();
   const dateEl=document.getElementById('todo-date');const dueDate=dateEl&&dateEl.value?dateEl.value:null;
+  const noteEl=document.getElementById('todo-note');const note=(noteEl&&noteEl.value.trim())||'';
   if(!text||!currentUser)return;if(!db){alert('Brak bazy.');return;}
   const assignees=Array.from(selectedAssignees);
   db.collection('todos').add({
-    text,done:false,addedBy:currentUser,
-    assignees,
-    assignee:assignees[0]||null,
-    dueDate,
+    text,done:false,status:'todo',pilne:isPilne,note,
+    addedBy:currentUser,assignees,assignee:assignees[0]||null,dueDate,
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
-  }).then(()=>{input.value='';if(dateEl)dateEl.value='';}).catch(e=>console.error('Todo:',e));
+  }).then(()=>{
+    input.value='';if(dateEl)dateEl.value='';if(noteEl)noteEl.value='';
+    isPilne=false;const pt=document.getElementById('pilne-toggle');if(pt)pt.classList.remove('on');
+  }).catch(e=>console.error('Todo:',e));
 }
-function toggleTodo(id,done){if(db)db.collection('todos').doc(id).update({done:!done}).catch(console.error);}
+
+function setTodoStatus(id,currentStatus){
+  if(!db)return;
+  const next=STATUSES[(STATUSES.indexOf(currentStatus)+1)%STATUSES.length];
+  const isDone=next==='zrobione';
+  db.collection('todos').doc(id).update({status:next,done:isDone}).catch(console.error);
+}
+
 function deleteTodo(id){if(db)db.collection('todos').doc(id).delete().catch(console.error);}
 
-let _editingTodoId=null;
-let _editSelectedAssignees=new Set();
+/* ── EDIT MODAL ── */
+let _editingTodoId=null,_editSelectedAssignees=new Set();
+
 function editTodo(id){
-  const t=_latestTodos.find(x=>x.id===id);
-  if(!t)return;
+  const t=_latestTodos.find(x=>x.id===id);if(!t)return;
   _editingTodoId=id;
   _editSelectedAssignees=new Set(getAssignees(t));
+  _editIsPilne=isTodoPilne(t);
   document.getElementById('edit-todo-text').value=t.text||'';
   document.getElementById('edit-todo-date').value=t.dueDate||'';
+  document.getElementById('edit-status').value=getTodoStatus(t);
+  const noteEl=document.getElementById('edit-todo-note');if(noteEl)noteEl.value=t.note||'';
+  const pt=document.getElementById('edit-pilne-toggle');if(pt)pt.classList.toggle('on',_editIsPilne);
   renderEditAssignees();
   document.getElementById('todo-edit-modal').classList.add('open');
   document.getElementById('edit-todo-text').focus();
 }
 function renderEditAssignees(){
-  const row=document.getElementById('edit-assignee-row');
-  if(!row)return;
-  row.innerHTML='';
+  const row=document.getElementById('edit-assignee-row');if(!row)return;row.innerHTML='';
+  const noneActive=_editSelectedAssignees.size===0;
+  const none=document.createElement('span');
+  none.className='a-btn'+(noneActive?' sel':'');
+  if(noneActive)none.style.cssText='background:rgba(255,255,255,.06);color:var(--text2)';
+  none.textContent='ogólne';
+  none.onclick=()=>{_editSelectedAssignees.clear();renderEditAssignees();};
+  row.appendChild(none);
   Object.entries(ASSIGNEES).forEach(([name,color])=>{
     const sel=_editSelectedAssignees.has(name);
     const btn=document.createElement('button');
@@ -614,77 +709,140 @@ function renderEditAssignees(){
     row.appendChild(btn);
   });
 }
-function closeEditModal(){
-  _editingTodoId=null;
-  document.getElementById('todo-edit-modal').classList.remove('open');
-}
+function closeEditModal(){_editingTodoId=null;document.getElementById('todo-edit-modal').classList.remove('open');}
 function saveEditTodo(){
   if(!_editingTodoId||!db)return;
-  const text=document.getElementById('edit-todo-text').value.trim();
-  if(!text)return;
+  const text=document.getElementById('edit-todo-text').value.trim();if(!text)return;
   const dueDate=document.getElementById('edit-todo-date').value||null;
+  const status=document.getElementById('edit-status').value||'todo';
+  const noteEl=document.getElementById('edit-todo-note');const note=(noteEl&&noteEl.value.trim())||'';
   const assignees=Array.from(_editSelectedAssignees);
   db.collection('todos').doc(_editingTodoId).update({
-    text,dueDate,assignees,assignee:assignees[0]||null
+    text,dueDate,status,done:status==='zrobione',pilne:_editIsPilne,note,
+    assignees,assignee:assignees[0]||null
   }).then(()=>closeEditModal()).catch(console.error);
 }
 document.getElementById('todo-edit-modal').addEventListener('click',function(e){if(e.target===this)closeEditModal();});
 document.getElementById('edit-todo-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.ctrlKey)saveEditTodo();});
 
+/* ── RENDER TODO ITEM ── */
+function buildTodoEl(t){
+  const ac=getUserColor(t.addedBy||'');
+  const asgns=getAssignees(t);
+  const dueDays=getDueDays(t.dueDate);
+  const status=getTodoStatus(t);
+  const pilne=isTodoPilne(t);
+  const isUrgent=dueDays!==null&&dueDays<=3&&status!=='zrobione';
+
+  const asgHtml=asgns.map(n=>{
+    const c=ASSIGNEES[n]||'#888';
+    return`<span class="assignee-tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${escHtml(n)}</span>`;
+  }).join('');
+
+  let dueHtml='';
+  if(t.dueDate){
+    const parts=t.dueDate.split('-');
+    const formatted=parts.length===3?`${parts[2]}.${parts[1]}.${parts[0]}`:t.dueDate;
+    const dueLabel=dueDays<0?`${-dueDays}d po terminie`:dueDays===0?'Dziś!':dueDays===1?'Jutro':`za ${dueDays}d`;
+    dueHtml=`<span class="todo-due${isUrgent?' urgent':''}">${formatted} · ${dueLabel}</span>`;
+  }
+
+  const prioBadge=pilne?`<span class="prio-badge pilne">PILNE</span>`:'';
+  const statusBadge=`<span class="status-badge ${status}" onclick="setTodoStatus('${t.id}','${status}')" title="Kliknij aby zmienić status">${STATUS_LABELS[status]}</span>`;
+  const noteHtml=t.note?`<div class="todo-note">${escHtml(t.note)}</div>`:'';
+
+  const el=document.createElement('div');
+  el.className='todo-item'+(pilne?' pilne':'')+(isUrgent?' overdue':'');
+  el.innerHTML=`
+    <div class="todo-meta" style="flex:1;min-width:0">
+      <div class="todo-text${status==='zrobione'?' done':''}" style="margin-bottom:3px">${escHtml(t.text)}</div>
+      ${noteHtml}
+      <div class="todo-sub">
+        ${statusBadge}
+        ${prioBadge}
+        ${asgHtml}
+        ${dueHtml}
+        <span class="author-tag">od <span style="color:${ac}">${escHtml(t.addedBy||'?')}</span></span>
+      </div>
+    </div>
+    <div class="todo-edit" onclick="editTodo('${t.id}')">✎</div>
+    <div class="todo-del" onclick="deleteTodo('${t.id}')">✕</div>`;
+  return el;
+}
+
+/* ── RENDER SECTION HEADER ── */
+function addSectionHeader(list,label){
+  const hdr=document.createElement('div');
+  hdr.className='todo-section-hdr';
+  hdr.textContent=label;
+  list.appendChild(hdr);
+}
+
+/* ── MAIN RENDER ── */
 function renderTodos(todos){
   const list=document.getElementById('todo-list');
   const badge=document.getElementById('todo-badge');
-  const topCnt=document.getElementById('todo-top-count');
+  const badgePilne=document.getElementById('todo-badge-pilne');
 
-  const visible=todos.filter(t=>isVisibleTodo(t));
-  const pending=visible.filter(t=>!t.done).length;
-  if(badge)badge.textContent=`${pending} zadań`;if(topCnt)topCnt.textContent=pending;
+  /* widoczność */
+  let visible;
+  const isPromotor=PROMOTOR_USERS.includes(currentUser);
+  if(isPromotor&&promotorFilterAssignee){
+    // PROMOTOR widzi zadania konkretnej osoby (jej perspektywa "Otrzymane")
+    visible=todos.filter(t=>{
+      const asgns=getAssignees(t);
+      return asgns.length===0||asgns.includes(promotorFilterAssignee);
+    });
+  } else if(isPromotor){
+    visible=todos;
+  } else {
+    visible=todos.filter(t=>isVisibleTodo(t));
+  }
+
+  /* badge */
+  const pending=visible.filter(t=>getTodoStatus(t)!=='zrobione').length;
+  const pilne=visible.filter(t=>isTodoPilne(t)&&getTodoStatus(t)!=='zrobione').length;
+  if(badge)badge.textContent=`${pending} zadań`;
+  if(badgePilne){badgePilne.style.display=pilne?'':'none';badgePilne.textContent=`${pilne} pilnych`;}
+
   if(!visible.length){list.innerHTML='<div class="empty-state">Brak zadań</div>';return;}
-
-  // Sort: active first (by dueDate asc, no-date last), then done
-  const active=visible.filter(t=>!t.done);
-  const done=visible.filter(t=>t.done);
-  const withDate=active.filter(t=>t.dueDate).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate));
-  const noDate=active.filter(t=>!t.dueDate).sort((a,b)=>(b.createdAt?.toMillis?.()??0)-(a.createdAt?.toMillis?.()??0));
-  const sorted=[...withDate,...noDate,...done];
-
   list.innerHTML='';
-  sorted.forEach(t=>{
-    const ac=getUserColor(t.addedBy||'');
+
+  /* podział na sekcje */
+  const targetUser=isPromotor&&promotorFilterAssignee?promotorFilterAssignee:currentUser;
+
+  const received=visible.filter(t=>{
     const asgns=getAssignees(t);
-    const dueDays=getDueDays(t.dueDate);
-    const isUrgent=dueDays!==null&&dueDays<=3&&!t.done;
-
-    const asgHtml=asgns.map(n=>{
-      const c=ASSIGNEES[n]||'#888';
-      return`<span class="assignee-tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${escHtml(n)}</span>`;
-    }).join('');
-
-    let dueHtml='';
-    if(t.dueDate){
-      const parts=t.dueDate.split('-');
-      const formatted=parts.length===3?`${parts[2]}.${parts[1]}.${parts[0]}`:t.dueDate;
-      const dueLabel=dueDays<0?`${-dueDays}d po terminie`:dueDays===0?'Dziś!':dueDays===1?'Jutro':`za ${dueDays}d`;
-      dueHtml=`<span class="todo-due${isUrgent?' urgent':''}" title="${formatted}">${formatted} · ${dueLabel}</span>`;
-    }
-
-    const el=document.createElement('div');
-    el.className='todo-item'+(isUrgent?' overdue':'');
-    el.innerHTML=`
-      <div class="todo-cb ${t.done?'done':''}" onclick="toggleTodo('${t.id}',${t.done})"></div>
-      <div class="todo-meta">
-        <div class="todo-text ${t.done?'done':''}">${escHtml(t.text)}</div>
-        <div class="todo-sub">
-          ${asgHtml}
-          ${dueHtml}
-          <span class="author-tag">od <span style="color:${ac}">${escHtml(t.addedBy||'?')}</span></span>
-        </div>
-      </div>
-      <div class="todo-edit" onclick="editTodo('${t.id}')">✎</div>
-      <div class="todo-del" onclick="deleteTodo('${t.id}')">✕</div>`;
-    list.appendChild(el);
+    return asgns.length===0||asgns.includes(targetUser);
   });
+  const outgoing=visible.filter(t=>{
+    const asgns=getAssignees(t);
+    return t.addedBy===targetUser&&asgns.length>0&&!asgns.includes(targetUser);
+  });
+  // PROMOTOR bez filtra: zadania innych (nie pasujące do żadnej grupy)
+  const others=isPromotor&&!promotorFilterAssignee?visible.filter(t=>{
+    const asgns=getAssignees(t);
+    return !(asgns.length===0||asgns.includes(currentUser))&&t.addedBy!==currentUser;
+  }):[];
+
+  /* render sekcji */
+  if(received.length){
+    addSectionHeader(list,'Otrzymane');
+    sortTodoSection(received).forEach(t=>list.appendChild(buildTodoEl(t)));
+  }
+  if(outgoing.length){
+    addSectionHeader(list,'Zlecone przeze mnie');
+    sortTodoSection(outgoing).forEach(t=>list.appendChild(buildTodoEl(t)));
+  }
+  if(others.length){
+    addSectionHeader(list,'Pozostałe');
+    sortTodoSection(others).forEach(t=>list.appendChild(buildTodoEl(t)));
+  }
+  if(!received.length&&!outgoing.length&&!others.length){
+    list.innerHTML='<div class="empty-state">Brak zadań</div>';
+  }
 }
+
 let _latestTodos=[];
 if(db){db.collection('todos').onSnapshot(snap=>{_latestTodos=snap.docs.map(d=>({id:d.id,...d.data()}));renderTodos(_latestTodos);},e=>{console.error('Todos:',e);document.getElementById('todo-list').innerHTML='<div class="empty-state">Błąd</div>';});}
 
@@ -960,7 +1118,8 @@ async function sendChat(){
   }catch(e){removeSpinner();appendMsg('beata',`Błąd: ${e.message}`);}
   finally{btn.disabled=false;input.focus();}
 }
-document.getElementById('chat-input').addEventListener('keydown',function(e){
+const _chatInput=document.getElementById('chat-input');
+if(_chatInput)_chatInput.addEventListener('keydown',function(e){
   if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}
   setTimeout(()=>{this.style.height='auto';this.style.height=Math.min(this.scrollHeight,64)+'px';},0);
 });
@@ -969,8 +1128,7 @@ document.getElementById('chat-input').addEventListener('keydown',function(e){
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtK(n){if(n==null)return'–';if(n>=1000000)return(n/1000000).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'k';return String(Math.round(n));}
 
-/* ── START — initCal jako pierwsze, żeby kalendarz nie pokazywał "..." ── */
-initCal();
+/* ── START ── */
 initUser();
 renderAssigneeButtons();
 /* ── THEME ── */
