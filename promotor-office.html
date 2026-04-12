@@ -71,8 +71,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .po-tab:hover{color:var(--text)}
 .po-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 /* deal done star */
-.deal-star{font-size:22px;cursor:pointer;line-height:1;transition:transform .15s;user-select:none;flex-shrink:0}
-.deal-star:hover{transform:scale(1.15)}
+.deal-done-btn{font-family:var(--mono);font-size:10px;letter-spacing:.10em;font-weight:500;padding:6px 14px;border-radius:6px;border:1.5px solid rgba(52,211,153,.35);background:rgba(52,211,153,.06);color:var(--text3);cursor:pointer;transition:all .18s;flex-shrink:0;white-space:nowrap}
+.deal-done-btn:hover{border-color:rgba(52,211,153,.6);background:rgba(52,211,153,.12);color:var(--teal)}
+.deal-done-btn.is-done{border-color:rgba(52,211,153,.55);background:rgba(52,211,153,.13);color:var(--teal);font-weight:600}
+.deal-done-btn.is-done:hover{border-color:rgba(248,113,113,.45);background:rgba(248,113,113,.08);color:var(--red)}
 
 /* ── ARTIST ITEM ── */
 .artist-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;position:relative}
@@ -467,7 +469,7 @@ function renderList(){
   const el=document.getElementById('artist-list');
   if(!artists.length){
     const emptyMsg=currentTab==='done'?'Brak dealów':'Brak artystów w Promotor Office';
-    const emptyHint=currentTab==='done'?'Oznacz gwiazdką artystę aby dodać do Deal Done':'Dodaj artystów celownikiem w Watchlist';
+    const emptyHint=currentTab==='done'?'Kliknij DEAL DONE w profilu artysty':'Dodaj artystów celownikiem w Watchlist';
     el.innerHTML=`<div class="empty-state"><svg viewBox="0 0 16 16" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg><span>${q?'Brak wyników':emptyMsg}</span>${q?'':'<span style="font-size:10px;color:var(--text3)">'+emptyHint+'</span>'}</div>`;
     return;
   }
@@ -484,7 +486,7 @@ function renderList(){
     div.className='artist-item'+(isSelected?' selected':'');
     div.innerHTML=`
       <div class="artist-item-top">
-        <span class="artist-name">${a.dealDone?'⭐ ':''}${esc(a.name||'–')}</span>
+        <span class="artist-name">${esc(a.name||'–')}</span>
         <button class="remove-btn" title="Usuń z Promotor Office" onclick="event.stopPropagation();removeFromOffice(${a.id})">
           <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg>
         </button>
@@ -538,7 +540,7 @@ function renderDetail(id){
         ${a.spotifyUrl?`<a href="${esc(a.spotifyUrl)}" target="_blank" rel="noopener" style="color:var(--blue);font-size:11px;font-family:var(--mono)">Spotify ↗</a>`:''}
       </div>
     </div>
-    <div title="${a.dealDone?'Deal Done! Kliknij aby cofnąć':'Oznacz jako Deal Done'}" class="deal-star" onclick="toggleDealDone(${a.id})">${a.dealDone?'⭐':'☆'}</div>
+    <button class="deal-done-btn${a.dealDone?' is-done':''}" onclick="toggleDealDone(${a.id})" title="${a.dealDone?'Kliknij aby cofnąć do In Progress':'Przenieś do Deal Done'}">${a.dealDone?'✓ DEAL DONE':'DEAL DONE'}</button>
   </div>
   <div class="detail-body">
 

@@ -844,6 +844,11 @@ function renderDetail(id){
 
   renderCheckpoints(show);
   renderChart(show);
+  /* Enter key w formularzu kosztów */
+  const cfDesc=document.getElementById(`cf-desc-${id}`);
+  const cfAmt=document.getElementById(`cf-amt-${id}`);
+  if(cfDesc)cfDesc.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();cfAmt&&cfAmt.focus();}});
+  if(cfAmt)cfAmt.addEventListener('keydown',async e=>{if(e.key==='Enter'){e.preventDefault();await addCost(id);cfDesc&&cfDesc.focus();}});
 }
 
 function renderCheckpoints(show){
