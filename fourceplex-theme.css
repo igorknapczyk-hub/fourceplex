@@ -128,6 +128,15 @@ body.light .topbar {
   background: rgba(255,255,255,0.68);
 }
 
+/* ── Logo switching — dark/light mode ── */
+.fp-logo-dark  { display: block; }
+.fp-logo-light { display: none;  }
+body.light .fp-logo-dark  { display: none  !important; }
+body.light .fp-logo-light { display: block !important; }
+
+/* Cancel old invert trick (no longer needed) */
+body.light img[alt="Fource.Plex"] { filter: none !important; mix-blend-mode: normal !important; opacity: 1 !important; }
+
 /* Metallic brand wordmark */
 .brand-logo {
   font-family: var(--mono);
