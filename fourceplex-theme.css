@@ -626,6 +626,23 @@ body.light .toolbar { background: rgba(255,255,255,0.55); }
 .toolbar-title { font-family: var(--mono); }
 
 /* ═══════════════════════════════════
+   DETAIL HEADER — sticky glass
+   (applies to marketing, produkcja, listy-gosci, promotor-office)
+═══════════════════════════════════ */
+.detail-header {
+  position: sticky !important;
+  top: 0;
+  z-index: 20;
+  background: rgba(20,20,32,0.80) !important;
+  backdrop-filter: blur(22px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(150%) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+}
+body.light .detail-header {
+  background: rgba(238,238,248,0.84) !important;
+}
+
+/* ═══════════════════════════════════
    SEC-CARD
 ═══════════════════════════════════ */
 .sec-card {
