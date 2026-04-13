@@ -665,33 +665,65 @@ function exportXLS(show){
   const hospE=allExps.filter(e=>e.showId===show.id&&e.category==='hospitality');
   const prodSum=prodE.reduce((a,e)=>a+(+e.amount||0),0);
   const hospSum=hospE.reduce((a,e)=>a+(+e.amount||0),0);
-  const rows=e=>`<tr><td>${e.name||''}</td><td>${(+e.amount||0).toFixed(2)}</td></tr>`;
-  const html=`<html><head><meta charset="UTF-8"><style>
-    body{font-family:Arial,sans-serif;font-size:12px}
-    h2{font-size:14px;margin-bottom:4px}h3{font-size:12px;margin:12px 0 4px}
-    table{border-collapse:collapse;min-width:320px}
-    th,td{border:1px solid #ccc;padding:4px 10px;text-align:left}
-    th{background:#f0f0f0;font-weight:bold}
-    .sum td{font-weight:bold;background:#f8f8f8}
-  </style></head><body>
-  <h2>${show.artistName||'–'} — Wydatki produkcyjne · ${show.date||''}</h2>
-  <h3>Production</h3>
-  <table><thead><tr><th>Nazwa</th><th>Kwota (PLN)</th></tr></thead><tbody>
-  ${prodE.map(rows).join('')}
-  <tr class="sum"><td>Suma</td><td>${prodSum.toFixed(2)}</td></tr>
-  </tbody></table>
-  <h3>Hospitality</h3>
-  <table><thead><tr><th>Nazwa</th><th>Kwota (PLN)</th></tr></thead><tbody>
-  ${hospE.map(rows).join('')}
-  <tr class="sum"><td>Suma</td><td>${hospSum.toFixed(2)}</td></tr>
-  </tbody></table>
-  <p style="margin-top:14px;font-weight:bold">Łącznie: ${(prodSum+hospSum).toFixed(2)} PLN</p>
+  const fmtAmt=n=>n%1===0?n.toFixed(0):n.toFixed(2);
+  const dataRow=e=>`<tr>
+    <td style="padding:3px 8px;font-family:Arial;font-size:10pt">${esc(e.name||'')}</td>
+    <td style="padding:3px 8px;font-family:Arial;font-size:10pt;text-align:right">${fmtAmt(+e.amount||0)}</td>
+    <td></td></tr>`;
+  /* colours matching template */
+  const C_HDR='background:#EFEFEF';
+  const C_SEC='background:#F3F3F3';
+  const stHdr=`padding:4px 8px;font-family:Arial;font-size:12pt;font-weight:bold;text-align:center;${C_HDR}`;
+  const stSub=`padding:3px 8px;font-family:Arial;font-size:10pt;${C_HDR}`;
+  const stSec=`padding:4px 8px;font-family:Arial;font-size:10pt;font-weight:bold;text-align:center;${C_SEC}`;
+  const stTot=`padding:3px 8px;font-family:Arial;font-size:10pt;${C_SEC}`;
+  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:x="urn:schemas-microsoft-com:office:excel"
+    xmlns="http://www.w3.org/TR/REC-html40">
+  <head><meta charset="UTF-8">
+  <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>
+  <x:ExcelWorksheet><x:Name>Koszty</x:Name><x:WorksheetOptions>
+  <x:Selected/></x:WorksheetOptions></x:ExcelWorksheet>
+  </x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+  </head><body>
+  <table style="border-collapse:collapse;width:520px;font-family:Arial;font-size:10pt">
+    <!-- Row 1: concert name header -->
+    <tr><td colspan="3" style="${stHdr}">${esc(show.artistName||'–')}</td></tr>
+    <!-- Row 2: date / venue / company -->
+    <tr>
+      <td style="${stSub}">${show.date||'–'}</td>
+      <td style="${stSub}">${esc(show.venue||'–')}</td>
+      <td style="${stSub}">Fource Entertainment</td>
+    </tr>
+    <!-- Row 3: PRODUCTION section header -->
+    <tr><td colspan="3" style="${stSec}">PRODUCTION</td></tr>
+    <!-- Production rows -->
+    ${prodE.map(dataRow).join('')}
+    <!-- Production total -->
+    <tr>
+      <td style="${stTot}"></td>
+      <td style="${stTot};text-align:right;font-weight:bold">${fmtAmt(prodSum)}</td>
+      <td style="${stTot};font-weight:bold">TOTAL</td>
+    </tr>
+    <!-- Spacer -->
+    <tr><td colspan="3" style="padding:4px"></td></tr>
+    <!-- Row 11: HOSPITALITY section header -->
+    <tr><td colspan="3" style="${stSec}">HOSPITALITY</td></tr>
+    <!-- Hospitality rows -->
+    ${hospE.map(dataRow).join('')}
+    <!-- Hospitality total -->
+    <tr>
+      <td style="${stTot}"></td>
+      <td style="${stTot};text-align:right;font-weight:bold">${fmtAmt(hospSum)}</td>
+      <td style="${stTot};font-weight:bold">TOTAL</td>
+    </tr>
+  </table>
   </body></html>`;
-  const blob=new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'});
+  const blob=new Blob(['\uFEFF'+html],{type:'application/vnd.ms-excel;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;
-  a.download='FOURCE_'+(show.artistName||'wydatki').replace(/\s+/g,'_')+'_'+(show.date||'')+'.xls';
+  a.download=(show.artistName||'wydatki').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'-')+'-costs.xls';
   a.click();
   URL.revokeObjectURL(url);
 }

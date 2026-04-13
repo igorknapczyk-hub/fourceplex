@@ -474,7 +474,7 @@ function renderList(){
     return;
   }
   el.innerHTML='';
-  artists.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  artists.sort((a,b)=>(b.id||0)-(a.id||0));
   artists.forEach(a=>{
     const isSelected=a.id===selectedId;
     const steps=getSteps(a);
@@ -658,6 +658,7 @@ const STEPS=[
   {key:'oferta',  label:'Oferta'},
   {key:'followup',label:'Follow up'},
   {key:'period',  label:'Period'},
+  {key:'venue',   label:'Venue'},
 ];
 function getSteps(a){return a.steps||{};}
 function renderStepDots(a){
@@ -707,6 +708,7 @@ async function toggleStep(id,key,el){
   /* update list dots without re-rendering detail (to preserve focus) */
   renderList();
 }
+
 async function saveStepNote(id,key,value){
   if(!window._poReady)return;
   const a=(window._poArtists||[]).find(x=>x.id===id);
