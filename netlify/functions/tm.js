@@ -33,22 +33,25 @@ async function getSessionId() {
   return data.sessionId;
 }
 
-async function getEventSales(sessionId, eventName, eventDate) {
+async function getEventSales(sessionId) {
   const url = `${process.env.TM_URL}/reports/eventSales?apikey=${process.env.TM_API_KEY}`;
-  // Zakres: od 18 miesięcy temu do dziś — żeby złapać całą sprzedaż
+  const to = new Date();
   const from = new Date();
-  from.setMonth(from.getMonth() - 18);
-  const fromStr = from.toISOString().slice(0, 10).replace(/-/g, '-') + ' 00:00:00';
-  const toStr   = new Date().toISOString().slice(0, 10) + ' 23:59:59';
+  from.setDate(from.getDate() - 30);
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} 00:00:00`;
   const res = await fetch(url, {
-    method:  'POST',
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Accept':       'application/json',
       'sessionId':    sessionId,
       'marketCode':   process.env.TM_MARKET,
     },
-    body: JSON.stringify({ from: fromStr, to: toStr }),
+    body: JSON.stringify({
+      from: fmt(from),
+      to:   fmt(to),
+    }),
   });
   if (!res.ok) {
     const text = await res.text();
@@ -107,7 +110,7 @@ exports.handler = async function(event) {
   }
   try {
     const sessionId   = await getSessionId();
-    const transactions = await getEventSales(sessionId, eventName, eventDate);
+    const transactions = await getEventSales(sessionId);
     if (!transactions.length) {
       return { statusCode: 404, headers: { ...CORS, 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Brak transakcji w TM dla tego okresu' }) };
