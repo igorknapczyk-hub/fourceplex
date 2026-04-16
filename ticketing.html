@@ -1075,34 +1075,49 @@ async function doCountOne(evId){
   const ev=window._events?.find(e=>e.id===evId);
   if(!ev){notify('Nie znaleziono eventu','err');return;}
   if(!curUser){notify('Wybierz użytkownika','err');return;}
-  notify('Pobieram dane z eBilet...','info');
+  notify('Pobieram dane z API...','info');
   try{
-    const res=await fetch('/.netlify/functions/ebilet',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({eventName:ev.name,eventDate:ev.date}),
-    });
-    const data=await res.json();
-    if(data.error){notify('eBilet: '+data.error,'err');return;}
+    // Odpytaj eBilet i TM równolegle
+    const [ebRes,tmRes]=await Promise.all([
+      fetch('/.netlify/functions/ebilet',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({eventName:ev.name,eventDate:ev.date}),
+      }),
+      fetch('/.netlify/functions/tm',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({eventName:ev.name,eventDate:ev.date}),
+      }),
+    ]);
+    const ebData=await ebRes.json();
+    const tmData=await tmRes.json();
+    // Użyj dotychczasowych wartości jako fallback jeśli API zwróci błąd
+    const newEb=ebData.error?ev.eb||0:ebData.eb||0;
+    const newTm=tmData.error?ev.tm||0:tmData.tm||0;
+    const newOther=ev.other||0;
+    const newTot=newTm+newEb+newOther;
+    const newRem=ebData.error?ev.remains||0:ebData.remains||0;
+    const pct=ev.cap?Math.round(newTot/ev.cap*100):0;
     // Zaktualizuj event w Firebase
-    const newTot=(ev.tm||0)+data.eb+(ev.other||0);
-    const newRem=data.remains;
-    const u={...ev,eb:data.eb,remains:newRem,updatedBy:curUser,updatedAt:Date.now()};
+    const u={...ev,tm:newTm,eb:newEb,remains:newRem,updatedBy:curUser,updatedAt:Date.now()};
     delete u.id;
     await window._setDoc(window._doc(window._db,'ticketing_events',evId),u);
     // Zapisz snapshot z dzisiejszą datą
     const today=fd(new Date().toISOString().slice(0,10));
     const sid='snap_'+evId+'_'+today.replace(/\./g,'_');
-    const pct=ev.cap?Math.round(newTot/ev.cap*100):0;
     await window._setDoc(window._doc(window._db,'ticketing_snapshots',sid),{
       eventId:evId,eventName:ev.name,date:today,
-      tm:ev.tm||0,eb:data.eb,other:ev.other||0,
+      tm:newTm,eb:newEb,other:newOther,
       total:newTot,remains:newRem,wraps:ev.wraps||0,pct,
       createdBy:curUser,createdAt:Date.now(),
     });
-    notify('✅ eBilet: '+data.eb+' biletów ('+data.matchedRecords+' rekordów)');
+    // Pokaż wynik
+    const ebInfo=ebData.error?'eBilet: błąd':'eBilet: '+newEb;
+    const tmInfo=tmData.error?'TM: błąd':'TM: '+newTm;
+    notify('✅ '+tmInfo+' / '+ebInfo+' / Total: '+newTot);
   }catch(err){
-    notify('Błąd połączenia z eBilet: '+err.message,'err');
+    notify('Błąd API: '+err.message,'err');
   }
 }
 
