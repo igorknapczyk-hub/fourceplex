@@ -33,24 +33,27 @@ async function getSessionId() {
   return data.sessionId;
 }
 
-async function getEventSales(sessionId) {
+async function getEventSales(sessionId, eventDate) {
   const url = `${process.env.TM_URL}/reports/eventSales?apikey=${process.env.TM_API_KEY}`;
-  const pad = n => String(n).padStart(2, '0');
+  const pad = n => String(n).padStart(2,'0');
   const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} 00:00:00`;
 
-  // Podziel 365 dni na okresy po 31 dni
+  // Startuj od eventDate + 7 dni, idź 365 dni wstecz, okresy po 31 dni
+  const anchor = new Date(eventDate);
+  anchor.setDate(anchor.getDate() + 7);
+
   const periods = [];
-  const now = new Date();
   for (let i = 0; i < 365; i += 31) {
-    const to = new Date(now);
-    to.setDate(to.getDate() - i);
-    const from = new Date(now);
-    from.setDate(from.getDate() - Math.min(i + 31, 365));
+    const to = new Date(anchor);
+    to.setDate(anchor.getDate() - i);
+    const from = new Date(anchor);
+    from.setDate(anchor.getDate() - Math.min(i + 31, 365));
     periods.push({ from: fmt(from), to: fmt(to) });
   }
 
-  // Wyślij wszystkie zapytania równolegle
-  const results = await Promise.all(periods.map(async period => {
+  // Szeregowo — jeden request na raz
+  const allTransactions = [];
+  for (const period of periods) {
     const res = await fetch(url, {
       method: 'POST',
       headers: {
@@ -61,13 +64,14 @@ async function getEventSales(sessionId) {
       },
       body: JSON.stringify({ from: period.from, to: period.to }),
     });
-    if (!res.ok) return [];
+    if (!res.ok) continue;
     const data = await res.json();
-    return Array.isArray(data) ? data : (data.transactions ?? data.items ?? []);
-  }));
-
-  // Połącz wszystkie wyniki w jedną tablicę
-  return results.flat();
+    const rows = Array.isArray(data) ? data : (data.transactions ?? data.items ?? []);
+    allTransactions.push(...rows);
+    // Zatrzymaj gdy mamy już wystarczająco dużo danych
+    if (allTransactions.length > 0 && i >= 62) break;
+  }
+  return allTransactions;
 }
 
 function filterAndCount(transactions, eventName, eventDate) {
@@ -119,7 +123,7 @@ exports.handler = async function(event) {
   }
   try {
     const sessionId   = await getSessionId();
-    const transactions = await getEventSales(sessionId);
+    const transactions = await getEventSales(sessionId, eventDate);
     if (!transactions.length) {
       return { statusCode: 404, headers: { ...CORS, 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Brak transakcji w TM dla tego okresu' }) };
