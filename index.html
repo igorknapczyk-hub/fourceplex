@@ -69,8 +69,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 /* ── WIDGET GRID ── */
 .widgets-grid{
   display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  grid-template-rows:1fr 1fr;
+  grid-template-columns:1fr 380px;
+  grid-template-rows:1fr;
   gap:12px;
   height:100%;
 }
@@ -162,7 +162,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .todo-note-input:focus{border-bottom-color:rgba(200,240,96,.35)}
 .todo-note-input::placeholder{color:var(--text3)}
 /* status badges (clickable) */
-.status-badge{font-family:var(--mono);font-size:8px;padding:1px 6px;border-radius:3px;cursor:pointer;flex-shrink:0;border:1px solid;transition:all .12s;user-select:none}
+.status-badge{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:4px;cursor:pointer;flex-shrink:0;border:1px solid;transition:all .12s;user-select:none}
 .status-badge.todo{color:var(--text3);border-color:var(--border);background:transparent}
 .status-badge.wtoku{color:var(--blue);border-color:rgba(96,165,250,.35);background:rgba(96,165,250,.09)}
 .status-badge.zablokowane{color:var(--red);border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.09)}
@@ -180,6 +180,37 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .filter-btn{background:transparent;border:1px solid var(--border);border-radius:12px;padding:2px 9px;font-size:10px;font-family:var(--mono);color:var(--text3);cursor:pointer;transition:all .12s}
 .filter-btn:hover{border-color:var(--border2);color:var(--text2)}
 .filter-btn.active{background:var(--bg4);border-color:var(--border2);color:var(--text)}
+
+/* ── selected task highlight ── */
+.todo-item.selected{border-color:rgba(200,240,96,.5)!important;background:rgba(200,240,96,.04)!important;cursor:default}
+/* ── note textarea in add form ── */
+.todo-note-textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:12px;padding:7px 11px;outline:none;resize:vertical;min-height:58px;max-height:100px;transition:border-color .15s;margin-top:5px}
+.todo-note-textarea:focus{border-color:rgba(200,240,96,.4)}
+.todo-note-textarea::placeholder{color:var(--text3)}
+/* ── link inputs in add form ── */
+.todo-link-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;margin-top:5px;transition:border-color .15s}
+.todo-link-input:focus{border-color:rgba(200,240,96,.35)}
+.todo-link-input::placeholder{color:var(--text3)}
+/* ── DETAIL PANEL ── */
+.detail-task-title{font-size:15px;font-weight:600;color:var(--text);line-height:1.4;flex-shrink:0;word-break:break-word}
+.detail-meta-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0;margin-top:4px}
+.detail-status-badge{font-size:11px!important;padding:4px 11px!important}
+.detail-due{font-family:var(--mono);font-size:11px;color:var(--text3);flex-shrink:0}
+.detail-due.urgent{color:var(--red)}
+.detail-note-block{background:var(--bg3);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.5;font-style:italic;flex-shrink:0;word-break:break-word}
+.detail-link-row{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;padding:6px 10px;border-radius:5px;background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.15);flex-shrink:0;transition:opacity .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.detail-link-row.drive-link{color:var(--teal);background:rgba(52,211,153,.07);border-color:rgba(52,211,153,.15)}
+.detail-link-row:hover{opacity:.75}
+.detail-exec-section{flex:1;display:flex;flex-direction:column;gap:7px;min-height:0;border-top:1px solid var(--border);padding-top:10px;margin-top:4px}
+.detail-section-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);flex-shrink:0}
+.exec-notes-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:0}
+.exec-note-item{background:var(--bg3);border-radius:5px;padding:8px 10px;flex-shrink:0}
+.exec-note-text{font-size:12px;color:var(--text);line-height:1.4;word-break:break-word}
+.exec-note-meta{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px}
+.exec-note-add-row{display:flex;gap:7px;flex-shrink:0;align-items:flex-end;padding-top:4px}
+.exec-note-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:12px;padding:7px 11px;outline:none;resize:none;transition:border-color .15s;min-height:48px}
+.exec-note-input:focus{border-color:rgba(200,240,96,.4)}
+.exec-note-input::placeholder{color:var(--text3)}
 
 /* ════════════════════════════════
    W2 — WATCHLIST
@@ -378,8 +409,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 <div class="main-scroll">
 <div class="widgets-grid">
 
-  <!-- ═══ W1: JASZCZURZE SPRAWY — kol 1-2, pełna wysokość ═══ -->
-  <div class="widget" style="grid-column:1/3;grid-row:1/3">
+  <!-- ═══ W1: JASZCZURZE SPRAWY — lewa kolumna, pełna wysokość ═══ -->
+  <div class="widget" style="grid-column:1;grid-row:1">
     <div class="widget-header">
       <span class="widget-title">Jaszczurze sprawy</span>
       <div class="widget-badges">
@@ -394,7 +425,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
           <button class="btn" onclick="addTodo()">+</button>
         </div>
         <div class="assignee-row" id="assignee-row"></div>
-        <input class="todo-note-input" id="todo-note" placeholder="Krótka notatka… (opcjonalnie)" maxlength="300" style="margin-top:5px">
+        <textarea class="todo-note-textarea" id="todo-note" placeholder="Notatka… opis zadania, kontekst (opcjonalnie)" maxlength="1000"></textarea>
+        <input class="todo-link-input" id="todo-drive" type="url" placeholder="🗂 Link do Google Drive (opcjonalnie)">
+        <input class="todo-link-input" id="todo-links" type="url" placeholder="🔗 Zewnętrzny link (opcjonalnie)">
         <div style="display:flex;align-items:center;gap:8px;margin-top:5px">
           <span class="pilne-toggle" id="pilne-toggle" onclick="togglePilne()">⚡ PILNE</span>
           <input class="todo-date-input" id="todo-date" type="date" title="Termin wykonania (opcjonalnie)" style="flex:1;margin-top:0"></div>
@@ -410,30 +443,15 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     </div>
   </div>
 
-  <!-- ═══ W2: MARKETING ALERTY — kol 3, rząd 1 ═══ -->
-  <div class="widget" style="grid-column:3;grid-row:1">
-    <div class="widget-header">
-      <span class="widget-title">Marketing — Alerty</span>
-      <div class="widget-badges"><span class="wbadge b-red" id="mkt-badge">–</span></div>
+  <!-- ═══ PANEL SZCZEGÓŁÓW ZADANIA — prawa kolumna ═══ -->
+  <div class="widget" id="task-detail-panel" style="grid-column:2;grid-row:1">
+    <div class="widget-header detail-header">
+      <span class="widget-title" id="detail-panel-title">Szczegóły zadania</span>
+      <button class="btn-ghost" onclick="closeTaskDetail()" id="detail-close-btn" style="display:none;padding:2px 8px;font-size:11px">✕</button>
     </div>
-    <div class="widget-body">
-      <div class="mkt-list" id="mkt-list"><div class="empty-state">Ładowanie…</div></div>
-    </div>
-  </div>
-
-  <!-- ═══ W3: TICKETING ALERTY — kol 3, rząd 2 ═══ -->
-  <div class="widget" style="grid-column:3;grid-row:2">
-    <div class="widget-header">
-      <span class="widget-title">Ticketing — Alerty</span>
-      <div class="widget-badges">
-        <span class="wbadge b-red" id="tk-alert-badge">–</span>
-        <a href="ticketing.html" class="wbadge b-teal" style="text-decoration:none;cursor:pointer">Otwórz →</a>
-      </div>
-    </div>
-    <div class="widget-body">
-      <div class="tk-alert-list" id="tk-alert-list">
-        <div class="empty-state">Ładowanie…</div>
-      </div>
+    <div class="widget-body" style="overflow:hidden">
+      <div class="empty-state" id="detail-empty" style="margin-top:40px">Wybierz zadanie z listy</div>
+      <div id="detail-content" style="display:none;flex:1;flex-direction:column;gap:10px;overflow-y:auto;min-height:0"></div>
     </div>
   </div>
 
@@ -672,14 +690,19 @@ function addTodo(){
   const input=document.getElementById('todo-input');const text=input.value.trim();
   const dateEl=document.getElementById('todo-date');const dueDate=dateEl&&dateEl.value?dateEl.value:null;
   const noteEl=document.getElementById('todo-note');const note=(noteEl&&noteEl.value.trim())||'';
+  const driveEl=document.getElementById('todo-drive');const driveLink=(driveEl&&driveEl.value.trim())||'';
+  const linksEl=document.getElementById('todo-links');const linkVal=(linksEl&&linksEl.value.trim())||'';
+  const links=linkVal?[linkVal]:[];
   if(!text||!currentUser)return;if(!db){alert('Brak bazy.');return;}
   const assignees=Array.from(selectedAssignees);
   db.collection('todos').add({
-    text,done:false,status:'todo',pilne:isPilne,note,
+    text,done:false,status:'todo',pilne:isPilne,note,driveLink,links,
     addedBy:currentUser,assignees,assignee:assignees[0]||null,dueDate,
+    execNotes:[],
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
   }).then(()=>{
     input.value='';if(dateEl)dateEl.value='';if(noteEl)noteEl.value='';
+    if(driveEl)driveEl.value='';if(linksEl)linksEl.value='';
     isPilne=false;const pt=document.getElementById('pilne-toggle');if(pt)pt.classList.remove('on');
   }).catch(e=>console.error('Todo:',e));
 }
@@ -780,6 +803,9 @@ function buildTodoEl(t){
 
   const el=document.createElement('div');
   el.className='todo-item'+(pilne?' pilne':'')+(isUrgent?' overdue':'');
+  el.dataset.id=t.id;
+  el.style.cursor='pointer';
+  el.onclick=function(e){if(!e.target.closest('.todo-edit')&&!e.target.closest('.todo-del'))openTaskDetail(t.id);};
   el.innerHTML=`
     <div class="todo-meta" style="flex:1;min-width:0">
       <div class="todo-text${status==='zrobione'?' done':''}" style="margin-bottom:3px">${escHtml(t.text)}</div>
@@ -792,8 +818,8 @@ function buildTodoEl(t){
         <span class="author-tag">od <span style="color:${ac}">${escHtml(t.addedBy||'?')}</span></span>
       </div>
     </div>
-    <div class="todo-edit" onclick="editTodo('${t.id}')">✎</div>
-    <div class="todo-del" onclick="deleteTodo('${t.id}')">✕</div>`;
+    <div class="todo-edit" onclick="event.stopPropagation();editTodo('${t.id}')">✎</div>
+    <div class="todo-del" onclick="event.stopPropagation();deleteTodo('${t.id}')">✕</div>`;
   return el;
 }
 
@@ -880,285 +906,145 @@ function renderTodos(todos){
 }
 
 let _latestTodos=[];
-if(db){db.collection('todos').onSnapshot(snap=>{_latestTodos=snap.docs.map(d=>({id:d.id,...d.data()}));renderTodos(_latestTodos);},e=>{console.error('Todos:',e);document.getElementById('todo-list').innerHTML='<div class="empty-state">Błąd</div>';});}
+if(db){db.collection('todos').onSnapshot(snap=>{
+  _latestTodos=snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderTodos(_latestTodos);
+  /* jeśli jest otwarte zadanie, odśwież panel szczegółów */
+  if(_selectedTaskId){
+    const updated=_latestTodos.find(x=>x.id===_selectedTaskId);
+    if(updated)renderTaskDetail(updated);else closeTaskDetail();
+  }
+  /* zaznacz wybrany element */
+  document.querySelectorAll('.todo-item').forEach(el=>{
+    el.classList.toggle('selected',el.dataset.id===_selectedTaskId);
+  });
+},e=>{console.error('Todos:',e);document.getElementById('todo-list').innerHTML='<div class="empty-state">Błąd</div>';});}
 
 /* ══════════════════════════════════════
-   W3 — TICKETING ALERTY
-   pct = sold/cap*100
-   >=95% → OSTATNIE 5% (czerwony)
-   >=89% → OSTATNIE 10% (bursztyn)
+   PANEL SZCZEGÓŁÓW ZADANIA
 ══════════════════════════════════════ */
-let tkEvents=[];
+let _selectedTaskId=null;
 
-function renderTicketingAlerts(){
-  const today=new Date().toISOString().slice(0,10);
-  const list=document.getElementById('tk-alert-list');
-  const badge=document.getElementById('tk-alert-badge');
-  if(!list)return;
+function openTaskDetail(id){
+  _selectedTaskId=id;
+  const t=_latestTodos.find(x=>x.id===id);if(!t)return;
+  renderTaskDetail(t);
+  /* zaznacz wybrany element */
+  document.querySelectorAll('.todo-item').forEach(el=>{
+    el.classList.toggle('selected',el.dataset.id===id);
+  });
+}
 
-  // Tylko aktywne (data >= dziś)
-  const active=tkEvents.filter(e=>(e.date||'')>=today);
+function closeTaskDetail(){
+  _selectedTaskId=null;
+  document.querySelectorAll('.todo-item').forEach(el=>el.classList.remove('selected'));
+  const content=document.getElementById('detail-content');
+  const empty=document.getElementById('detail-empty');
+  const closeBtn=document.getElementById('detail-close-btn');
+  const titleEl=document.getElementById('detail-panel-title');
+  if(content){content.style.display='none';content.innerHTML='';}
+  if(empty)empty.style.display='';
+  if(closeBtn)closeBtn.style.display='none';
+  if(titleEl)titleEl.textContent='Szczegóły zadania';
+}
 
-  // Wylicz pct dla każdego i filtruj alerty
-  const alerts=active
-    .map(e=>{
-      const sold=(e.tm||0)+(e.eb||0)+(e.other||0);
-      const cap=e.cap||0;
-      const pct=cap>0?Math.round(sold/cap*100):0;
-      return{...e,sold,pct};
-    })
-    .filter(e=>e.pct>=89&&e.pct<100)
-    .sort((a,b)=>b.pct-a.pct); // najwyższy % u góry
+function renderTaskDetail(t){
+  const content=document.getElementById('detail-content');
+  const empty=document.getElementById('detail-empty');
+  const closeBtn=document.getElementById('detail-close-btn');
+  const titleEl=document.getElementById('detail-panel-title');
+  if(!content)return;
+  if(empty)empty.style.display='none';
+  if(closeBtn)closeBtn.style.display='';
+  if(titleEl)titleEl.textContent=t.text.length>28?t.text.slice(0,28)+'…':t.text;
 
-  if(badge)badge.textContent=`${alerts.length} alertów`;
+  const status=getTodoStatus(t);
+  const pilne=isTodoPilne(t);
+  const asgns=getAssignees(t);
+  const dueDays=getDueDays(t.dueDate);
+  const isUrgent=dueDays!==null&&dueDays<=3&&status!=='zrobione';
+  const ac=getUserColor(t.addedBy||'');
 
-  if(!alerts.length){
-    list.innerHTML='<div class="empty-state">Brak alertów sprzedażowych</div>';
-    return;
+  const asgHtml=asgns.map(n=>{
+    const c=ASSIGNEES[n]||'#888';
+    return`<span class="assignee-tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${escHtml(n)}</span>`;
+  }).join('');
+
+  let dueHtml='';
+  if(t.dueDate){
+    const parts=t.dueDate.split('-');
+    const formatted=parts.length===3?`${parts[2]}.${parts[1]}.${parts[0]}`:t.dueDate;
+    const dueLabel=dueDays<0?`${-dueDays}d po terminie`:dueDays===0?'Dziś!':dueDays===1?'Jutro':`za ${dueDays}d`;
+    dueHtml=`<div class="detail-due${isUrgent?' urgent':''}" style="margin-top:4px">${formatted} · ${dueLabel}</div>`;
   }
 
-  list.innerHTML='';
-  alerts.forEach(e=>{
-    const is5=e.pct>=95&&e.pct<100;
-    const chipClass=is5?'chip-5':'chip-10';
-    const chipLabel=is5?'OSTATNIE 5%':'OSTATNIE 10%';
-    const itemClass=is5?'alert-5':'alert-10';
-    const pctColor=is5?'var(--red)':'var(--amber)';
-    // Data w formacie DD.MM.YYYY
-    const dateParts=(e.date||'').split('-');
-    const dateStr=dateParts.length===3?`${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`:'–';
-    const venue=e.venue||'';
+  const driveHtml=t.driveLink?`<a href="${escHtml(t.driveLink)}" target="_blank" rel="noopener" class="detail-link-row drive-link">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" width="13" height="13" style="flex-shrink:0"><path d="M14 10l-3 5H5L2 10l3-5h6l3 5z"/><path d="M2 10h12M8 5l3 5M8 5L5 10"/></svg>
+    Google Drive
+  </a>`:'';
 
-    const el=document.createElement('div');
-    el.className=`tk-alert-item ${itemClass}`;
-    el.innerHTML=`
-      <div class="tk-alert-body">
-        <div class="tk-alert-name">${escHtml(e.name||'–')}</div>
-        <div class="tk-alert-meta">${escHtml(venue)}${venue?' · ':''}${dateStr}</div>
+  const linksArr=Array.isArray(t.links)?t.links:[];
+  const linksHtml=linksArr.filter(Boolean).map((l,i)=>`<a href="${escHtml(l)}" target="_blank" rel="noopener" class="detail-link-row">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" width="13" height="13" style="flex-shrink:0"><path d="M6 3h7v7M13 3L7 9"/><rect x="1" y="7" width="6" height="6" rx="1"/></svg>
+    Link zewnętrzny${linksArr.length>1?' '+(i+1):''}
+  </a>`).join('');
+
+  /* exec notes */
+  const execNotes=Array.isArray(t.execNotes)?t.execNotes:[];
+  const execListHtml=execNotes.length
+    ?[...execNotes].reverse().map(n=>{
+        const c=getUserColor(n.addedBy||'');
+        let ts='';
+        if(n.addedAt){
+          try{const d=new Date(n.addedAt);ts=d.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});}catch(e){}
+        }
+        return`<div class="exec-note-item">
+          <div class="exec-note-text">${escHtml(n.text)}</div>
+          <div class="exec-note-meta"><span style="color:${c}">${escHtml(n.addedBy||'?')}</span>${ts?' · '+ts:''}</div>
+        </div>`;
+      }).join('')
+    :'<div class="empty-state" style="padding:8px 0;font-size:11px">Brak notatek wykonania</div>';
+
+  content.style.display='flex';
+  content.innerHTML=`
+    <div class="detail-task-title">${escHtml(t.text)}</div>
+    <div class="detail-meta-row">
+      <span class="status-badge detail-status-badge ${status}" onclick="setTodoStatus('${t.id}','${status}')">${STATUS_LABELS[status]}</span>
+      ${pilne?'<span class="prio-badge pilne">PILNE</span>':''}
+      ${asgHtml}
+      <span class="author-tag">od <span style="color:${ac}">${escHtml(t.addedBy||'?')}</span></span>
+    </div>
+    ${dueHtml}
+    ${t.note?`<div class="detail-note-block">${escHtml(t.note)}</div>`:''}
+    ${driveHtml}
+    ${linksHtml}
+    <div class="detail-exec-section">
+      <div class="detail-section-lbl">Notatki wykonania</div>
+      <div class="exec-notes-list" id="exec-notes-list">${execListHtml}</div>
+      <div class="exec-note-add-row">
+        <textarea class="exec-note-input" id="exec-note-input" placeholder="Dodaj notatkę z postępów…" rows="2"></textarea>
+        <button class="btn" onclick="addExecNote('${t.id}')" style="align-self:flex-end;padding:6px 12px">Dodaj</button>
       </div>
-      <span class="tk-alert-chip ${chipClass}">${chipLabel}</span>
-      <span class="tk-alert-pct" style="color:${pctColor}">${e.pct}%</span>`;
-    list.appendChild(el);
-  });
+    </div>`;
+
+  /* Enter w textarea exec-note */
+  const inp=document.getElementById('exec-note-input');
+  if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();addExecNote(t.id);}});
 }
 
-if(db){
-  db.collection('ticketing_events').onSnapshot(snap=>{
-    tkEvents=snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderTicketingAlerts();
-    renderCal(); // odśwież kropki na kalendarzu
-  },e=>console.error('Events:',e));
-}
-
-/* ══════════════════════════════════════
-   W4 — KALENDARZ (makieta)
-══════════════════════════════════════ */
-const MONTHS_PL=['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
-const DAYS_PL=['Pn','Wt','Śr','Cz','Pt','Sb','Nd'];
-let calYear,calMonth;
-
-function initCal(){const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();renderCal();}
-function calNav(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}else if(calMonth<0){calMonth=11;calYear--;}renderCal();}
-
-function renderCal(){
-  if(calYear==null||calMonth==null)return;
-  const lbl=document.getElementById('cal-month-label');
-  if(lbl)lbl.textContent=`${MONTHS_PL[calMonth]} ${calYear}`;
-  const grid=document.getElementById('cal-grid');
-  if(!grid)return;
-  grid.innerHTML='';
-
-  // Nagłówki dni
-  DAYS_PL.forEach(d=>{const el=document.createElement('div');el.className='cal-day-name';el.textContent=d;grid.appendChild(el);});
-
-  const today=new Date();
-  const firstDay=new Date(calYear,calMonth,1);
-  // Poniedziałek = 0
-  let startDow=(firstDay.getDay()+6)%7;
-  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
-  const daysInPrev=new Date(calYear,calMonth,0).getDate();
-
-  // Eventy z ticketingu (aktywne) — zaznacz na kalendarzu
-  const eventDates={};
-  tkEvents.forEach(e=>{
-    if(e.date){
-      // format YYYY-MM-DD
-      const key=e.date.slice(0,10);
-      if(!eventDates[key])eventDates[key]=[];
-      eventDates[key].push(e.name);
-    }
-  });
-
-  const totalCells=Math.ceil((startDow+daysInMonth)/7)*7;
-  for(let i=0;i<totalCells;i++){
-    const cell=document.createElement('div');cell.className='cal-cell';
-    let dayNum,isOtherMonth=false;
-    if(i<startDow){dayNum=daysInPrev-startDow+i+1;isOtherMonth=true;}
-    else if(i>=startDow+daysInMonth){dayNum=i-startDow-daysInMonth+1;isOtherMonth=true;}
-    else{dayNum=i-startDow+1;}
-
-    if(isOtherMonth)cell.classList.add('other-month');
-
-    const cellDate=new Date(calYear,calMonth+(isOtherMonth&&i<startDow?-1:isOtherMonth?1:0),dayNum);
-    const isToday=cellDate.toDateString()===today.toDateString();
-    if(isToday)cell.classList.add('today');
-
-    const dateKey=`${cellDate.getFullYear()}-${String(cellDate.getMonth()+1).padStart(2,'0')}-${String(cellDate.getDate()).padStart(2,'0')}`;
-    const evs=eventDates[dateKey];
-    if(evs&&evs.length)cell.classList.add('has-event');
-
-    const num=document.createElement('div');num.className='cal-num';num.textContent=dayNum;cell.appendChild(num);
-    if(evs&&evs.length){
-      const dots=document.createElement('div');dots.className='cal-dots';
-      evs.slice(0,3).forEach(()=>{const dot=document.createElement('div');dot.className='cal-dot';dot.style.background='var(--purple)';dots.appendChild(dot);});
-      cell.appendChild(dots);
-    }
-    grid.appendChild(cell);
-  }
-}
-
-/* ══════════════════════════════════════
-   W5 — MARKETING CHECKPOINTS (z marketing_shows)
-   Kolekcja: 'marketing_shows'
-   Pola: artistName, date (YYYY-MM-DD), checkpoints (obiekt bool)
-   Logika: te same CP_KEYS i getExpectedCPs co marketing.html
-══════════════════════════════════════ */
-const CP_NAMES_MKT={
-  adAccess:'Artist ad access',
-  campaignLaunch:'Kampania startowa',
-  retargeting:'Kampania retargetingowa',
-  contentRecorded:'Content od artysty',
-  influencers:'Aktywizacja mediów',
-  emailBlast:'Wysyłka mailingu'
-};
-const CP_KEYS_MKT=Object.keys(CP_NAMES_MKT);
-
-const CP_ICONS_MKT={
-  adAccess:'🔑',
-  campaignLaunch:'📣',
-  retargeting:'🎯',
-  contentRecorded:'🎬',
-  influencers:'📱',
-  emailBlast:'📧'
-};
-
-function daysUntilMkt(dateStr){
-  if(!dateStr)return 9999;
-  const now=new Date();now.setHours(0,0,0,0);
-  return Math.round((new Date(dateStr)-now)/86400000);
-}
-
-function getExpectedCPs(daysLeft){
-  const active=[];
-  if(daysLeft<=60){active.push('adAccess','contentRecorded');}
-  if(daysLeft<=30){active.push('campaignLaunch');}
-  if(daysLeft<=14){active.push('influencers','retargeting');}
-  if(daysLeft<=7) {active.push('emailBlast');}
-  return active;
-}
-
-function renderMarketing(shows){
-  const today=new Date().toISOString().slice(0,10);
-  const list=document.getElementById('mkt-list');
-
-  // Tylko aktywne showy (data >= dziś)
-  const active=shows.filter(s=>s.date&&s.date>=today);
-
-  // Zbierz wszystkie niezaliczone, wymagane checkpointy
-  const checkpoints=[];
-  active.forEach(show=>{
-    const daysLeft=daysUntilMkt(show.date);
-    const expected=getExpectedCPs(daysLeft);
-    expected.forEach(key=>{
-      const done=show.checkpoints&&show.checkpoints[key];
-      if(!done){
-        checkpoints.push({
-          key,
-          task:CP_NAMES_MKT[key],
-          icon:CP_ICONS_MKT[key]||'▸',
-          event:show.artistName||'–',
-          date:show.date,
-          daysLeft,
-        });
-      }
-    });
-  });
-
-  // Sortuj: najpierw najbliżej koncertu (daysLeft rosnąco)
-  checkpoints.sort((a,b)=>a.daysLeft-b.daysLeft);
-  const top10=checkpoints.slice(0,10);
-
-  document.getElementById('mkt-badge').textContent=`${checkpoints.length} zadań`;
-
-  if(!top10.length){
-    list.innerHTML='<div class="empty-state">Wszystkie checkpointy zaliczone 🎉</div>';
-    return;
-  }
-
-  list.innerHTML='';
-  top10.forEach(cp=>{
-    const urgency=cp.daysLeft<=3?'urgent':cp.daysLeft<=7?'soon':'ok';
-    const daysText=cp.daysLeft===0?'Dziś!':cp.daysLeft===1?'Jutro':`za ${cp.daysLeft}d`;
-    const el=document.createElement('div');
-    el.className=`mkt-item ${urgency}`;
-    el.innerHTML=`
-      <div class="mkt-icon">${cp.icon}</div>
-      <div class="mkt-body">
-        <div class="mkt-task">${escHtml(cp.task)}</div>
-        <div class="mkt-meta">
-          <span class="mkt-event">${escHtml(cp.event)}</span>
-          <span class="mkt-days ${urgency}">${daysText}</span>
-        </div>
-      </div>`;
-    list.appendChild(el);
-  });
-}
-
-// Real-time listener na marketing_shows
-if(db){
-  db.collection('marketing_shows').onSnapshot(
-    snap=>renderMarketing(snap.docs.map(d=>({id:d.id,...d.data()}))),
-    e=>{console.error('Marketing shows:',e);document.getElementById('mkt-list').innerHTML='<div class="empty-state">Błąd ładowania</div>';}
-  );
-}
-
-/* ══════════════════════════════════════
-   W6 — SPYTAJ BEATĘ
-══════════════════════════════════════ */
-const chatHistory=[];
-const CLAUDE_SYSTEM='Jesteś Beatą — wirtualną office managerką agencji koncertowej FOURCE. Rozmawiasz po polsku, jesteś pomocna, konkretna i przyjazna. Pomagasz zespołowi (Monika, Igor, Mariusz) w planowaniu tras koncertowych, analizie artystów i zarządzaniu sprzedażą biletów. Wypowiadasz się jako kobieta. Odpowiadaj zwięźle i konkretnie.';
-
-function appendMsg(role,text){
-  const c=document.getElementById('chat-messages');const m=document.createElement('div');m.className=`chat-msg ${role}`;
-  m.innerHTML=`<div class="msg-sender">${escHtml(role==='user'?(currentUser||'Ty'):'Beata')}</div><div class="msg-bubble">${escHtml(text)}</div>`;
-  c.appendChild(m);c.scrollTop=c.scrollHeight;
-}
-function showSpinner(){
-  const c=document.getElementById('chat-messages');const s=document.createElement('div');s.id='chat-spinner';s.className='chat-msg beata';
-  s.innerHTML=`<div class="msg-sender">Beata</div><div class="chat-spinner"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
-  c.appendChild(s);c.scrollTop=c.scrollHeight;
-}
-function removeSpinner(){const s=document.getElementById('chat-spinner');if(s)s.remove();}
-
-async function sendChat(){
-  const input=document.getElementById('chat-input');const btn=document.getElementById('chat-send');
-  const text=input.value.trim();if(!text)return;
-  input.value='';input.style.height='';btn.disabled=true;
-  chatHistory.push({role:'user',content:text});appendMsg('user',text);showSpinner();
+async function addExecNote(id){
+  if(!db||!currentUser)return;
+  const inp=document.getElementById('exec-note-input');
+  const text=inp?inp.value.trim():'';
+  if(!text)return;
+  const note={text,addedBy:currentUser,addedAt:new Date().toISOString()};
   try{
-    const res=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:CLAUDE_SYSTEM,messages:chatHistory})});
-    if(!res.ok)throw new Error(`HTTP ${res.status}`);
-    const data=await res.json();const reply=data?.content?.[0]?.text||'(brak odpowiedzi)';
-    chatHistory.push({role:'assistant',content:reply});removeSpinner();appendMsg('beata',reply);
-  }catch(e){removeSpinner();appendMsg('beata',`Błąd: ${e.message}`);}
-  finally{btn.disabled=false;input.focus();}
+    await db.collection('todos').doc(id).update({
+      execNotes:firebase.firestore.FieldValue.arrayUnion(note)
+    });
+    if(inp)inp.value='';
+  }catch(e){console.error('ExecNote:',e);}
 }
-const _chatInput=document.getElementById('chat-input');
-if(_chatInput)_chatInput.addEventListener('keydown',function(e){
-  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}
-  setTimeout(()=>{this.style.height='auto';this.style.height=Math.min(this.scrollHeight,64)+'px';},0);
-});
 
 /* ── HELPERS ── */
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
