@@ -27,6 +27,8 @@ query($eventName: String) {
       free_seats_without_reservations
       all_seats
       taken_seats_without_reservations
+      sales_gross
+      sales_net
     }
   }
 }
@@ -191,7 +193,10 @@ exports.handler = async function (event) {
       };
     }
 
-    const eb      = matches.reduce((s, m) => s + (m.sales_ticket_count ?? 0), 0);
+    const paid  = matches.filter(m => (m.sales_gross ?? 0) > 0);
+    const comps = matches.reduce((s, m) => s + ((m.sales_gross ?? 0) === 0 ? (m.sales_ticket_count ?? 0) : 0), 0);
+
+    const eb      = paid.reduce((s, m) => s + (m.sales_ticket_count ?? 0), 0);
     const remains = matches.reduce((s, m) => s + (m.free_seats_without_reservations ?? 0), 0);
     const cap     = matches.reduce((s, m) => s + (m.all_seats ?? 0), 0);
     const taken   = matches.reduce((s, m) => s + (m.taken_seats_without_reservations ?? 0), 0);
@@ -204,6 +209,7 @@ exports.handler = async function (event) {
         remains,
         cap,
         taken,
+        comps,
         eventName: matches[0].event_name,
         eventDate: matches[0].event_time,
         matchedRecords: matches.length,
