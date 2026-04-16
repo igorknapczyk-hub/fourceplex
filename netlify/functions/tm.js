@@ -33,21 +33,25 @@ async function getSessionId() {
   return data.sessionId;
 }
 
-async function getEventSales(sessionId, eventDate) {
+async function getEventSales(sessionId, eventDate, onSaleDate) {
   const url = `${process.env.TM_URL}/reports/eventSales?apikey=${process.env.TM_API_KEY}`;
   const pad = n => String(n).padStart(2,'0');
   const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} 00:00:00`;
 
-  // Startuj od eventDate + 7 dni, idź 365 dni wstecz, okresy po 31 dni
+  // Startuj od eventDate + 7 dni, idź wstecz do onSaleDate (lub 365 dni)
   const anchor = new Date(eventDate);
   anchor.setDate(anchor.getDate() + 7);
 
+  const totalDays = onSaleDate
+    ? Math.ceil((anchor - new Date(onSaleDate)) / (1000 * 60 * 60 * 24))
+    : 365;
+
   const periods = [];
-  for (let i = 0; i < 365; i += 31) {
+  for (let i = 0; i < totalDays; i += 31) {
     const to = new Date(anchor);
     to.setDate(anchor.getDate() - i);
     const from = new Date(anchor);
-    from.setDate(anchor.getDate() - Math.min(i + 31, 365));
+    from.setDate(anchor.getDate() - Math.min(i + 31, totalDays));
     periods.push({ from: fmt(from), to: fmt(to) });
   }
 
@@ -107,11 +111,12 @@ exports.handler = async function(event) {
     return { statusCode: 405, headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Tylko POST' }) };
   }
-  let eventName, eventDate;
+  let eventName, eventDate, onSaleDate;
   try {
     const body = JSON.parse(event.body || '{}');
-    eventName = (body.eventName || '').trim();
-    eventDate = (body.eventDate || '').trim();
+    eventName  = (body.eventName  || '').trim();
+    eventDate  = (body.eventDate  || '').trim();
+    onSaleDate = (body.onSaleDate || '').trim() || null;
   } catch {
     return { statusCode: 400, headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Nieprawidłowy JSON' }) };
@@ -122,7 +127,7 @@ exports.handler = async function(event) {
   }
   try {
     const sessionId   = await getSessionId();
-    const transactions = await getEventSales(sessionId, eventDate);
+    const transactions = await getEventSales(sessionId, eventDate, onSaleDate);
     if (!transactions.length) {
       return { statusCode: 404, headers: { ...CORS, 'Content-Type': 'application/json' },
         body: JSON.stringify({ error: 'Brak transakcji w TM dla tego okresu' }) };
