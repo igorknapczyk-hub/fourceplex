@@ -104,14 +104,52 @@ exports.handler = async function(event) {
     return { statusCode: 405, headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Tylko POST' }) };
   }
-  let eventName, eventDate;
+  let eventName, eventDate, body;
   try {
-    const body = JSON.parse(event.body || '{}');
+    body = JSON.parse(event.body || '{}');
     eventName = (body.eventName || '').trim();
     eventDate = (body.eventDate || '').trim();
   } catch {
     return { statusCode: 400, headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Nieprawidłowy JSON' }) };
+  }
+  if (body.debug) {
+    try {
+      const sessionId = await getSessionId();
+      const url = `${process.env.TM_URL}/reports/eventSales?apikey=${process.env.TM_API_KEY}`;
+      const now = new Date();
+      const from = new Date();
+      from.setDate(from.getDate() - 31);
+      const pad = n => String(n).padStart(2, '0');
+      const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} 00:00:00`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept':       'application/json',
+          'sessionId':    sessionId,
+          'marketCode':   process.env.TM_MARKET,
+        },
+        body: JSON.stringify({ from: fmt(from), to: fmt(now) }),
+      });
+      const text = await res.text();
+      return {
+        statusCode: 200,
+        headers: { ...CORS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          status: res.status,
+          headers: Object.fromEntries(res.headers.entries()),
+          rawResponse: text.slice(0, 2000),
+        }),
+      };
+    } catch(err) {
+      return {
+        statusCode: 500,
+        headers: { ...CORS, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ debugError: err.message }),
+      };
+    }
   }
   if (!eventName || !eventDate) {
     return { statusCode: 400, headers: { ...CORS, 'Content-Type': 'application/json' },
