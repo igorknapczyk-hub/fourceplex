@@ -106,17 +106,15 @@ async function querySales(token, eventName) {
 }
 
 /* ── Filtruj po dacie (±2 dni) ── */
-function findMatchingEvent(items, eventDate) {
-  // eventDate: YYYY-MM-DD
+function findAllMatchingEvents(items, eventDate) {
   const target = new Date(eventDate);
-  target.setHours(0, 0, 0, 0);
-  const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
-
-  return items.find(item => {
+  return items.filter(item => {
     if (!item.event_time) return false;
     const d = new Date(item.event_time);
-    return Math.abs(d.getTime() - target.getTime()) <= TWO_DAYS;
-  }) ?? null;
+    return d.getFullYear() === target.getFullYear()
+        && d.getMonth()    === target.getMonth()
+        && d.getDate()     === target.getDate();
+  });
 }
 
 /* ── Handler ── */
@@ -180,32 +178,36 @@ exports.handler = async function (event) {
       };
     }
 
-    // 4. Znajdź dokładny event (±2 dni)
-    const match = findMatchingEvent(items, eventDate);
+    const matches = findAllMatchingEvents(items, eventDate);
 
-    if (!match) {
+    if (!matches.length) {
       return {
         statusCode: 404,
         headers: { ...CORS, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          error: `Nie znaleziono eventu w oknie ±2 dni od ${eventDate}`,
+          error: `Nie znaleziono eventu dla daty ${eventDate}`,
           resultsFound: items.length,
         }),
       };
     }
 
-    // 5. Odpowiedź
+    const eb      = matches.reduce((s, m) => s + (m.sales_ticket_count ?? 0), 0);
+    const remains = matches.reduce((s, m) => s + (m.free_seats_without_reservations ?? 0), 0);
+    const cap     = matches.reduce((s, m) => s + (m.all_seats ?? 0), 0);
+    const taken   = matches.reduce((s, m) => s + (m.taken_seats_without_reservations ?? 0), 0);
+
     return {
       statusCode: 200,
       headers: { ...CORS, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        eb:        match.sales_ticket_count            ?? 0,
-        remains:   match.free_seats_without_reservations ?? 0,
-        cap:       match.all_seats                     ?? 0,
-        taken:     match.taken_seats_without_reservations ?? 0,
-        eventName: match.event_name                    ?? eventName,
-        eventDate: match.event_time                    ?? eventDate,
-        raw:       match,
+        eb,
+        remains,
+        cap,
+        taken,
+        eventName: matches[0].event_name,
+        eventDate: matches[0].event_time,
+        matchedRecords: matches.length,
+        raw: matches,
       }),
     };
 
