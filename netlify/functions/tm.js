@@ -35,30 +35,39 @@ async function getSessionId() {
 
 async function getEventSales(sessionId) {
   const url = `${process.env.TM_URL}/reports/eventSales?apikey=${process.env.TM_API_KEY}`;
-  const to = new Date();
-  const from = new Date();
-  from.setDate(from.getDate() - 30);
   const pad = n => String(n).padStart(2, '0');
   const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} 00:00:00`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept':       'application/json',
-      'sessionId':    sessionId,
-      'marketCode':   process.env.TM_MARKET,
-    },
-    body: JSON.stringify({
-      from: fmt(from),
-      to:   fmt(to),
-    }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`TM eventSales error ${res.status}: ${text}`);
+
+  // Podziel 365 dni na okresy po 31 dni
+  const periods = [];
+  const now = new Date();
+  for (let i = 0; i < 365; i += 31) {
+    const to = new Date(now);
+    to.setDate(to.getDate() - i);
+    const from = new Date(now);
+    from.setDate(from.getDate() - Math.min(i + 31, 365));
+    periods.push({ from: fmt(from), to: fmt(to) });
   }
-  const data = await res.json();
-  return Array.isArray(data) ? data : (data.items ?? []);
+
+  // Wyślij wszystkie zapytania równolegle
+  const results = await Promise.all(periods.map(async period => {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept':       'application/json',
+        'sessionId':    sessionId,
+        'marketCode':   process.env.TM_MARKET,
+      },
+      body: JSON.stringify({ from: period.from, to: period.to }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data.items ?? []);
+  }));
+
+  // Połącz wszystkie wyniki w jedną tablicę
+  return results.flat();
 }
 
 function filterAndCount(transactions, eventName, eventDate) {
