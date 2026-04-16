@@ -10,7 +10,7 @@ const CORS = {
 };
 
 const GRAPHQL_QUERY = `
-query($eventName: String, $dateFrom: String, $dateTo: String) {
+query($eventName: String, $dateFrom: DateTime, $dateTo: DateTime) {
   sales(
     filter: {
       event_name: { contains: $eventName }
@@ -173,11 +173,11 @@ exports.handler = async function (event) {
     // 2. dateFrom = 3 dni przed eventDate (żeby złapać ±2 dni)
     const dateFromObj = new Date(eventDate);
     dateFromObj.setDate(dateFromObj.getDate() - 3);
-    const dateFrom = dateFromObj.toISOString().slice(0, 10);
+    const dateFrom = dateFromObj.toISOString();
 
     const dateToObj = new Date(eventDate);
     dateToObj.setDate(dateToObj.getDate() + 4);
-    const dateTo = dateToObj.toISOString().slice(0, 10);
+    const dateTo = dateToObj.toISOString();
 
     // 3. Zapytanie GraphQL
     const items = await querySales(token, eventName, dateFrom, dateTo);
