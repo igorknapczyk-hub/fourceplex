@@ -1087,7 +1087,7 @@ async function doCountOne(evId){
       fetch('/.netlify/functions/tm',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({eventName:ev.name,eventDate:ev.date}),
+        body:JSON.stringify({eventName:ev.name,eventDate:ev.date,onSaleDate:ev.onSale}),
       }),
     ]);
     const ebData=await ebRes.json();
