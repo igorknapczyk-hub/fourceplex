@@ -10,11 +10,10 @@ const CORS = {
 };
 
 const GRAPHQL_QUERY = `
-query($eventName: String, $dateFrom: DateTime, $dateTo: DateTime) {
+query($eventName: String) {
   sales(
     filter: {
       event_name: { contains: $eventName }
-      event_time: { gt: $dateFrom, lt: $dateTo }
     }
     orderBy: null
   ) {
@@ -73,7 +72,7 @@ async function getAccessToken() {
 }
 
 /* ── Zapytaj GraphQL ── */
-async function querySales(token, eventName, dateFrom, dateTo) {
+async function querySales(token, eventName) {
   const graphqlUrl = process.env.EBILET_GRAPHQL_URL;
   if (!graphqlUrl) {
     throw new Error('Brak zmiennej środowiskowej: EBILET_GRAPHQL_URL');
@@ -87,7 +86,7 @@ async function querySales(token, eventName, dateFrom, dateTo) {
     },
     body: JSON.stringify({
       query:     GRAPHQL_QUERY,
-      variables: { eventName, dateFrom, dateTo },
+      variables: { eventName },
     }),
   });
 
@@ -170,17 +169,8 @@ exports.handler = async function (event) {
     // 1. Token OAuth2
     const token = await getAccessToken();
 
-    // 2. dateFrom = 3 dni przed eventDate (żeby złapać ±2 dni)
-    const dateFromObj = new Date(eventDate);
-    dateFromObj.setDate(dateFromObj.getDate() - 3);
-    const dateFrom = dateFromObj.toISOString();
-
-    const dateToObj = new Date(eventDate);
-    dateToObj.setDate(dateToObj.getDate() + 4);
-    const dateTo = dateToObj.toISOString();
-
-    // 3. Zapytanie GraphQL
-    const items = await querySales(token, eventName, dateFrom, dateTo);
+    // 2. Zapytanie GraphQL
+    const items = await querySales(token, eventName);
 
     if (!items.length) {
       return {
