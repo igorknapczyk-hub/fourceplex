@@ -69,7 +69,6 @@ async function getEventSales(sessionId, eventDate) {
     const data = await res.json();
     const rows = Array.isArray(data) ? data : (data.transactions ?? data.items ?? []);
     allTransactions.push(...rows);
-    if (allTransactions.length > 0 && i >= 2) break;
   }
   return allTransactions;
 }
