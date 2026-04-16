@@ -53,7 +53,8 @@ async function getEventSales(sessionId, eventDate) {
 
   // Szeregowo — jeden request na raz
   const allTransactions = [];
-  for (const period of periods) {
+  for (let i = 0; i < periods.length; i++) {
+    const period = periods[i];
     const res = await fetch(url, {
       method: 'POST',
       headers: {
@@ -68,8 +69,7 @@ async function getEventSales(sessionId, eventDate) {
     const data = await res.json();
     const rows = Array.isArray(data) ? data : (data.transactions ?? data.items ?? []);
     allTransactions.push(...rows);
-    // Zatrzymaj gdy mamy już wystarczająco dużo danych
-    if (allTransactions.length > 0 && i >= 62) break;
+    if (allTransactions.length > 0 && i >= 2) break;
   }
   return allTransactions;
 }
