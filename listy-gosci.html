@@ -334,6 +334,143 @@ let allShows=[];
 let selectedShowId=null;
 let currentTab='active';
 const MIN_ROWS=5;
+let _guestLocal={},_guestDirty=false,_guestShowId=null,_guestAutoSave=null;
+function _gRowId(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+const TYPE_CFG={
+  guests:{color:'var(--teal)',hasFrom:true,hasMedia:true},
+  foto:{color:'var(--purple)',hasFrom:true,hasMedia:false},
+  rozdane:{color:'var(--amber)',hasFrom:false,hasMedia:false},
+};
+function _isEmptyRow(r){return !r.name&&!r.email&&!r.from&&(!r.tickets||r.tickets===''||r.tickets==='0'||parseInt(r.tickets)===0);}
+function initGuestLocal(show){
+  _guestDirty=false;clearTimeout(_guestAutoSave);_guestAutoSave=null;
+  _guestShowId=show.id;_guestLocal={};
+  ['guests','foto','rozdane'].forEach(type=>{
+    const items=show[type]||[];
+    _guestLocal[type]=items.map(r=>({rowId:_gRowId(),name:r.name||'',email:r.email||'',from:r.from||'',tickets:r.tickets!=null?String(r.tickets):'',isMedia:!!r.isMedia}));
+    while(_guestLocal[type].length<MIN_ROWS)_guestLocal[type].push({rowId:_gRowId(),name:'',email:'',from:'',tickets:'',isMedia:false});
+    const last=_guestLocal[type][_guestLocal[type].length-1];
+    if(!_isEmptyRow(last))_guestLocal[type].push({rowId:_gRowId(),name:'',email:'',from:'',tickets:'',isMedia:false});
+  });
+}
+async function flushGuestToFirestore(showId){
+  if(!_guestDirty)return;
+  clearTimeout(_guestAutoSave);_guestAutoSave=null;_guestDirty=false;
+  const patch={};
+  ['guests','foto','rozdane'].forEach(type=>{
+    const rows=_guestLocal[type]||[];
+    let end=rows.length;while(end>0&&_isEmptyRow(rows[end-1]))end--;
+    const cfg=TYPE_CFG[type];
+    patch[type]=rows.slice(0,end).map(r=>{
+      const obj={name:r.name||'',email:r.email||'',tickets:parseInt(r.tickets)||0};
+      if(cfg.hasFrom)obj.from=r.from||'';
+      if(cfg.hasMedia)obj.isMedia=!!r.isMedia;
+      return obj;
+    });
+  });
+  try{await updShow(showId,patch);}catch(e){console.error('flush guest:',e);_guestDirty=true;}
+}
+function _ensureTrailingEmpty(type){
+  const rows=_guestLocal[type];if(!rows||!rows.length)return;
+  if(!_isEmptyRow(rows[rows.length-1])){
+    const row={rowId:_gRowId(),name:'',email:'',from:'',tickets:'',isMedia:false};
+    rows.push(row);
+    const tbody=document.querySelector(`.itable tbody[data-type="${type}"]`);
+    if(tbody)_appendGuestTr(tbody,type,row);
+  }
+}
+function _buildGuestTrHTML(type,row){
+  const cfg=TYPE_CFG[type];const empty=_isEmptyRow(row);const cls=empty?'cell-input empty-row':'cell-input';
+  const mediaCh=cfg.hasMedia?`<td class="col-media" style="text-align:center"><input type="checkbox" class="media-cb" data-row-id="${row.rowId}" data-type="${type}" ${row.isMedia?'checked':''} ${empty?'disabled':''}></td>`:'';
+  return `<tr data-row-id="${row.rowId}">
+    <td class="col-cb"><input type="checkbox" class="row-cb" data-type="${type}" data-email="${esc(row.email||'')}" ${empty?'disabled':''}></td>
+    <td class="${cfg.hasFrom?'col-name':'col-name-r'}"><input class="${cls}" data-type="${type}" data-row-id="${row.rowId}" data-field="name" value="${esc(row.name||'')}" placeholder="Imię i nazwisko"></td>
+    <td class="${cfg.hasFrom?'col-email':'col-email-r'}"><input class="${cls}" data-type="${type}" data-row-id="${row.rowId}" data-field="email" value="${esc(row.email||'')}" placeholder="email@domena.pl" style="color:${cfg.color}"></td>
+    ${cfg.hasFrom?`<td class="col-from"><input class="${cls}" data-type="${type}" data-row-id="${row.rowId}" data-field="from" value="${esc(row.from||'')}" placeholder="Od kogo?"></td>`:''}
+    ${mediaCh}
+    <td class="col-tick"><input class="${cls} mono" data-type="${type}" data-row-id="${row.rowId}" data-field="tickets" value="${esc(String(row.tickets??''))}" placeholder="1" type="number" min="0" style="color:${cfg.color};text-align:center"></td>
+    <td class="col-del"><button class="row-del-btn" data-type="${type}" data-row-id="${row.rowId}" ${empty?'style="visibility:hidden"':''}>✕</button></td>
+  </tr>`;
+}
+function _appendGuestTr(tbody,type,row){
+  const tmp=document.createElement('tbody');tmp.innerHTML=_buildGuestTrHTML(type,row);
+  const tr=tmp.firstElementChild;_bindGuestRow(tr,_guestShowId);tbody.appendChild(tr);
+}
+function _bindGuestRow(tr,showId){
+  tr.querySelectorAll('.cell-input').forEach(inp=>{
+    inp.addEventListener('input',()=>{
+      const type=inp.dataset.type,rowId=inp.dataset.rowId,field=inp.dataset.field;
+      const row=(_guestLocal[type]||[]).find(r=>r.rowId===rowId);if(!row)return;
+      row[field]=inp.value;_guestDirty=true;
+      const empty=_isEmptyRow(row);
+      tr.querySelectorAll('.cell-input').forEach(i=>i.classList.toggle('empty-row',empty));
+      const rowCb=tr.querySelector('.row-cb');if(rowCb)rowCb.disabled=empty;
+      const mediaCb=tr.querySelector('.media-cb');if(mediaCb)mediaCb.disabled=empty;
+      const delBtn=tr.querySelector('.row-del-btn');if(delBtn)delBtn.style.visibility=empty?'hidden':'';
+      clearTimeout(_guestAutoSave);
+      _guestAutoSave=setTimeout(()=>flushGuestToFirestore(showId),30000);
+      _ensureTrailingEmpty(type);
+    });
+    inp.addEventListener('keydown',e=>{
+      const trEl=inp.closest('tr');
+      if(e.key==='Enter'||e.key==='ArrowDown'){
+        e.preventDefault();
+        const nextTr=trEl.nextElementSibling;
+        if(nextTr){const next=nextTr.querySelector(`[data-field="${inp.dataset.field}"]`);if(next)next.focus();}
+      } else if(e.key==='ArrowUp'){
+        e.preventDefault();
+        const prevTr=trEl.previousElementSibling;
+        if(prevTr){const prev=prevTr.querySelector(`[data-field="${inp.dataset.field}"]`);if(prev)prev.focus();}
+      } else if(e.key==='ArrowRight'&&inp.selectionStart===inp.value.length){
+        e.preventDefault();
+        const all=[...trEl.querySelectorAll('.cell-input')];
+        const ci=all.indexOf(inp);if(ci<all.length-1)all[ci+1].focus();
+      } else if(e.key==='ArrowLeft'&&inp.selectionStart===0){
+        e.preventDefault();
+        const all=[...trEl.querySelectorAll('.cell-input')];
+        const ci=all.indexOf(inp);if(ci>0)all[ci-1].focus();
+      } else if(e.key==='Escape'){
+        const type=inp.dataset.type,rowId=inp.dataset.rowId;
+        const row=(_guestLocal[type]||[]).find(r=>r.rowId===rowId);
+        if(row)inp.value=String(row[inp.dataset.field]??'');inp.blur();
+      }
+    });
+  });
+  const mediaCb=tr.querySelector('.media-cb');
+  if(mediaCb){
+    mediaCb.addEventListener('change',()=>{
+      const type=mediaCb.dataset.type,rowId=mediaCb.dataset.rowId;
+      const row=(_guestLocal[type]||[]).find(r=>r.rowId===rowId);
+      if(row){row.isMedia=mediaCb.checked;_guestDirty=true;}
+      clearTimeout(_guestAutoSave);
+      _guestAutoSave=setTimeout(()=>flushGuestToFirestore(showId),30000);
+    });
+  }
+  const delBtn=tr.querySelector('.row-del-btn');
+  if(delBtn){
+    delBtn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const type=delBtn.dataset.type,rowId=delBtn.dataset.rowId;
+      const rows=_guestLocal[type];if(!rows)return;
+      const idx=rows.findIndex(r=>r.rowId===rowId);
+      if(idx>=0)rows.splice(idx,1);tr.remove();_guestDirty=true;
+      _ensureTrailingEmpty(type);
+      clearTimeout(_guestAutoSave);
+      _guestAutoSave=setTimeout(()=>flushGuestToFirestore(showId),30000);
+    });
+  }
+}
+function bindGuestEvents(showId){
+  const dc=document.getElementById('detail-content');
+  dc.querySelectorAll('.itable').forEach(tbl=>{
+    tbl.addEventListener('focusout',e=>{
+      if(!_guestDirty)return;
+      const rt=e.relatedTarget;
+      if(!rt||!tbl.contains(rt)){clearTimeout(_guestAutoSave);flushGuestToFirestore(showId);}
+    });
+  });
+  dc.querySelectorAll('.itable tbody tr').forEach(tr=>_bindGuestRow(tr,showId));
+}
 
 /* ══ HELPERS ══ */
 function fmtDate(s){if(!s)return'–';try{const d=new Date(s);return`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;}catch{return s;}}
@@ -356,7 +493,7 @@ onSnapshot(showsCol,snap=>{
   renderList();
   if(selectedShowId){
     const s=allShows.find(x=>x.id===selectedShowId);
-    if(s)renderDetail(s);
+    if(s&&!_guestDirty)renderDetail(s);
   }
 },err=>{
   console.error('Firestore:',err);
@@ -447,7 +584,10 @@ async function doSave(){
 }
 
 /* ══ SELECT / DELETE ══ */
-function selectShow(id){
+async function selectShow(id){
+  if(_guestDirty&&_guestShowId&&_guestShowId!==id){
+    await flushGuestToFirestore(_guestShowId);
+  }
   selectedShowId=id;
   const show=allShows.find(s=>s.id===id);
   if(show)renderDetail(show);
@@ -466,55 +606,38 @@ async function doDelete(id){
 }
 
 /* ══ RENDER DETAIL ══ */
-function buildRows(type,items,color,hasFrom,hasMedia){
-  const filled=items.length;
-  const total=Math.max(filled+1,MIN_ROWS);
-  let html='';
-  for(let i=0;i<total;i++){
-    const r=items[i]||{};
-    const empty=i>=filled;
-    const cls=empty?'cell-input empty-row':'cell-input';
-    const tickVal=empty?'':String(r.tickets??'');
-    const mediaCh=hasMedia?(empty?`<td class="col-media" style="text-align:center"><input type="checkbox" class="media-cb" data-type="${type}" data-idx="${i}" disabled></td>`
-      :`<td class="col-media" style="text-align:center"><input type="checkbox" class="media-cb" data-type="${type}" data-idx="${i}" ${r.isMedia?'checked':''}></td>`):'';
-    html+=`<tr>
-      <td class="col-cb"><input type="checkbox" class="row-cb" data-type="${type}" data-email="${esc(r.email||'')}" ${empty?'disabled':''}></td>
-      <td class="${hasFrom?'col-name':'col-name-r'}"><input class="${cls}" data-type="${type}" data-idx="${i}" data-field="name" value="${esc(r.name||'')}" placeholder="Imię i nazwisko"></td>
-      <td class="${hasFrom?'col-email':'col-email-r'}"><input class="${cls}" data-type="${type}" data-idx="${i}" data-field="email" value="${esc(r.email||'')}" placeholder="email@domena.pl" style="color:${color}"></td>
-      ${hasFrom?`<td class="col-from"><input class="${cls}" data-type="${type}" data-idx="${i}" data-field="from" value="${esc(r.from||'')}" placeholder="Od kogo?"></td>`:''}
-      ${mediaCh}
-      <td class="col-tick"><input class="${cls} mono" data-type="${type}" data-idx="${i}" data-field="tickets" value="${tickVal}" placeholder="1" type="number" min="0" style="color:${color};text-align:center"></td>
-      <td class="col-del"><button class="row-del-btn" data-type="${type}" data-idx="${i}" ${empty?'style="visibility:hidden"':''}>✕</button></td>
-    </tr>`;
-  }
-  return html;
+function buildRows(type){
+  return (_guestLocal[type]||[]).map(r=>_buildGuestTrHTML(type,r)).join('');
 }
 
-function buildSection(type,label,items,color,accCls,hasFrom,hasMedia){
-  const totalTix=sumTix(items);
+function buildSection(type,label,accCls){
+  const cfg=TYPE_CFG[type];
+  const rows=_guestLocal[type]||[];
+  const totalTix=rows.reduce((a,r)=>a+(parseInt(r.tickets)||0),0);
+  const filledCount=rows.filter(r=>!_isEmptyRow(r)).length;
   const nameLabel=type==='rozdane'?'Dla kogo':'Imię i nazwisko';
-  const fromTh=hasFrom?`<th class="col-from">Od kogo?</th>`:'';
-  const mediaTh=hasMedia?`<th class="col-media" style="text-align:center;font-size:9px">Media</th>`:'';
+  const fromTh=cfg.hasFrom?`<th class="col-from">Od kogo?</th>`:'';
+  const mediaTh=cfg.hasMedia?`<th class="col-media" style="text-align:center;font-size:9px">Media</th>`:'';
   return `<div class="sec-card ${accCls}">
     <div class="sec-head">
       <span class="sec-title">${label}</span>
       <div class="sec-head-right">
-        <span class="sec-badge">${items.length}&thinsp;os. · ${totalTix}&thinsp;bil.</span>
+        <span class="sec-badge">${filledCount}&thinsp;os. · ${totalTix}&thinsp;bil.</span>
         <button class="btn btn-sm copy-btn" data-type="${type}"><svg style="width:10px;height:10px;vertical-align:middle" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="3" width="9" height="11" rx="1.5"/><path d="M3 13V2a1 1 0 011-1h7"/></svg> Kopiuj</button>
       </div>
     </div>
     <div class="itable-wrap">
-      <table class="itable">
+      <table class="itable" data-type="${type}">
         <thead><tr>
           <th class="col-cb"></th>
-          <th class="${hasFrom?'col-name':'col-name-r'}">${nameLabel}</th>
-          <th class="${hasFrom?'col-email':'col-email-r'}">Email</th>
+          <th class="${cfg.hasFrom?'col-name':'col-name-r'}">${nameLabel}</th>
+          <th class="${cfg.hasFrom?'col-email':'col-email-r'}">Email</th>
           ${fromTh}
           ${mediaTh}
           <th class="col-tick" style="text-align:center">Bil.</th>
           <th class="col-del"></th>
         </tr></thead>
-        <tbody data-type="${type}">${buildRows(type,items,color,hasFrom,hasMedia)}</tbody>
+        <tbody data-type="${type}">${buildRows(type)}</tbody>
       </table>
     </div>
   </div>`;
@@ -525,7 +648,7 @@ function renderDetail(show){
   const dc=document.getElementById('detail-content');
   dc.style.display='flex';
 
-  const foto=show.foto||[], guests=show.guests||[], media=show.media||[], rozdane=show.rozdane||[];
+  initGuestLocal(show);
 
   dc.innerHTML=`
     <div class="detail-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
@@ -538,17 +661,13 @@ function renderDetail(show){
       </button>
     </div>
     <div class="detail-body">
-      ${buildSection('guests','Goście i Media',guests,'var(--teal)','acc-teal',true,true)}
-      ${buildSection('foto','Foto',foto,'var(--purple)','acc-purple',true,false)}
-      ${buildSection('rozdane','Rozdane bilety',rozdane,'var(--amber)','acc-amber',false,false)}
+      ${buildSection('guests','Goście i Media','acc-teal')}
+      ${buildSection('foto','Foto','acc-purple')}
+      ${buildSection('rozdane','Rozdane bilety','acc-amber')}
       <div class="sec-card">
-        <div class="sec-head"><span class="sec-title">Polityka Foto / Uwagi</span></div>
+        <div class="sec-head"><span class="sec-title">Polityka Foto / Uwagi</span><span class="notes-meta" id="policy-saved" style="font-family:var(--mono);font-size:9px;color:var(--teal)"></span></div>
         <div style="padding:10px 12px">
           <textarea class="notes-textarea" id="foto-policy" rows="3" placeholder="Wpisz zasady fotografowania, uwagi dla mediów...">${esc(show.fotoPolicy||'')}</textarea>
-          <div class="notes-save-row">
-            <span class="notes-meta" id="policy-saved"></span>
-            <button class="btn btn-sm" id="save-policy-btn">Zapisz</button>
-          </div>
         </div>
       </div>
       <div class="email-section">
@@ -569,44 +688,25 @@ function renderDetail(show){
       </div>
     </div>`;
 
-  /* ── cell inputs: blur=save, Enter=next row ── */
-  dc.querySelectorAll('.cell-input').forEach(inp=>{
-    inp.addEventListener('blur',()=>saveCell(show.id,inp));
-    inp.addEventListener('keydown',e=>{
-      if(e.key!=='Enter')return;
-      e.preventDefault();
-      saveCell(show.id,inp);
-      const nextTr=inp.closest('tr').nextElementSibling;
-      if(nextTr){
-        const next=nextTr.querySelector(`[data-field="${inp.dataset.field}"]`);
-        if(next)setTimeout(()=>next.focus(),50);
-      }
-    });
-  });
-
-  /* ── delete row buttons ── */
-  dc.querySelectorAll('.row-del-btn').forEach(btn=>{
-    btn.addEventListener('click',async e=>{
-      e.stopPropagation();
-      const type=btn.dataset.type, idx=parseInt(btn.dataset.idx);
-      const s=allShows.find(x=>x.id===show.id);
-      if(!s)return;
-      const list=[...(s[type]||[])];
-      list.splice(idx,1);
-      await updShow(show.id,{[type]:list});
-    });
-  });
+  /* ── Excel-style guest table navigation & local-first save ── */
+  bindGuestEvents(show.id);
 
   /* ── copy buttons ── */
   dc.querySelectorAll('.copy-btn').forEach(btn=>{
     btn.addEventListener('click',()=>copyList(show,btn.dataset.type));
   });
 
-  /* ── checkboxes → email recipients ── */
+  /* ── checkboxes → email recipients (reads live from _guestLocal) ── */
   dc.addEventListener('change',e=>{
     if(!e.target.classList.contains('row-cb'))return;
     const checked=[...dc.querySelectorAll('.row-cb:checked')];
-    const emails=checked.map(c=>c.dataset.email).filter(Boolean);
+    const emails=checked.map(c=>{
+      const trEl=c.closest('tr');
+      const type=c.dataset.type;
+      const rowId=trEl&&trEl.dataset.rowId;
+      const row=rowId&&(_guestLocal[type]||[]).find(r=>r.rowId===rowId);
+      return row?row.email:(c.dataset.email||'');
+    }).filter(Boolean);
     document.getElementById('email-badge').textContent=`${checked.length} zaznaczonych`;
     const rl=document.getElementById('recipients-list');
     rl.innerHTML=emails.length
@@ -614,25 +714,20 @@ function renderDetail(show){
       :'<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Zaznacz osoby z list powyżej…</span>';
   });
 
-  /* ── isMedia checkbox ── */
-  dc.querySelectorAll('.media-cb').forEach(cb=>{
-    cb.addEventListener('change',async()=>{
-      const type=cb.dataset.type, idx=parseInt(cb.dataset.idx);
-      const s=allShows.find(x=>x.id===show.id);
-      if(!s)return;
-      const list=[...(s[type]||[])];
-      if(list[idx])list[idx]={...list[idx],isMedia:cb.checked};
-      await updShow(show.id,{[type]:list});
+  /* ── auto-save: fotoPolicy ── */
+  (function(){
+    let _t;
+    const el=document.getElementById('foto-policy');
+    const meta=document.getElementById('policy-saved');
+    if(!el)return;
+    el.addEventListener('input',()=>{
+      clearTimeout(_t);
+      _t=setTimeout(async()=>{
+        await updShow(show.id,{fotoPolicy:el.value});
+        if(meta){meta.textContent='Zapisano';setTimeout(()=>{if(meta)meta.textContent='';},2000);}
+      },800);
     });
-  });
-
-  /* ── policy save ── */
-  document.getElementById('save-policy-btn').addEventListener('click',async()=>{
-    const val=document.getElementById('foto-policy').value;
-    await updShow(show.id,{fotoPolicy:val});
-    const m=document.getElementById('policy-saved');
-    if(m){m.textContent='Zapisano';setTimeout(()=>{if(m)m.textContent='';},2000);}
-  });
+  })();
 
   /* ── generate xls ── */
   document.getElementById('gen-doc-btn').addEventListener('click',()=>generateDoc(show));
@@ -672,7 +767,7 @@ async function saveCell(showId,inp){
 
 /* ══ COPY LIST ══ */
 function copyList(show,type){
-  const items=(show[type]||[]).filter(r=>r.name||r.email);
+  const items=(_guestLocal[type]||[]).filter(r=>r.name||r.email);
   if(!items.length){showToast('Lista jest pusta');return;}
   let text;
   if(type==='rozdane'){
@@ -688,8 +783,8 @@ function copyList(show,type){
 function generateDoc(show){
   if(typeof XLSX==='undefined'){showToast('Błąd: SheetJS nie załadowany');return;}
 
-  const guests=(show.guests||[]).filter(r=>r.name);
-  const foto=(show.foto||[]).filter(r=>r.name);
+  const guests=(_guestLocal['guests']||[]).filter(r=>r.name);
+  const foto=(_guestLocal['foto']||[]).filter(r=>r.name);
 
   // Shared column layout: A=Imię i nazwisko, B=Od kogo?, C=Bilety
   // No borders, no Media column, no Rozdane section
@@ -707,7 +802,7 @@ function generateDoc(show){
     rows.push(['Imię i nazwisko','Od kogo?','Bilety']); // headers
     if(items.length){
       items.forEach(r=>{
-        rows.push([r.name||'', r.from||'', r.tickets||1]);
+        rows.push([r.name||'', r.from||'', parseInt(r.tickets)||1]);
       });
     } else {
       rows.push(['(brak wpisów)','','']);
@@ -744,6 +839,14 @@ function showToast(msg){
   t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2200);
 }
+
+/* ══ BEFOREUNLOAD FLUSH ══ */
+window.addEventListener('beforeunload',e=>{
+  if(_guestDirty&&_guestShowId){
+    flushGuestToFirestore(_guestShowId);
+    e.preventDefault();e.returnValue='';
+  }
+});
 
 /* ══ INIT ══ */
 initUser();

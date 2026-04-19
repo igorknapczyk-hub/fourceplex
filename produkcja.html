@@ -375,7 +375,9 @@ document.getElementById('user-modal-overlay').addEventListener('click',e=>{if(e.
 document.getElementById('user-badge-btn').addEventListener('click',openUM);
 
 /* state */
-let allShows=[],allExps=[],selectedShowId=null,currentTab='active',_pendingExpFocus=null;
+let allShows=[],allExps=[],selectedShowId=null,currentTab='active';
+/* expense local state — Excel-style, no Firestore on nav */
+let _expLocal={},_expDirty=false,_expShowId=null,_expAutoSave=null;
 
 /* listeners */
 onSnapshot(showsCol,snap=>{
@@ -390,7 +392,11 @@ onSnapshot(showsCol,snap=>{
 });
 onSnapshot(expsCol,snap=>{
   allExps=snap.docs.map(d=>({id:d.id,...d.data()}));
-  if(selectedShowId){const s=allShows.find(x=>x.id===selectedShowId);if(s)renderDetail(s);}
+  // Only re-render expense section if there are no pending local changes
+  if(selectedShowId&&!_expDirty){
+    const s=allShows.find(x=>x.id===selectedShowId);
+    if(s)rerenderExpenses(s);
+  }
 },err=>console.error('exps:',err));
 
 /* seed */
@@ -524,32 +530,197 @@ function selectShow(id){
   renderList();
 }
 
+/* ─── EXPENSE EXCEL MANAGER ─── */
+function _expRowId(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+
+function initExpLocal(showId){
+  _expShowId=showId; _expDirty=false;
+  clearInterval(_expAutoSave); _expAutoSave=null;
+  ['production','hospitality'].forEach(cat=>{
+    const rows=allExps
+      .filter(e=>e.showId===showId&&e.category===cat)
+      .sort((a,b)=>((a.createdAt&&a.createdAt.seconds)||0)-((b.createdAt&&b.createdAt.seconds)||0))
+      .map(e=>({rowId:_expRowId(),fsId:e.id,name:e.name||'',amount:e.amount||''}));
+    const MIN=4;
+    while(rows.length<MIN)rows.push({rowId:_expRowId(),fsId:'',name:'',amount:''});
+    if(rows[rows.length-1].name||rows[rows.length-1].amount)
+      rows.push({rowId:_expRowId(),fsId:'',name:'',amount:''});
+    _expLocal[cat]=rows;
+  });
+}
+
+function buildExpTableHTML(cat){
+  return '<table class="exp-table"><tbody>'
+    +(_expLocal[cat]||[]).map(r=>{
+      const hasData=r.name||r.amount;
+      return '<tr data-row-id="'+r.rowId+'" data-cat="'+cat+'">'
+        +'<td><input class="etbl-inp ename" data-row-id="'+r.rowId+'" data-cat="'+cat+'" value="'+esc(r.name||'')+'" placeholder="Nazwa wydatku"></td>'
+        +'<td style="width:80px"><input class="etbl-inp eamt etbl-amt" data-row-id="'+r.rowId+'" data-cat="'+cat+'" type="number" value="'+(r.amount||'')+'" placeholder="PLN"></td>'
+        +'<td style="width:24px"><button class="etbl-del" data-row-id="'+r.rowId+'" data-cat="'+cat+'" style="'+(hasData?'':'visibility:hidden')+'">×</button></td>'
+        +'</tr>';
+    }).join('')
+    +'</tbody></table>';
+}
+
+function rerenderExpenses(show){
+  if(_expDirty)return;
+  const prodEl=document.getElementById('exp-col-prod');
+  const hospEl=document.getElementById('exp-col-hosp');
+  const sumEl=document.getElementById('exp-total');
+  if(!prodEl||!hospEl)return;
+  initExpLocal(show.id);
+  const prodSum=allExps.filter(e=>e.showId===show.id&&e.category==='production').reduce((a,e)=>a+(+e.amount||0),0);
+  const hospSum=allExps.filter(e=>e.showId===show.id&&e.category==='hospitality').reduce((a,e)=>a+(+e.amount||0),0);
+  prodEl.innerHTML=buildExpTableHTML('production');
+  hospEl.innerHTML=buildExpTableHTML('hospitality');
+  if(sumEl)sumEl.textContent=fmtPLN(prodSum+hospSum)+' PLN';
+  bindExpEvents(show.id);
+}
+
+async function flushExpToFirestore(showId){
+  if(!_expDirty||_expShowId!==showId)return;
+  _expDirty=false;
+  clearInterval(_expAutoSave); _expAutoSave=null;
+  for(const cat of['production','hospitality']){
+    for(const row of(_expLocal[cat]||[])){
+      const name=(row.name||'').trim();
+      const amount=parseFloat(row.amount)||0;
+      if(!name&&!amount){
+        if(row.fsId){await delExp(row.fsId);row.fsId='';}
+        continue;
+      }
+      if(row.fsId){await updExp(row.fsId,{name,amount});}
+      else{const ref=await addExp({showId,category:cat,name,amount,addedBy:currentUser||'?'});row.fsId=ref.id;}
+    }
+  }
+}
+
+function _addNewExpRow(tbody,cat,isName,showId){
+  const newId=_expRowId();
+  (_expLocal[cat]||[]).push({rowId:newId,fsId:'',name:'',amount:''});
+  const newTr=document.createElement('tr');
+  newTr.dataset.rowId=newId; newTr.dataset.cat=cat;
+  newTr.innerHTML='<td><input class="etbl-inp ename" data-row-id="'+newId+'" data-cat="'+cat+'" value="" placeholder="Nazwa wydatku"></td>'
+    +'<td style="width:80px"><input class="etbl-inp eamt etbl-amt" data-row-id="'+newId+'" data-cat="'+cat+'" type="number" value="" placeholder="PLN"></td>'
+    +'<td style="width:24px"><button class="etbl-del" data-row-id="'+newId+'" data-cat="'+cat+'" style="visibility:hidden">×</button></td>';
+  tbody.appendChild(newTr);
+  _bindExpRow(newTr,showId);
+  setTimeout(()=>{const ni=newTr.querySelector(isName?'.ename':'.eamt');if(ni)ni.focus();},0);
+}
+
+function _bindExpRow(tr,showId){
+  tr.querySelectorAll('.etbl-inp').forEach(inp=>{
+    inp.addEventListener('input',()=>{
+      const rowId=inp.dataset.rowId,cat=inp.dataset.cat;
+      const row=(_expLocal[cat]||[]).find(r=>r.rowId===rowId);
+      if(!row)return;
+      if(inp.classList.contains('ename'))row.name=inp.value;else row.amount=inp.value;
+      _expDirty=true; _expShowId=showId;
+      if(!_expAutoSave)_expAutoSave=setInterval(()=>flushExpToFirestore(showId),30000);
+      recalcSums();
+      const del=tr.querySelector('.etbl-del');
+      if(del)del.style.visibility=(row.name||row.amount)?'visible':'hidden';
+    });
+    inp.addEventListener('keydown',e=>{
+      const rowId=inp.dataset.rowId,cat=inp.dataset.cat;
+      const isName=inp.classList.contains('ename');
+      const rows=_expLocal[cat]||[];
+      const ri=rows.findIndex(r=>r.rowId===rowId);
+      const tbl=inp.closest('.exp-table');
+
+      if(e.key==='Escape'){
+        e.preventDefault();
+        const row=rows[ri];
+        inp.value=isName?(row.name||''):(row.amount||'');
+        inp.blur(); return;
+      }
+      if(e.key==='Enter'||e.key==='ArrowDown'){
+        e.preventDefault();
+        const row=rows[ri];
+        if(isName)row.name=inp.value;else row.amount=inp.value;
+        _expDirty=true; _expShowId=showId;
+        if(ri===rows.length-1&&inp.value.trim()){
+          _addNewExpRow(inp.closest('tbody'),cat,isName,showId); return;
+        }
+        if(ri<rows.length-1){
+          const nid=rows[ri+1].rowId;
+          const ni=tbl&&tbl.querySelector('.'+(isName?'ename':'eamt')+'[data-row-id="'+nid+'"]');
+          if(ni)setTimeout(()=>ni.focus(),0);
+        }
+        return;
+      }
+      if(e.key==='ArrowUp'){
+        e.preventDefault();
+        if(ri>0){const pid=rows[ri-1].rowId;const pi=tbl&&tbl.querySelector('.'+(isName?'ename':'eamt')+'[data-row-id="'+pid+'"]');if(pi)setTimeout(()=>pi.focus(),0);}
+        return;
+      }
+      if(e.key==='ArrowRight'&&isName&&inp.selectionStart===inp.value.length){
+        e.preventDefault();
+        const a=tbl&&tbl.querySelector('.eamt[data-row-id="'+rowId+'"]');if(a)a.focus(); return;
+      }
+      if(e.key==='ArrowLeft'&&!isName&&inp.selectionStart===0){
+        e.preventDefault();
+        const n=tbl&&tbl.querySelector('.ename[data-row-id="'+rowId+'"]');if(n)n.focus(); return;
+      }
+      if(e.key==='Tab'){
+        const row=rows[ri];if(isName)row.name=inp.value;else row.amount=inp.value;
+        _expDirty=true; _expShowId=showId;
+      }
+    });
+  });
+  const del=tr.querySelector('.etbl-del');
+  if(del)del.addEventListener('click',async()=>{
+    const rowId=del.dataset.rowId,cat=del.dataset.cat;
+    const rows=_expLocal[cat]||[];
+    const ri=rows.findIndex(r=>r.rowId===rowId);
+    if(ri<0)return;
+    const row=rows[ri];
+    if(((row.name||'').trim()||(parseFloat(row.amount)||0))&&!confirm('Usunąć wiersz?'))return;
+    if(row.fsId)await delExp(row.fsId);
+    rows.splice(ri,1);
+    tr.remove();
+  });
+}
+
+function recalcSums(){
+  ['production','hospitality'].forEach(cat=>{
+    const sum=(_expLocal[cat]||[]).reduce((a,r)=>a+(parseFloat(r.amount)||0),0);
+    const el=document.getElementById('exp-sum-'+cat);
+    if(el)el.textContent=fmtPLN(sum)+' PLN';
+  });
+  const total=(['production','hospitality']).reduce((a,cat)=>a+(_expLocal[cat]||[]).reduce((b,r)=>b+(parseFloat(r.amount)||0),0),0);
+  const tel=document.getElementById('exp-total');
+  if(tel)tel.textContent=fmtPLN(total)+' PLN';
+}
+
+function bindExpEvents(showId){
+  document.querySelectorAll('.exp-table').forEach(tbl=>{
+    tbl.addEventListener('focusout',e=>{
+      if(!tbl.contains(e.relatedTarget))flushExpToFirestore(showId);
+    });
+    tbl.querySelectorAll('tr[data-row-id]').forEach(tr=>_bindExpRow(tr,showId));
+  });
+}
+
+window.addEventListener('beforeunload',e=>{
+  if(_expDirty&&_expShowId){flushExpToFirestore(_expShowId);e.preventDefault();}
+});
+
 /* render detail */
 function renderDetail(show){
+  // flush any pending expense edits for previous show
+  if(_expDirty&&_expShowId&&_expShowId!==show.id)flushExpToFirestore(_expShowId);
+
   document.getElementById('detail-empty').style.display='none';
   const dc=document.getElementById('detail-content');
-  dc.style.display='flex';dc.style.flexDirection='column';
+  dc.style.display='flex'; dc.style.flexDirection='column';
   const past=!isActive(show);
   const we=isWeekend(show.date);
   const{done,total,pct}=cpPct(show);
-  const prodE=allExps.filter(e=>e.showId===show.id&&e.category==='production');
-  const hospE=allExps.filter(e=>e.showId===show.id&&e.category==='hospitality');
-  const prodSum=prodE.reduce((a,e)=>a+(+e.amount||0),0);
-  const hospSum=hospE.reduce((a,e)=>a+(+e.amount||0),0);
+  const prodSum=allExps.filter(e=>e.showId===show.id&&e.category==='production').reduce((a,e)=>a+(+e.amount||0),0);
+  const hospSum=allExps.filter(e=>e.showId===show.id&&e.category==='hospitality').reduce((a,e)=>a+(+e.amount||0),0);
 
-  function buildExpTable(list,cat){
-    const MIN=4;
-    const rows=[...list];
-    while(rows.length<MIN)rows.push(null);
-    if(rows[rows.length-1]!==null)rows.push(null);
-    return '<table class="exp-table"><tbody>'+rows.map((e,i)=>
-      '<tr class="etr" data-cat="'+cat+'" data-idx="'+i+'" data-eid="'+(e?e.id:'')+'">'
-      +'<td><input class="etbl-inp ename" data-cat="'+cat+'" data-idx="'+i+'" value="'+(e?esc(e.name||''):'')+'" placeholder="Nazwa wydatku"></td>'
-      +'<td style="width:80px"><input class="etbl-inp eamt etbl-amt" data-cat="'+cat+'" data-idx="'+i+'" type="number" value="'+(e&&e.amount?e.amount:'')+'" placeholder="PLN"></td>'
-      +'<td style="width:24px"><button class="etbl-del" data-eid="'+(e?e.id:'')+'">'+(e?'×':'')+'</button></td>'
-      +'</tr>'
-    ).join('')+'</tbody></table>';
-  }
+  initExpLocal(show.id);
 
   const cpCols=[ALL_CPS.slice(0,7),ALL_CPS.slice(7,14),ALL_CPS.slice(14,21)];
   const cpGrid=cpCols.map(items=>'<div>'+items.map(item=>{
@@ -577,18 +748,18 @@ function renderDetail(show){
     +'<div class="detail-body">'
     +(we?'<div class="weekend-alert">⚠️ Koncert w '+dayName(show.date).toUpperCase()+' — pamiętaj o zwiększonych wymaganiach organizacyjnych.</div>':'')
     +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Advancing / Checkpointy</span><span style="font-family:var(--mono);font-size:10px;color:var(--teal)">'+done+'/'+total+' · '+pct+'%</span></div><div class="sec-body"><div class="cp-grid">'+cpGrid+'</div></div></div>'
-    +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Wydatki</span><div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">Razem: <strong style="color:var(--text)">'+fmtPLN(prodSum+hospSum)+' PLN</strong></span><button class="btn btn-sm" style="padding:2px 7px;font-size:10px" id="exp-xls-btn">⬇ Eksportuj .xls</button></div></div>'
+    +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Wydatki</span><div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">Razem: <strong id="exp-total" style="color:var(--text)">'+fmtPLN(prodSum+hospSum)+' PLN</strong></span><button class="btn btn-sm" style="padding:2px 7px;font-size:10px" id="exp-xls-btn">⬇ Eksportuj .xls</button></div></div>'
     +'<div class="sec-body"><div class="expenses-grid">'
-    +'<div><div class="exp-col-head">Production <span class="exp-col-sum">'+fmtPLN(prodSum)+' PLN</span></div>'+buildExpTable(prodE,'production')+'</div>'
-    +'<div><div class="exp-col-head">Hospitality <span class="exp-col-sum">'+fmtPLN(hospSum)+' PLN</span></div>'+buildExpTable(hospE,'hospitality')+'</div>'
+    +'<div><div class="exp-col-head">Production <span class="exp-col-sum" id="exp-sum-production">'+fmtPLN(prodSum)+' PLN</span></div><div id="exp-col-prod">'+buildExpTableHTML('production')+'</div></div>'
+    +'<div><div class="exp-col-head">Hospitality <span class="exp-col-sum" id="exp-sum-hospitality">'+fmtPLN(hospSum)+' PLN</span></div><div id="exp-col-hosp">'+buildExpTableHTML('hospitality')+'</div></div>'
     +'</div></div></div>'
     +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Timetable & Notatki</span></div><div class="sec-body"><div class="tt-notes-row">'
-    +'<div><div class="fl" style="margin-bottom:5px">Timetable / Schedule</div><textarea class="notes-textarea" rows="15" id="tt-area" placeholder="18:00 Wpuszczenie&#10;21:00 Artysta&#10;23:00 Curfew">'+esc(show.timetableText||'')+'</textarea><div class="notes-save-row"><span class="notes-meta" id="tt-meta"></span><button class="btn btn-sm" id="tt-save">Zapisz</button></div></div>'
-    +'<div><div class="fl" style="margin-bottom:5px">Notatki</div><textarea class="notes-textarea" rows="15" id="notes-area" placeholder="Rider notes, informacje specjalne…">'+esc(show.notesText||'')+'</textarea><div class="notes-save-row"><span class="notes-meta" id="notes-meta"></span><button class="btn btn-sm" id="notes-save">Zapisz</button></div></div>'
+    +'<div><div class="fl" style="margin-bottom:5px">Timetable / Schedule</div><textarea class="notes-textarea" rows="15" id="tt-area" placeholder="18:00 Wpuszczenie&#10;21:00 Artysta&#10;23:00 Curfew">'+esc(show.timetableText||'')+'</textarea><div class="notes-save-row"><span class="notes-meta" id="tt-meta"></span></div></div>'
+    +'<div><div class="fl" style="margin-bottom:5px">Notatki</div><textarea class="notes-textarea" rows="15" id="notes-area" placeholder="Rider notes, informacje specjalne…">'+esc(show.notesText||'')+'</textarea><div class="notes-save-row"><span class="notes-meta" id="notes-meta"></span></div></div>'
     +'</div></div></div>'
     +'</div>';
 
-  /* bind checkpoints */
+  /* checkpoints */
   dc.querySelectorAll('.cp-row[data-key]').forEach(row=>{
     row.addEventListener('click',async()=>{
       const key=row.dataset.key;
@@ -601,59 +772,28 @@ function renderDetail(show){
     inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}});
   });
 
-  /* bind expense table */
-  async function saveExpRow(cat,idx){
-    const tr=dc.querySelector('.etr[data-cat="'+cat+'"][data-idx="'+idx+'"]');
-    if(!tr)return;
-    const nameEl=dc.querySelector('.ename[data-cat="'+cat+'"][data-idx="'+idx+'"]');
-    const amtEl=dc.querySelector('.eamt[data-cat="'+cat+'"][data-idx="'+idx+'"]');
-    const name=(nameEl&&nameEl.value.trim())||'';
-    const amount=parseFloat(amtEl&&amtEl.value)||0;
-    const eid=tr.dataset.eid;
-    if(!name){if(eid){await delExp(eid);tr.dataset.eid='';}return;}
-    if(eid){await updExp(eid,{name,amount});}
-    else{const ref=await addExp({showId:show.id,category:cat,name,amount,addedBy:currentUser||'?'});tr.dataset.eid=ref.id;_pendingExpFocus={cat,idx:idx+1};}
-  }
-  dc.querySelectorAll('.etbl-inp').forEach(inp=>{
-    inp.addEventListener('blur',async()=>{await saveExpRow(inp.dataset.cat,inp.dataset.idx);});
-    inp.addEventListener('keydown',async e=>{
-      if(e.key==='Enter'){
-        e.preventDefault();
-        const cat=inp.dataset.cat,idx=parseInt(inp.dataset.idx);
-        await saveExpRow(cat,idx);
-        const nextInp=dc.querySelector('.ename[data-cat="'+cat+'"][data-idx="'+(idx+1)+'"]');
-        if(nextInp){nextInp.focus();}else{inp.blur();}
-      }
-    });
-  });
-  dc.querySelectorAll('.etbl-del').forEach(btn=>{
-    btn.addEventListener('click',async()=>{
-      const eid=btn.dataset.eid;if(!eid)return;
-      if(!confirm('Usunąć?'))return;
-      await delExp(eid);
-    });
-  });
+  /* expenses — Excel-style */
+  bindExpEvents(show.id);
 
   /* xls export */
-  document.getElementById('exp-xls-btn').addEventListener('click',()=>{exportXLS(show);});
+  document.getElementById('exp-xls-btn').addEventListener('click',()=>exportXLS(show));
 
-  /* restore pending focus after re-render */
-  if(_pendingExpFocus){
-    const{cat,idx}=_pendingExpFocus;
-    _pendingExpFocus=null;
-    const el=dc.querySelector('.ename[data-cat="'+cat+'"][data-idx="'+idx+'"]');
-    if(el)setTimeout(()=>el.focus(),0);
+  /* timetable/notes — auto-save */
+  function makeAutoSave(id,field,metaId){
+    let _t;
+    const el=document.getElementById(id);
+    const meta=document.getElementById(metaId);
+    if(!el)return;
+    el.addEventListener('input',()=>{
+      clearTimeout(_t);
+      _t=setTimeout(async()=>{
+        await updShow(show.id,{[field]:el.value});
+        if(meta){meta.textContent='Zapisano '+new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});setTimeout(()=>{if(meta)meta.textContent='';},2000);}
+      },800);
+    });
   }
-
-  /* timetable/notes */
-  document.getElementById('tt-save').addEventListener('click',async()=>{
-    await updShow(show.id,{timetableText:document.getElementById('tt-area').value});
-    document.getElementById('tt-meta').textContent='Zapisano '+new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
-  });
-  document.getElementById('notes-save').addEventListener('click',async()=>{
-    await updShow(show.id,{notesText:document.getElementById('notes-area').value});
-    document.getElementById('notes-meta').textContent='Zapisano '+new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
-  });
+  makeAutoSave('tt-area','timetableText','tt-meta');
+  makeAutoSave('notes-area','notesText','notes-meta');
 
   document.getElementById('btn-edit').addEventListener('click',()=>openPanel(show));
   document.getElementById('btn-setlist').addEventListener('click',()=>openSetlist(show));

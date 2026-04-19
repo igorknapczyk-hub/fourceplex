@@ -157,10 +157,10 @@ textarea.form-input{resize:vertical;min-height:52px}
 }
 .pan-mid table{border-collapse:collapse;table-layout:fixed}
 
-/* RIGHT frozen panel — LIVE block + actions */
+/* RIGHT frozen panel — LIVE block + actions (sits between left and middle) */
 .pan-right{
   flex-shrink: 0;
-  border-left: 2px solid rgba(200,240,96,.22);
+  border-right: 2px solid rgba(200,240,96,.22);
   background: var(--bg);
   z-index: 20;
   overflow-y: scroll;
@@ -508,19 +508,19 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
         </table>
       </div>
 
+      <!-- RIGHT: frozen LIVE block + actions (between left and middle) -->
+      <div class="pan-right" id="panRight">
+        <table id="tblRight">
+          <thead id="thdRight"></thead>
+          <tbody id="tbRight"></tbody>
+        </table>
+      </div>
+
       <!-- MIDDLE: scrollable Tuesday history -->
       <div class="pan-mid" id="panMid">
         <table id="tblMid">
           <thead id="thdMid"></thead>
           <tbody id="tbMid"></tbody>
-        </table>
-      </div>
-
-      <!-- RIGHT: frozen LIVE block + actions -->
-      <div class="pan-right" id="panRight">
-        <table id="tblRight">
-          <thead id="thdRight"></thead>
-          <tbody id="tbRight"></tbody>
         </table>
       </div>
     </div>
@@ -571,48 +571,6 @@ const SEED=[
   {name:'Pacifica',      date:'2026-05-27',venue:'BARdzo Bardzo',    price:'99',     cap:200,  onSale:'2026-02-14',tm:31,  eb:28,  other:0,  remains:141, wraps:3, vip:'',       notes:'słaba sprzedaż',addedBy:'Monika'},
 ];
 
-/* buildSnapSeed — all Tuesdays from 6.1.2026 to today, per-event personality curve */
-function buildSnapSeed(evs){
-  const today=new Date(); today.setHours(0,0,0,0);
-  const allTues=[];
-  let t=new Date(2026,0,6); // first Tuesday 2026
-  while(t<today){ allTues.push(new Date(t)); t.setDate(t.getDate()+7); }
-
-  const result=[];
-  evs.forEach(ev=>{
-    const evDate=new Date(ev.date);
-    const relevant=allTues.filter(tue=>tue<evDate);
-    if(!relevant.length)return;
-    const n=relevant.length;
-    const startFrac=0.18+Math.random()*0.22; // 18-40%
-    const endFrac  =0.87+Math.random()*0.12; // 87-99%
-    relevant.forEach((tue,ti)=>{
-      const prog=n>1?ti/(n-1):1;
-      const eased=prog<0.5?2*prog*prog:(1-Math.pow(-2*prog+2,2)/2);
-      const f=startFrac+(endFrac-startFrac)*eased;
-      const noise=0.93+Math.random()*0.14;
-      const sTM=Math.round((ev.tm||0)*f*noise);
-      const sEB=Math.round((ev.eb||0)*f*noise);
-      const sOt=Math.round((ev.other||0)*f);
-      const tot=sTM+sEB+sOt;
-      const lbl=`${tue.getDate()}.${tue.getMonth()+1}.${tue.getFullYear()}`;
-      const daysAgo=Math.round((today-tue)/86400000);
-      result.push({
-        sid:`snap_${ev.id}_${lbl.replace(/\./g,'_')}`,
-        data:{
-          eventId:ev.id,eventName:ev.name,date:lbl,
-          tm:sTM,eb:sEB,other:sOt,total:tot,
-          remains:Math.max(0,(ev.cap||0)-tot),
-          wraps:Math.round((ev.wraps||0)*f),
-          pct:ev.cap?Math.round(tot/ev.cap*100):0,
-          createdBy:'seed',createdAt:Date.now()-daysAgo*86400000,
-        }
-      });
-    });
-  });
-  return result;
-}
-
 window.addEventListener('fb-ready',async()=>{
   const s=await window._getDocs(window._evCol);
   if(s.empty){
@@ -621,35 +579,8 @@ window.addEventListener('fb-ready',async()=>{
       await window._setDoc(window._doc(window._db,'ticketing_events',id),{...ev,breakEven:0,internalBuys:0,addedAt:Date.now()});
     }
     notify('Załadowano '+SEED.length+' eventów testowych');
-    const waitAndSeed=()=>{
-      if(!window._events.length){setTimeout(waitAndSeed,600);return;}
-      const snaps=buildSnapSeed(window._events);
-      let i=0;
-      const batch=async()=>{
-        if(i>=snaps.length){notify('Historia: '+snaps.length+' snapshotów od 6.1.2026');return;}
-        await window._setDoc(window._doc(window._db,'ticketing_snapshots',snaps[i].sid),snaps[i].data);
-        i++; if(i%8===0)await new Promise(r=>setTimeout(r,40)); batch();
-      };
-      batch();
-    };
-    setTimeout(waitAndSeed,1500);
-  } else {
-    // Backfill missing snapshots (e.g. new events added or old 5-week seed)
-    setTimeout(async()=>{
-      const evs=window._events; if(!evs.length)return;
-      const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
-      const active=evs.filter(ev=>new Date(ev.date)>=cutoff);
-      const needsFill=active.some(ev=>(window._snaps?.[ev.id]||[]).length<4);
-      if(!needsFill)return;
-      const snaps=buildSnapSeed(evs);
-      let i=0;
-      const batch=async()=>{
-        if(i>=snaps.length){notify('Historia uzupełniona: '+snaps.length+' snapshotów');return;}
-        await window._setDoc(window._doc(window._db,'ticketing_snapshots',snaps[i].sid),snaps[i].data);
-        i++; if(i%8===0)await new Promise(r=>setTimeout(r,40)); batch();
-      };
-      batch();
-    },3500);
+    // Historyczne snapshoty wtorkowe zostaną uzupełniane przez doCountOne/doCountAll
+    // wyłącznie na podstawie prawdziwych danych z API. Nie generujemy fikcyjnych liczb.
   }
 });
 
@@ -792,16 +723,14 @@ function renderTable(){
   const allSnaps=window._snaps||{};
   const dateSet=new Set();
   rows.forEach(ev=>{(allSnaps[ev.id]||[]).forEach(s=>dateSet.add(s.date));});
-  const snapDates=[...dateSet].sort((a,b)=>{
-    const ms=s=>{const p=s.split('.');return new Date(+p[2],+p[1]-1,+p[0]).getTime();};
-    return ms(a)-ms(b);
-  });
+  const parseSnapDate=s=>{const p=s.split('.');return new Date(+p[2],+p[1]-1,+p[0]);};
+  const snapDates=[...dateSet].sort((a,b)=>parseSnapDate(b)-parseSnapDate(a)).filter(d=>parseSnapDate(d).getDay()===2);
 
   // Column widths
   const LW={calc:15,name:210,date:93};
   const LEFT_W=Object.values(LW).reduce((s,v)=>s+v,0);
-  const SW={dni:52,venue:118,cena:62,cap:48,onsale:60,be:60};
-  const BW={tm:58,eb:58,oth:52,t:62,w:46,pct:46,r:56};
+  const SW={dni:52,venue:118,cena:62,cap:52,onsale:60,be:60};
+  const BW={tm:68,eb:68,oth:58,t:72,w:50,pct:52,r:62};
   const BLOCK_W=Object.values(BW).reduce((s,v)=>s+v,0);
   const BCOLS=['TM','eB','Inne','T','W','%','R'];
 
@@ -848,16 +777,19 @@ function renderTable(){
   document.getElementById('tblMid').style.minWidth=midW+'px';
 
   // RIGHT PANEL — LIVE cols same widths as snapshot BW
-  const RL={t:62,w:46,pct:46,r:56,act:52};
+  const RL={tm:68,eb:68,oth:58,t:72,w:50,pct:52,r:62,act:56};
   const RL_W=Object.values(RL).reduce((s,v)=>s+v,0);
   document.getElementById('panRight').style.width=RL_W+'px';
   document.getElementById('panRight').style.display='';
-  document.getElementById('panRight').style.borderLeft='2px solid rgba(200,240,96,.22)';
+  document.getElementById('panRight').style.borderRight='2px solid rgba(200,240,96,.22)';
   document.getElementById('tblRight').style.width=RL_W+'px';
-  const rcg=`<colgroup><col style="width:${RL.t}px"><col style="width:${RL.w}px"><col style="width:${RL.pct}px"><col style="width:${RL.r}px"><col style="width:${RL.act}px"></colgroup>`;
-  const rr1=`<tr><th class="r1 dg live-hdr" colspan="5" style="width:${RL_W}px"><span style="color:var(--accent)">LIVE ●</span></th></tr>`;
+  const rcg=`<colgroup><col style="width:${RL.t}px"><col style="width:${RL.tm}px"><col style="width:${RL.eb}px"><col style="width:${RL.oth}px"><col style="width:${RL.w}px"><col style="width:${RL.pct}px"><col style="width:${RL.r}px"><col style="width:${RL.act}px"></colgroup>`;
+  const rr1=`<tr><th class="r1 dg live-hdr" colspan="8" style="width:${RL_W}px"><span style="color:var(--accent)">LIVE ●</span></th></tr>`;
   const rr2=`<tr>
     <th class="r2 live-bg" style="width:${RL.t}px;text-align:right;padding-right:8px;border-left:1px solid rgba(200,240,96,.15)">T</th>
+    <th class="r2 live-bg" style="width:${RL.tm}px;text-align:right;padding-right:8px">TM</th>
+    <th class="r2 live-bg" style="width:${RL.eb}px;text-align:right;padding-right:8px">eB</th>
+    <th class="r2 live-bg" style="width:${RL.oth}px;text-align:right;padding-right:8px">Inne</th>
     <th class="r2 live-bg" style="width:${RL.w}px;text-align:right;padding-right:8px">W</th>
     <th class="r2 live-bg" style="width:${RL.pct}px;text-align:right;padding-right:8px">%</th>
     <th class="r2 live-bg" style="width:${RL.r}px;text-align:right;padding-right:8px">R</th>
@@ -892,12 +824,22 @@ function renderTable(){
     const pctCol=pctColor(pct);
     const aBtn=alertBtn(pct);
 
-    // LEFT ROW — calc(⊞+alert) | name | date
+    // LEFT ROW — calc(⊞+alert+last-count) | name | date
+    let lastCtHtml='';
+    if(ev.lastCountedAt){
+      const _d=new Date(ev.lastCountedAt);
+      const _dd=_d.getDate(),_mm=_d.getMonth()+1;
+      const _hh=String(_d.getHours()).padStart(2,'0'),_mn=String(_d.getMinutes()).padStart(2,'0');
+      lastCtHtml=`<div style="font-family:var(--mono);font-size:6.5px;color:var(--text3);line-height:1.2;text-align:center;white-space:nowrap;margin-top:1px">${_dd}.${_mm}<br>${_hh}:${_mn}</div>`;
+    }
     lH+=`<tr class="${rc}" data-id="${ev.id}">
-      <td style="width:${LW.calc}px;text-align:center;padding:0 3px">
-        <div style="display:flex;align-items:center;justify-content:center;gap:3px">
-          <span class="calc-btn" onclick="doCountOne('${ev.id}')" title="Zlicz (wymaga API)">⊞</span>
-          ${aBtn}
+      <td style="width:${LW.calc}px;text-align:center;padding:0 1px;overflow:visible">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+          <div style="display:flex;align-items:center;gap:2px">
+            <span class="calc-btn" onclick="doCountOne('${ev.id}')" title="Zlicz (wymaga API)">⊞</span>
+            ${aBtn}
+          </div>
+          ${lastCtHtml}
         </div>
       </td>
       <td class="name-c" style="width:${LW.name}px">${ev.name}</td>
@@ -914,22 +856,31 @@ function renderTable(){
     const beHtml=be?(beHit?`<span class="be-v be-hit">${be} 💰</span>`:`<span class="be-v">${be}</span>`):'—';
     mr+=`<td style="width:${SW.be}px;text-align:right;padding-right:8px">${beHtml}</td>`;
 
-    snapDates.forEach((dt)=>{
+    snapDates.forEach((dt,di)=>{
       const s=(allSnaps[ev.id]||[]).find(x=>x.date===dt);
-      if(s){
+      const isReal=s&&s.createdBy!=='seed';
+      if(isReal){
         const sp=s.pct||0;
+        // Wraps = diff vs previous Tuesday snapshot (only if previous is also real)
+        const prevDt=di+1<snapDates.length?snapDates[di+1]:null;
+        const sPrev=prevDt?(allSnaps[ev.id]||[]).find(x=>x.date===prevDt):null;
+        const isPrevReal=sPrev&&sPrev.createdBy!=='seed';
+        const wDiff=isPrevReal?(s.total||0)-(sPrev.total||0):null;
+        const wHtml=wDiff!=null?`<span style="color:${wDiff>0?'var(--teal)':wDiff<0?'var(--red)':'var(--text2)'}">${wDiff>0?'+':''}${wDiff}</span>`:'—';
         mr+=`<td class="num bl-sep" style="width:${BW.tm}px">${s.tm||0}</td>`;
         mr+=`<td class="num" style="width:${BW.eb}px">${s.eb||0}</td>`;
         mr+=`<td class="num ec" style="width:${BW.oth}px;color:var(--text2)" data-snapid="${s.id}" data-evid="${ev.id}" data-val="${s.other||0}" onclick="iEditSnap(this)" title="Edytuj Inne">${s.other||0}</td>`;
         mr+=`<td class="num-b" style="width:${BW.t}px">${s.total||0}</td>`;
-        mr+=`<td class="num" style="width:${BW.w}px">${s.wraps||0}</td>`;
+        mr+=`<td class="num" style="width:${BW.w}px">${wHtml}</td>`;
         mr+=`<td class="num" style="width:${BW.pct}px;color:${pctColor(sp)}">${ev.cap?sp+'%':'—'}</td>`;
         mr+=`<td class="num" style="width:${BW.r}px;color:var(--text3)">${s.remains||0}</td>`;
       }else{
-        mr+=`<td class="num bl-sep" style="width:${BW.tm}px;color:var(--text3)">—</td>`;
-        ['eb','oth','t','w'].forEach(k=>mr+=`<td class="num" style="width:${BW[k]}px;color:var(--text3)">—</td>`);
+        // No real data — show XX (nie wymyślamy liczb)
+        const xxStyle='color:var(--text3);letter-spacing:.04em';
+        mr+=`<td class="num bl-sep" style="width:${BW.tm}px;${xxStyle}">XX</td>`;
+        ['eb','oth','t','w'].forEach(k=>mr+=`<td class="num" style="width:${BW[k]}px;${xxStyle}">XX</td>`);
         mr+=`<td style="width:${BW.pct}px"></td>`;
-        mr+=`<td class="num" style="width:${BW.r}px;color:var(--text3)">—</td>`;
+        mr+=`<td class="num" style="width:${BW.r}px;${xxStyle}">XX</td>`;
       }
     });
     mr+='</tr>';
@@ -953,9 +904,21 @@ function renderTable(){
     if(pct>=100)rc2='row-ok';
     const remColor2=rem===0?'var(--teal)':typeof rem==='number'&&rem<50?'var(--amber)':'var(--text3)';
     const pctCol2=pctColor(pct);
+    // LIVE Wraps = diff vs last real Tuesday snapshot
+    const evRealTue=(allSnaps[ev.id]||[])
+      .filter(s=>s.createdBy!=='seed'&&parseSnapDate(s.date).getDay()===2)
+      .sort((a,b)=>parseSnapDate(b.date)-parseSnapDate(a.date));
+    const lastRS=evRealTue[0];
+    const liveWDiff=lastRS!=null?tot-(lastRS.total||0):null;
+    const liveWHtml=liveWDiff!=null
+      ?`<span style="color:${liveWDiff>0?'var(--teal)':liveWDiff<0?'var(--red)':'var(--text2)'}">${liveWDiff>0?'+':''}${liveWDiff}</span>`
+      :'—';
     rH+=`<tr class="${rc2}" data-id="${ev.id}">
-      <td class="num-b live-bg" style="width:${RL.t}px;border-left:1px solid rgba(200,240,96,.12)">${tot}</td>
-      <td class="num live-bg" style="width:${RL.w}px">${ev.wraps||0}</td>
+      <td class="num-b live-bg" style="width:${RL.t}px;font-weight:700;border-left:1px solid rgba(200,240,96,.12)">${tot}</td>
+      <td class="num live-bg" style="width:${RL.tm}px">${ev.tm||0}</td>
+      <td class="num live-bg" style="width:${RL.eb}px">${ev.eb||0}</td>
+      <td class="num ec live-bg" style="width:${RL.oth}px" data-evid="${ev.id}" data-field="other" data-val="${ev.other||0}" onclick="iEdit(this,'${ev.id}','other')" title="Edytuj Inne">${ev.other||0}</td>
+      <td class="num live-bg" style="width:${RL.w}px">${liveWHtml}</td>
       <td class="num live-bg" style="width:${RL.pct}px;color:${pctCol2}">${ev.cap?pct+'%':'—'}</td>
       <td class="num live-bg" style="width:${RL.r}px;color:${remColor2}">${rem}</td>
       <td style="width:${RL.act}px;padding:0 5px">
@@ -1078,40 +1041,45 @@ async function doCountOne(evId){
   notify('Pobieram dane z API...','info');
   try{
     // Odpytaj eBilet i TM równolegle
+    // excludeZeroPrices=true: bilety z ceną 0 PLN są wykluczone z liczenia po stronie API
     const [ebRes,tmRes]=await Promise.all([
       fetch('/.netlify/functions/ebilet',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({eventName:ev.name,eventDate:ev.date}),
+        body:JSON.stringify({eventName:ev.name,eventDate:ev.date,excludeZeroPrices:true}),
       }),
       fetch('/.netlify/functions/tm',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({eventName:ev.name,eventDate:ev.date,onSaleDate:ev.onSale}),
+        body:JSON.stringify({eventName:ev.name,eventDate:ev.date,onSaleDate:ev.onSale,excludeZeroPrices:true}),
       }),
     ]);
     const ebData=await ebRes.json();
     const tmData=await tmRes.json();
     // Użyj dotychczasowych wartości jako fallback jeśli API zwróci błąd
+    // Zwrócone wartości z API już nie zawierają biletów 0 PLN (filtrowanie po stronie serwera)
     const newEb=ebData.error?ev.eb||0:ebData.eb||0;
     const newTm=tmData.error?ev.tm||0:tmData.tm||0;
     const newOther=ev.other||0;
     const newTot=newTm+newEb+newOther;
     const newRem=ebData.error?ev.remains||0:ebData.remains||0;
     const pct=ev.cap?Math.round(newTot/ev.cap*100):0;
-    // Zaktualizuj event w Firebase
-    const u={...ev,tm:newTm,eb:newEb,remains:newRem,updatedBy:curUser,updatedAt:Date.now()};
+    const nowTs=Date.now();
+    // Zaktualizuj event w Firebase (lastCountedAt = znacznik czasu ostatniego zliczenia)
+    const u={...ev,tm:newTm,eb:newEb,remains:newRem,updatedBy:curUser,updatedAt:nowTs,lastCountedAt:nowTs};
     delete u.id;
     await window._setDoc(window._doc(window._db,'ticketing_events',evId),u);
-    // Zapisz snapshot z dzisiejszą datą
-    const today=fd(new Date().toISOString().slice(0,10));
-    const sid='snap_'+evId+'_'+today.replace(/\./g,'_');
-    await window._setDoc(window._doc(window._db,'ticketing_snapshots',sid),{
-      eventId:evId,eventName:ev.name,date:today,
-      tm:newTm,eb:newEb,other:newOther,
-      total:newTot,remains:newRem,wraps:ev.wraps||0,pct,
-      createdBy:curUser,createdAt:Date.now(),
-    });
+    // Zapisz snapshot tylko we wtorki
+    if(new Date().getDay()===2){
+      const today=fd(new Date().toISOString().slice(0,10));
+      const sid='snap_'+evId+'_'+today.replace(/\./g,'_');
+      await window._setDoc(window._doc(window._db,'ticketing_snapshots',sid),{
+        eventId:evId,eventName:ev.name,date:today,
+        tm:newTm,eb:newEb,other:newOther,
+        total:newTot,remains:newRem,wraps:ev.wraps||0,pct,
+        createdBy:curUser,createdAt:nowTs,
+      });
+    }
     // Pokaż wynik
     const ebInfo=ebData.error?'eBilet: błąd':'eBilet: '+newEb;
     const tmInfo=tmData.error?'TM: błąd':'TM: '+newTm;
@@ -1176,7 +1144,8 @@ function openEdit(id){
   F('fInternalBuys',ev.internalBuys);F('fVip',ev.vip);
   F('fTM',ev.tm);F('fEB',ev.eb);F('fOther',ev.other);
   F('fRemains',ev.remains);F('fWraps',ev.wraps);F('fNotes',ev.notes);
-  togglePanel('addPanel');
+  document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('open'));
+  document.getElementById('addPanel').classList.add('open');
 }
 async function deleteCurrentEvent(){if(!editId||!confirm('Usunąć event?'))return;await window._deleteDoc(window._doc(window._db,'ticketing_events',editId));notify('Usunięto');closeAllPanels();}
 
