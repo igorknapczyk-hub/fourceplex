@@ -1,8 +1,16 @@
 // netlify/functions/beata-bot.js
-// FAZA 0: Beata odbiera wiadomości z Telegrama, odpowiada przez Claude.
-// Bez Firestore, bez tools. Tylko osobowość + wiedza o Fource.Plex w promcie.
+// FAZA 1: Beata z tool use — czyta dane z Firestore (tylko odczyt).
 
 const Anthropic = require('@anthropic-ai/sdk');
+const {
+  getTodos,
+  getTicketingEvents,
+  getTicketingEvent,
+  getArtists,
+  getMarketingShows,
+  getGuestList,
+  getProductionStatus,
+} = require('./lib/firestore');
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -10,6 +18,8 @@ const anthropic = new Anthropic({
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
+
+// ── System prompt ─────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `Jesteś Beatą — asystentką AI polskiej agencji koncertowej FOURCE.
 
@@ -36,36 +46,140 @@ Hub webowy z modułami:
 - **Marketing** (marketing.html) — koncerty, checkpointy marketingowe, koszty, Meta Ads
 - **Listy Gości** (listy-gosci.html) — akredytacje, goście, foto, media
 - **Produkcja** (produkcja.html) — checklisty, koszty, timetable, rider notes
-- **Promotor Office** (promotor-office.html) — pipeline dealów, negocjacje, pipeline kroków (avails→oferta→follow-up→period→venue)
-- **Projekty** (projekty.html) — projekty specjalne, zadania
+- **Promotor Office** (promotor-office.html) — pipeline dealów, negocjacje (avails→oferta→follow-up→period→venue)
+- **Projekty** (projekty.html) — projekty specjalne
 
-Backend: Firebase Firestore. Kolekcje: todos, ticketing_events, ticketing_snapshots, artists, marketing_shows, guest_lists, productions.
-Hosting: Netlify. Funkcje serverless (Netlify Functions) do zliczania biletów z API TicketMaster i eBilet.
+Backend: Firebase Firestore. Kolekcje: todos, ticketing_events, ticketing_snapshots, artists, marketing_shows, guest_shows, production_shows.
+Hosting: Netlify. Funkcje serverless do zliczania biletów z API TicketMaster i eBilet.
 
 # TWOJA OSOBOWOŚĆ
 - Jesteś bezpośrednia, konkretna i profesjonalna — nie owijasz w bawełnę
 - Mówisz po polsku, chyba że ktoś napisze po angielsku
 - Masz lekkie poczucie humoru — jesteś przyjazna, ale skupiona na robocie
 - Nie jesteś nadmiernie entuzjastyczna ani nie używasz zbędnych emoji
-- Jak nie wiesz — mówisz wprost, że nie wiesz (Faza 0: nie masz dostępu do live danych)
+- Jak nie wiesz — mówisz wprost że nie wiesz
 - Krótkie pytania = krótkie odpowiedzi. Długie pytania = wyczerpująca odpowiedź.
 
-# WAŻNE OGRANICZENIA (Faza 0)
-- Nie masz dostępu do live danych Firestore — nie możesz sprawdzić aktualnej sprzedaży biletów, zadań, kalendarza
-- Gdy ktoś pyta o konkretne dane (np. "ile biletów sprzedano na Conan Gray?") — powiedz że jeszcze nie masz dostępu do bazy i że to będzie w następnej fazie
-- Możesz natomiast tłumaczyć jak system działa, odpowiadać na pytania ogólne, pomagać z decyzjami na podstawie kontekstu podanego w rozmowie`;
+# OBECNY STAN (FAZA 1)
+Masz dostęp do Firestore Plexa **tylko do odczytu**. Dostępne narzędzia:
+- get_todos — zadania z Jaszczurzych Spraw
+- get_ticketing_events / get_ticketing_event — sprzedaż biletów
+- get_artists — Watchlist
+- get_marketing_shows — dane marketingowe
 
-// Prosta pamięć konwersacji (per chat_id, in-memory — reset przy każdym cold starcie)
+Gdy user pyta o konkretne liczby/dane — ZAWSZE użyj odpowiedniego narzędzia, nie zgaduj.
+Jeszcze nie masz pamięci między sesjami, kalendarza, ani zapisu do Plexa (to w kolejnych fazach).
+
+Gdy raportujesz dane liczbowe, bądź zwięzła. Przykład dobrej odpowiedzi:
+"Dakhabrakha: 87% (1043/1200), break even przekroczony. TM 812, eBilet 231. 🦎"
+
+Nie wypisuj wszystkich pól jak w tabelce — zrób human-friendly podsumowanie.`;
+
+// ── Tool definitions ──────────────────────────────────────────────────────────
+
+const tools = [
+  {
+    name: 'get_todos',
+    description: 'Pobierz zadania z Jaszczurzych Spraw (task manager zespołu). Domyślnie zwraca otwarte zadania.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        assignee: { type: 'string', description: 'Filtruj po osobie przypisanej (Igor/Mariusz/Monika/Radek)' },
+        status: { type: 'string', enum: ['todo', 'doing', 'done'], description: 'Status zadania' },
+        limit: { type: 'number', description: 'Max liczba wyników (default 50)' },
+      },
+    },
+  },
+  {
+    name: 'get_ticketing_events',
+    description: 'Pobierz listę koncertów z danymi sprzedaży (TicketMaster, eBilet, other channels, % sprzedaży, break even).',
+    input_schema: {
+      type: 'object',
+      properties: {
+        upcoming_only: { type: 'boolean', description: 'Tylko nadchodzące koncerty' },
+        limit: { type: 'number' },
+      },
+    },
+  },
+  {
+    name: 'get_ticketing_event',
+    description: 'Znajdź konkretny koncert po nazwie (fragment wystarczy). Zwraca pełne dane sprzedaży.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        name_query: { type: 'string', description: 'Fragment nazwy koncertu/artysty' },
+      },
+      required: ['name_query'],
+    },
+  },
+  {
+    name: 'get_artists',
+    description: 'Pobierz artystów z Watchlisty — tracker artystów do potencjalnego bookingu.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', description: 'Filtruj po statusie artysty' },
+        limit: { type: 'number' },
+      },
+    },
+  },
+  {
+    name: 'get_marketing_shows',
+    description: 'Pobierz dane marketingowe koncertów (budżety, CTR, CPM, reach, checkpointy).',
+    input_schema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number' },
+      },
+    },
+  },
+];
+
+// ── Tool executor ─────────────────────────────────────────────────────────────
+
+async function executeTool(name, input) {
+  switch (name) {
+    case 'get_todos':
+      return getTodos({
+        assignee: input.assignee,
+        status: input.status,
+        limit: input.limit,
+      });
+
+    case 'get_ticketing_events':
+      return getTicketingEvents({
+        upcomingOnly: input.upcoming_only,
+        limit: input.limit,
+      });
+
+    case 'get_ticketing_event':
+      return getTicketingEvent(input.name_query);
+
+    case 'get_artists':
+      return getArtists({
+        status: input.status,
+        limit: input.limit,
+      });
+
+    case 'get_marketing_shows':
+      return getMarketingShows({
+        limit: input.limit,
+      });
+
+    default:
+      throw new Error(`Nieznany tool: ${name}`);
+  }
+}
+
+// ── Telegram helpers ──────────────────────────────────────────────────────────
+
+// In-memory historia konwersacji per chat_id (reset przy cold starcie)
 const conversations = {};
-const MAX_HISTORY = 20; // ostatnie 10 par wiadomości
+const MAX_HISTORY = 20; // 10 par user/assistant
 
 async function sendMessage(chatId, text) {
   const url = `${TELEGRAM_API}/sendMessage`;
-  const body = {
-    chat_id: chatId,
-    text: text,
-    parse_mode: 'Markdown',
-  };
+  const body = { chat_id: chatId, text, parse_mode: 'Markdown' };
 
   const response = await fetch(url, {
     method: 'POST',
@@ -74,67 +188,121 @@ async function sendMessage(chatId, text) {
   });
 
   if (!response.ok) {
-    const err = await response.text();
-    console.error('Telegram sendMessage error:', err);
-    // Fallback bez markdown jeśli błąd formatowania
+    console.error('Telegram sendMessage error:', await response.text());
+    // Fallback bez markdown
     await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: text }),
+      body: JSON.stringify({ chat_id: chatId, text }),
     });
   }
 }
+
+// ── Message handler ───────────────────────────────────────────────────────────
 
 async function handleMessage(message) {
   const chatId = message.chat.id;
   const text = message.text;
-  const firstName = message.from?.first_name || '';
+  const senderName = message.from?.first_name || 'Użytkownik';
 
   if (!text) return; // ignoruj media, stickery itp.
 
-  // Inicjuj historię dla tego chatu
+  // Komendy systemowe
+  if (text === '/start') {
+    await sendMessage(chatId, 'Cześć! Jestem Beata — asystentka AI agencji FOURCE. Mam dostęp do Plexa. Czym mogę pomóc?');
+    return;
+  }
+  if (text === '/ping') {
+    await sendMessage(chatId, 'pong 🏓');
+    return;
+  }
+
+  // Inicjuj historię
   if (!conversations[chatId]) {
     conversations[chatId] = [];
   }
 
-  // Dodaj wiadomość użytkownika do historii
-  conversations[chatId].push({
-    role: 'user',
-    content: text,
-  });
+  // Buduj messages: historia + nowa wiadomość
+  const userMessage = { role: 'user', content: `[Wiadomość od: ${senderName}]\n\n${text}` };
+  let messages = [...conversations[chatId], userMessage];
 
-  // Ogranicz historię
-  if (conversations[chatId].length > MAX_HISTORY) {
-    conversations[chatId] = conversations[chatId].slice(-MAX_HISTORY);
-  }
+  let finalText = '';
+  const MAX_ITERATIONS = 5;
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: conversations[chatId],
-    });
+    for (let i = 0; i < MAX_ITERATIONS; i++) {
+      const response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2048,
+        system: SYSTEM_PROMPT,
+        tools,
+        messages,
+      });
 
-    const reply = response.content[0]?.text || '...';
+      // Zbierz text blocks
+      const textBlocks = response.content
+        .filter(b => b.type === 'text')
+        .map(b => b.text)
+        .join('\n');
+      if (textBlocks) finalText = textBlocks;
 
-    // Dodaj odpowiedź do historii
-    conversations[chatId].push({
-      role: 'assistant',
-      content: reply,
-    });
+      // Koniec pętli jeśli Claude skończył (brak tool_use)
+      if (response.stop_reason !== 'tool_use') break;
 
-    await sendMessage(chatId, reply);
+      // Wykonaj wszystkie tool calls
+      const toolUses = response.content.filter(b => b.type === 'tool_use');
+      const toolResults = [];
+
+      for (const toolUse of toolUses) {
+        console.log(`[beata] tool_use: ${toolUse.name}`, JSON.stringify(toolUse.input));
+        try {
+          const result = await executeTool(toolUse.name, toolUse.input);
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: toolUse.id,
+            content: JSON.stringify(result),
+          });
+        } catch (err) {
+          console.error(`[beata] tool error (${toolUse.name}):`, err.message);
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: toolUse.id,
+            content: `Error: ${err.message}`,
+            is_error: true,
+          });
+        }
+      }
+
+      // Dodaj assistant response + tool results do messages
+      messages.push({ role: 'assistant', content: response.content });
+      messages.push({ role: 'user', content: toolResults });
+    }
+
+    if (!finalText) finalText = '...';
+
+    // Zapisz tylko text exchange w historii (bez tool_use/tool_result bloków)
+    conversations[chatId].push(
+      { role: 'user', content: `[Wiadomość od: ${senderName}]\n\n${text}` },
+      { role: 'assistant', content: finalText }
+    );
+
+    // Ogranicz historię
+    if (conversations[chatId].length > MAX_HISTORY) {
+      conversations[chatId] = conversations[chatId].slice(-MAX_HISTORY);
+    }
+
+    await sendMessage(chatId, finalText);
   } catch (error) {
-    console.error('Claude API error:', error);
+    console.error('[beata] Claude API error:', error);
     await sendMessage(chatId, 'Przepraszam, mam chwilowy problem techniczny. Spróbuj ponownie za chwilę.');
   }
 }
 
+// ── Netlify Function handler ──────────────────────────────────────────────────
+
 exports.handler = async (event) => {
-  // Akceptuj tylko POST
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 200, body: 'Beata bot działa.' };
+    return { statusCode: 200, body: 'Beata bot działa (Faza 1).' };
   }
 
   let update;
@@ -144,7 +312,6 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: 'Invalid JSON' };
   }
 
-  // Obsłuż wiadomość
   if (update.message) {
     await handleMessage(update.message);
   }
