@@ -1,0 +1,9 @@
+{
+  "name": "fourceplex",
+  "version": "1.0.0",
+  "description": "Fource.Plex — internal agency hub",
+  "private": true,
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0"
+  }
+}

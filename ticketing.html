@@ -267,6 +267,10 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
 /* Block separator */
 .bl-sep{border-left:1px solid rgba(255,255,255,.05)!important}
 
+/* Enforce identical row heights across all three panels */
+.pan-left table tr,.pan-mid table tr,.pan-right table tr{height:34px}
+.pan-left table td,.pan-mid table td,.pan-right table td{height:34px;max-height:34px}
+
 /* TABS */
 .tab-bar{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;padding:0 2px}
 .tab-btn{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:9px 18px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none;transition:all .15s}
@@ -569,6 +573,25 @@ const SEED=[
   {name:'Anatole Muster',date:'2026-05-17',venue:'Jassmine',         price:'110',    cap:200,  onSale:'2026-02-01',tm:44,  eb:61,  other:0,  remains:95,  wraps:5, vip:'',       notes:'nowy artysta',addedBy:'Igor'},
   {name:'Alok',          date:'2026-05-24',venue:'Niebo',            price:'119',    cap:250,  onSale:'2026-01-20',tm:98,  eb:82,  other:15, remains:55,  wraps:12,vip:'',       notes:'EDM, mocna kampania',addedBy:'Mariusz'},
   {name:'Pacifica',      date:'2026-05-27',venue:'BARdzo Bardzo',    price:'99',     cap:200,  onSale:'2026-02-14',tm:31,  eb:28,  other:0,  remains:141, wraps:3, vip:'',       notes:'słaba sprzedaż',addedBy:'Monika'},
+  {name:'Saint Stacy',   date:'2026-05-28',venue:'Hydrozagadka',     price:'89',     cap:370,  onSale:'',          tm:0,   eb:0,   other:0,  remains:370, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Conan Gray',    date:'2026-05-29',venue:'Atlas Arena',       price:'179-1350',cap:14698,onSale:'',         tm:0,   eb:0,   other:0,  remains:14698,wraps:0,vip:'',       notes:'',addedBy:'Igor'},
+  {name:'ivri',          date:'2026-06-11',venue:'BARdzo Bardzo',     price:'99',     cap:200,  onSale:'',          tm:0,   eb:0,   other:0,  remains:200, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Joost Klein',   date:'2026-06-15',venue:'Progresja',         price:'179',    cap:1800, onSale:'',          tm:0,   eb:0,   other:0,  remains:1800,wraps:0, vip:'',       notes:'dzień 1',addedBy:'Igor'},
+  {name:'Joost Klein',   date:'2026-06-16',venue:'Progresja',         price:'179',    cap:1800, onSale:'',          tm:0,   eb:0,   other:0,  remains:1800,wraps:0, vip:'',       notes:'dzień 2',addedBy:'Igor'},
+  {name:'Dream, Ivory',  date:'2026-06-20',venue:'BARdzo Bardzo',     price:'119',    cap:200,  onSale:'',          tm:0,   eb:0,   other:0,  remains:200, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Men I Trust',   date:'2026-06-22',venue:'Progresja',         price:'169',    cap:1800, onSale:'',          tm:0,   eb:0,   other:0,  remains:1800,wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Thaiboy Digital',date:'2026-06-25',venue:'Niebo',            price:'119',    cap:620,  onSale:'',          tm:0,   eb:0,   other:0,  remains:620, wraps:0, vip:'',       notes:'dzień 1',addedBy:'Igor'},
+  {name:'Thaiboy Digital',date:'2026-06-26',venue:'Niebo',            price:'129',    cap:750,  onSale:'',          tm:0,   eb:0,   other:0,  remains:750, wraps:0, vip:'',       notes:'dzień 2',addedBy:'Igor'},
+  {name:'Charlie Puth',  date:'2026-07-30',venue:'Progresja',         price:'249-1389',cap:7800, onSale:'',         tm:0,   eb:0,   other:0,  remains:7800,wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Eivor',         date:'2026-08-02',venue:'Proxima',           price:'130',    cap:900,  onSale:'',          tm:0,   eb:0,   other:0,  remains:900, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'OMD',           date:'2026-08-24',venue:'Progresja',         price:'239',    cap:5000, onSale:'',          tm:0,   eb:0,   other:0,  remains:5000,wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'New Constellations',date:'2026-09-08',venue:'Hydrozagadka',  price:'99',     cap:370,  onSale:'',          tm:0,   eb:0,   other:0,  remains:370, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'WITCHZ',        date:'2026-09-19',venue:'Niebo',             price:'119-149',cap:610,  onSale:'',          tm:0,   eb:0,   other:0,  remains:610, wraps:0, vip:'',       notes:'dzień 1',addedBy:'Igor'},
+  {name:'WITCHZ',        date:'2026-09-20',venue:'Niebo',             price:'119-149',cap:700,  onSale:'',          tm:0,   eb:0,   other:0,  remains:700, wraps:0, vip:'',       notes:'dzień 2',addedBy:'Igor'},
+  {name:'Stu Larsen',    date:'2026-09-26',venue:'Chmury',            price:'89',     cap:120,  onSale:'',          tm:0,   eb:0,   other:0,  remains:120, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Tender',        date:'2026-10-07',venue:'Hydrozagadka',      price:'99',     cap:370,  onSale:'',          tm:0,   eb:0,   other:0,  remains:370, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Digitalism',    date:'2026-10-24',venue:'Niebo',             price:'119',    cap:700,  onSale:'',          tm:0,   eb:0,   other:0,  remains:700, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Temples',       date:'2026-10-27',venue:'Niebo',             price:'109',    cap:700,  onSale:'',          tm:0,   eb:0,   other:0,  remains:700, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
 ];
 
 window.addEventListener('fb-ready',async()=>{
@@ -726,8 +749,8 @@ function renderTable(){
   const parseSnapDate=s=>{const p=s.split('.');return new Date(+p[2],+p[1]-1,+p[0]);};
   const snapDates=[...dateSet].sort((a,b)=>parseSnapDate(b)-parseSnapDate(a)).filter(d=>parseSnapDate(d).getDay()===2);
 
-  // Column widths
-  const LW={calc:15,name:210,date:93};
+  // Column widths — calc wider to fit timestamp+button side by side
+  const LW={calc:46,name:179,date:93};
   const LEFT_W=Object.values(LW).reduce((s,v)=>s+v,0);
   const SW={dni:52,venue:118,cena:62,cap:52,onsale:60,be:60};
   const BW={tm:68,eb:68,oth:58,t:72,w:50,pct:52,r:62};
@@ -824,22 +847,20 @@ function renderTable(){
     const pctCol=pctColor(pct);
     const aBtn=alertBtn(pct);
 
-    // LEFT ROW — calc(⊞+alert+last-count) | name | date
-    let lastCtHtml='';
+    // LEFT ROW — [timestamp | ⊞ | alert] | name | date  (all in one line → fixed 34px height)
+    let lastCtBlock='';
     if(ev.lastCountedAt){
       const _d=new Date(ev.lastCountedAt);
       const _dd=_d.getDate(),_mm=_d.getMonth()+1;
       const _hh=String(_d.getHours()).padStart(2,'0'),_mn=String(_d.getMinutes()).padStart(2,'0');
-      lastCtHtml=`<div style="font-family:var(--mono);font-size:6.5px;color:var(--text3);line-height:1.2;text-align:center;white-space:nowrap;margin-top:1px">${_dd}.${_mm}<br>${_hh}:${_mn}</div>`;
+      lastCtBlock=`<div style="font-family:var(--mono);font-size:8px;color:var(--text3);line-height:1.25;white-space:nowrap;text-align:right;flex-shrink:0">${_dd}.${_mm}<br>${_hh}:${_mn}</div>`;
     }
     lH+=`<tr class="${rc}" data-id="${ev.id}">
-      <td style="width:${LW.calc}px;text-align:center;padding:0 1px;overflow:visible">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:0">
-          <div style="display:flex;align-items:center;gap:2px">
-            <span class="calc-btn" onclick="doCountOne('${ev.id}')" title="Zlicz (wymaga API)">⊞</span>
-            ${aBtn}
-          </div>
-          ${lastCtHtml}
+      <td style="width:${LW.calc}px;text-align:center;padding:0 2px;height:34px">
+        <div style="display:flex;align-items:center;justify-content:center;gap:3px;height:100%">
+          ${lastCtBlock}
+          <span class="calc-btn" onclick="doCountOne('${ev.id}')" title="Zlicz (wymaga API)">⊞</span>
+          ${aBtn}
         </div>
       </td>
       <td class="name-c" style="width:${LW.name}px">${ev.name}</td>
