@@ -1,22 +1,24 @@
 // netlify/functions/beata-bot.js
-// FAZA 2: Beata z tool use — czytanie + zapis do Firestore (z confirm buttons).
+// FAZA 2.1: bugfix + nowe tools (artyści, koszty marketingowe, checklisty, notatki).
 
 const Anthropic = require('@anthropic-ai/sdk');
 const {
-  // Faza 1 — read
+  // Read — Faza 1
   getTodos,
   getTicketingEvents,
   getTicketingEvent,
   getArtists,
   getMarketingShows,
-  // Faza 2D — nowe read
+  // Read — Faza 2 / 2.1
   getGuestShow,
   getProductionShow,
   getProductionExpenses,
-  getMarketingCosts,
+  getMarketingCostsForShow,
+  getAllMarketingCosts,
+  getArtist,
   getProjects,
   getTicketingSnapshots,
-  // Faza 2C — write
+  // Write — Faza 2
   addTodo,
   updateTodoStatus,
   addTodoNote,
@@ -25,6 +27,14 @@ const {
   updateProductionChecklist,
   updateMarketingCheckpoint,
   addTicketingSnapshot,
+  // Write — Faza 2.1
+  addArtistToWatchlist,
+  updateArtistFlags,
+  addMarketingCost,
+  updateMarketingCost,
+  updateProductionChecklistItem,
+  updateProductionNotes,
+  updateMarketingNotes,
 } = require('./lib/firestore');
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -33,11 +43,9 @@ const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 
 // ── Pending actions (in-memory, TTL 10 min) ──────────────────────────────────
-// { actionId → { chatId, userId, senderName, toolName, input, createdAt } }
 const pendingActions = new Map();
 const PENDING_TTL_MS = 10 * 60 * 1000;
 
-// Zbiór nazw toolsów zapisujących
 const WRITE_TOOLS = new Set([
   'add_todo',
   'update_todo_status',
@@ -47,6 +55,13 @@ const WRITE_TOOLS = new Set([
   'update_production_checklist',
   'update_marketing_checkpoint',
   'add_ticketing_snapshot',
+  'add_artist_to_watchlist',
+  'update_artist_flags',
+  'add_marketing_cost',
+  'update_marketing_cost',
+  'update_production_checklist_item',
+  'update_production_notes',
+  'update_marketing_notes',
 ]);
 
 // ── System prompt ─────────────────────────────────────────────────────────────
@@ -69,15 +84,14 @@ FOURCE to agencja koncertowa zajmująca się:
 - Kamil — grafika (nie używa Fource.Plex, kontakt przez Monikę/Radka)
 
 # FOURCE.PLEX — wewnętrzny system agencji
-Hub webowy z modułami:
-- **Terrarium** (index.html) — dashboard + "Jaszczurze Sprawy" (task manager zespołu)
-- **Watchlist** (watchlist.html) — tracker artystów do bookingu, prognozy, trendy
-- **Ticketing** (ticketing.html) — sprzedaż biletów per koncert, kanały TM/eBilet/Inne, break even
-- **Marketing** (marketing.html) — koncerty, checkpointy marketingowe, koszty, Meta Ads
-- **Listy Gości** (listy-gosci.html) — akredytacje, goście, foto, media
-- **Produkcja** (produkcja.html) — checklisty, koszty, timetable, rider notes
-- **Promotor Office** (promotor-office.html) — pipeline dealów (avails→oferta→follow-up→period→venue)
-- **Projekty** (projekty.html) — projekty specjalne
+- **Terrarium** — dashboard + "Jaszczurze Sprawy" (task manager)
+- **Watchlist** — tracker artystów do bookingu, prognozy, trendy
+- **Ticketing** — sprzedaż biletów per koncert, TM/eBilet/Inne, break even
+- **Marketing** — checkpointy, koszty, Meta Ads
+- **Listy Gości** — akredytacje (foto/media/rozdane)
+- **Produkcja** — checklisty, koszty, timetable, rider notes
+- **Promotor Office** — pipeline dealów (avails→oferta→follow-up→period→venue)
+- **Projekty** — projekty specjalne
 
 Backend: Firebase Firestore. Hosting: Netlify.
 
@@ -88,24 +102,47 @@ Backend: Firebase Firestore. Hosting: Netlify.
 - Nie jesteś nadmiernie entuzjastyczna ani nie używasz zbędnych emoji
 - Jak nie wiesz — mówisz wprost że nie wiesz
 - Krótkie pytania = krótkie odpowiedzi. Długie pytania = wyczerpująca odpowiedź.
+- Gdy raportujesz liczby, bądź zwięzła: "Dakhabrakha: 87% (1043/1200). TM 812, eBilet 231. 🦎"
 
-# OBECNY STAN (FAZA 2)
+# OBECNY STAN (FAZA 2.1)
 Masz dostęp do Firestore Plexa:
 
-**Czytanie (dowolnie):** get_todos, get_ticketing_events, get_ticketing_event, get_artists, get_marketing_shows, get_guest_show, get_production_show, get_production_expenses, get_marketing_costs, get_projects, get_ticketing_snapshots.
+**Czytanie:** get_todos, get_ticketing_events, get_ticketing_event, get_artists, get_artist, get_marketing_shows, get_guest_show, get_production_show, get_production_expenses, get_marketing_costs_for_show, get_all_marketing_costs, get_projects, get_ticketing_snapshots.
 
-**Pisanie (z potwierdzeniem użytkownika):** add_todo, update_todo_status, add_todo_note, update_todo, add_guest_to_show, update_production_checklist, update_marketing_checkpoint, add_ticketing_snapshot.
+**Pisanie (z potwierdzeniem):** add_todo, update_todo_status, add_todo_note, update_todo, add_guest_to_show, add_artist_to_watchlist, update_artist_flags, add_marketing_cost, update_marketing_cost, update_production_checklist_item, update_production_notes, update_marketing_notes, update_marketing_checkpoint, add_ticketing_snapshot.
 
 WAŻNE zasady pisania:
-1. Gdy user prosi o zmianę (dodaj zadanie, zamknij, zaktualizuj) — najpierw upewnij się że masz wszystkie potrzebne info. Dopytaj jeśli trzeba (np. "Przypisać do kogo?", "Na kiedy termin?").
-2. Gdy masz komplet — wywołaj odpowiedni tool. System wyświetli userowi przycisk potwierdzenia. NIE powtarzaj tej informacji — nie pisz "teraz poproszę o potwierdzenie". Po prostu wywołaj tool i milcz albo napisz krótko "Dodaję... (potwierdź niżej)".
-3. Nie przypuszczaj — pytaj. Jeśli user mówi "dodaj zadanie do produkcji" — zapytaj kto ma to zrobić.
-4. Dla update_todo_status — najpierw znajdź zadanie przez get_todos, zidentyfikuj po tekście, pokaż userowi które zadanie zamierzasz zmienić, wywołaj tool.
+1. Gdy user prosi o zmianę — najpierw upewnij się że masz wszystkie info. Dopytaj jeśli trzeba.
+2. Gdy masz komplet — wywołaj tool. System wyświetli userowi przycisk confirm. Napisz krótko "Sprawdź niżej." lub nic.
+3. Dla update_todo_status — najpierw get_todos, zidentyfikuj zadanie po tekście, pokaż userowi i dopiero wywołaj tool. Do update_todo_status przekaż też todo_text_hint = treść zadania (pierwsze 60 znaków), żeby potwierdzenie było czytelne.
 
-Gdy raportujesz dane liczbowe, bądź zwięzła. Przykład:
-"Dakhabrakha: 87% (1043/1200), break even przekroczony. TM 812, eBilet 231. 🦎"
+# ZASADY ROZMAWIANIA O KONCERTACH I ARTYSTACH
 
-Jeszcze NIE masz: kalendarza Google, pamięci między sesjami, usuwania danych, scheduled briefów.`;
+- Używaj ZAWSZE nazw wykonawców (np. "Dakhabrakha", "Conan Gray") gdy piszesz do usera.
+  NIGDY nie pokazuj userom ID dokumentów (np. "8EbGkb4c6Lrah..."). ID możesz używać wewnętrznie przy wywołaniach toolsów.
+
+- W guest_shows koncert identyfikowany jest przez pole artistName.
+  Nie szukaj po showId w guest_shows — tego pola tam nie ma.
+  Lista gości jest w tablicach foto, media, rozdane bezpośrednio w dokumencie.
+
+- W marketing_costs showId = doc ID z ticketing_events.
+  Gdy user mówi o koszcie dla "Dakhabrakha", najpierw get_ticketing_event("Dakhabrakha"),
+  weź doc ID jako showId.
+
+- W artists (Watchlist) pole listeners to STRING (np. "638.3K") — nie parsuj jako number.
+
+- Gdy tool zwraca _multipleMatches: true — pokaż userowi listę z datami i poproś o doprecyzowanie.
+  Nie wywołuj write toola gdy jest wiele matchów — dopytaj najpierw.
+
+# ZASADY POTWIERDZANIA ZMIAN
+
+- NIE wyświetlaj ID dokumentów w komunikatach do usera. Zamiast
+  "Dodać koszt do showId WWACndvxBa...?" pisz
+  "Dodać koszt 1500 PLN (Druk/OOH) do koncertu Pentatonix?"
+
+- Gdy dodajesz koszt marketingowy — zawsze podaj artistName czytelnie w confirm.
+
+Jeszcze NIE masz: kalendarza Google, pamięci między sesjami, usuwania danych, Meta Ads API, scheduled briefów.`;
 
 // ── Tool definitions ──────────────────────────────────────────────────────────
 
@@ -113,7 +150,7 @@ const tools = [
   // ── READ TOOLS ──
   {
     name: 'get_todos',
-    description: 'Pobierz zadania z Jaszczurzych Spraw (task manager zespołu). Domyślnie zwraca otwarte zadania.',
+    description: 'Pobierz zadania z Jaszczurzych Spraw. Domyślnie zwraca otwarte.',
     input_schema: {
       type: 'object',
       properties: {
@@ -125,7 +162,7 @@ const tools = [
   },
   {
     name: 'get_ticketing_events',
-    description: 'Pobierz listę koncertów z danymi sprzedaży (TM, eBilet, %, break even).',
+    description: 'Lista koncertów z danymi sprzedaży (TM, eBilet, %, break even).',
     input_schema: {
       type: 'object',
       properties: {
@@ -136,7 +173,7 @@ const tools = [
   },
   {
     name: 'get_ticketing_event',
-    description: 'Znajdź konkretny koncert po nazwie (fragment wystarczy).',
+    description: 'Znajdź konkretny koncert po fragmencie nazwy. Zwraca pełne dane + doc ID (do użycia jako showId w marketing_costs).',
     input_schema: {
       type: 'object',
       properties: {
@@ -147,18 +184,29 @@ const tools = [
   },
   {
     name: 'get_artists',
-    description: 'Pobierz artystów z Watchlisty — tracker do potencjalnego bookingu.',
+    description: 'Lista artystów z Watchlisty. Filtruj hot:true żeby zobaczyć tylko "gorących".',
     input_schema: {
       type: 'object',
       properties: {
-        status: { type: 'string' },
+        hot: { type: 'boolean', description: 'Tylko artyści z flagą hot' },
         limit: { type: 'number' },
       },
     },
   },
   {
+    name: 'get_artist',
+    description: 'Znajdź konkretnego artystę po fragmencie nazwy. Zwraca pełne dane z flagami.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        name_query: { type: 'string', description: 'Fragment nazwy artysty' },
+      },
+      required: ['name_query'],
+    },
+  },
+  {
     name: 'get_marketing_shows',
-    description: 'Pobierz dane marketingowe koncertów (budżety, CTR, CPM, reach, checkpointy).',
+    description: 'Dane marketingowe koncertów (budżety, CTR, CPM, checkpointy).',
     input_schema: {
       type: 'object',
       properties: { limit: { type: 'number' } },
@@ -166,51 +214,59 @@ const tools = [
   },
   {
     name: 'get_guest_show',
-    description: 'Pobierz listę gości dla koncertu (fragment nazwy wystarczy).',
+    description: 'Lista gości dla koncertu — szuka po nazwie artysty (polu artistName). Zwraca tablice foto/media/rozdane.',
     input_schema: {
       type: 'object',
       properties: {
-        show_name_query: { type: 'string', description: 'Fragment nazwy koncertu' },
+        artist_name_query: { type: 'string', description: 'Fragment nazwy artysty' },
       },
-      required: ['show_name_query'],
+      required: ['artist_name_query'],
     },
   },
   {
     name: 'get_production_show',
-    description: 'Pobierz dane produkcji koncertu: checklist, timetable, rider notes.',
+    description: 'Dane produkcji koncertu: checklist, timetable, rider notes.',
     input_schema: {
       type: 'object',
       properties: {
-        show_name_query: { type: 'string', description: 'Fragment nazwy koncertu' },
+        artist_name_query: { type: 'string', description: 'Fragment nazwy artysty/koncertu' },
       },
-      required: ['show_name_query'],
+      required: ['artist_name_query'],
     },
   },
   {
     name: 'get_production_expenses',
-    description: 'Pobierz koszty produkcji dla concertu (po showId).',
+    description: 'Koszty produkcji dla koncertu (po showId z get_ticketing_event).',
     input_schema: {
       type: 'object',
       properties: {
-        show_id: { type: 'string', description: 'ID koncertu' },
+        show_id: { type: 'string', description: 'Doc ID z get_ticketing_event' },
       },
       required: ['show_id'],
     },
   },
   {
-    name: 'get_marketing_costs',
-    description: 'Pobierz koszty marketingowe dla koncertu (po showId).',
+    name: 'get_marketing_costs_for_show',
+    description: 'Koszty marketingowe dla konkretnego koncertu (po showId). Zwraca listę + total.',
     input_schema: {
       type: 'object',
       properties: {
-        show_id: { type: 'string', description: 'ID koncertu' },
+        show_id: { type: 'string', description: 'Doc ID z get_ticketing_event' },
       },
       required: ['show_id'],
+    },
+  },
+  {
+    name: 'get_all_marketing_costs',
+    description: 'Wszystkie koszty marketingowe (sortowane od najnowszych).',
+    input_schema: {
+      type: 'object',
+      properties: { limit: { type: 'number', description: 'Max liczba (default 50)' } },
     },
   },
   {
     name: 'get_projects',
-    description: 'Pobierz listę projektów z Projektów.',
+    description: 'Lista projektów.',
     input_schema: {
       type: 'object',
       properties: { limit: { type: 'number' } },
@@ -218,12 +274,12 @@ const tools = [
   },
   {
     name: 'get_ticketing_snapshots',
-    description: 'Pobierz historyczne snapshoty sprzedaży dla konkretnego eventu.',
+    description: 'Historyczne snapshoty sprzedaży dla eventu.',
     input_schema: {
       type: 'object',
       properties: {
-        event_id: { type: 'string', description: 'ID eventu z get_ticketing_event' },
-        limit: { type: 'number', description: 'Max liczba snapshotów (default 12)' },
+        event_id: { type: 'string', description: 'Doc ID z get_ticketing_event' },
+        limit: { type: 'number' },
       },
       required: ['event_id'],
     },
@@ -232,95 +288,190 @@ const tools = [
   // ── WRITE TOOLS ──
   {
     name: 'add_todo',
-    description: 'Dodaj nowe zadanie do Jaszczurzych Spraw. Wymaga potwierdzenia użytkownika.',
+    description: 'Dodaj zadanie do Jaszczurzych Spraw. Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
         text: { type: 'string', description: 'Treść zadania' },
-        assignee: { type: 'string', description: 'Osoba odpowiedzialna (Igor/Mariusz/Monika/Radek)' },
-        due_date: { type: 'string', description: 'Termin w formacie YYYY-MM-DD (opcjonalnie)' },
-        pilne: { type: 'boolean', description: 'Czy zadanie jest pilne' },
-        note: { type: 'string', description: 'Dodatkowa notatka (opcjonalnie)' },
+        assignee: { type: 'string', description: 'Osoba (Igor/Mariusz/Monika/Radek)' },
+        due_date: { type: 'string', description: 'Termin YYYY-MM-DD (opcjonalnie)' },
+        pilne: { type: 'boolean' },
+        note: { type: 'string', description: 'Notatka (opcjonalnie)' },
       },
       required: ['text', 'assignee'],
     },
   },
   {
     name: 'update_todo_status',
-    description: 'Zmień status zadania (todo/doing/done). Wymaga potwierdzenia.',
+    description: 'Zmień status zadania. Wymaga potwierdzenia. Przekaż todo_text_hint = fragment treści zadania (do 60 znaków) żeby confirm był czytelny.',
     input_schema: {
       type: 'object',
       properties: {
         todo_id: { type: 'string', description: 'ID zadania (z get_todos)' },
         new_status: { type: 'string', enum: ['todo', 'doing', 'done'] },
+        todo_text_hint: { type: 'string', description: 'Fragment tekstu zadania (do wyświetlenia w confirm)' },
       },
       required: ['todo_id', 'new_status'],
     },
   },
   {
     name: 'add_todo_note',
-    description: 'Dopisz notatkę wykonawczą do istniejącego zadania. Wymaga potwierdzenia.',
+    description: 'Dopisz notatkę wykonawczą do zadania. Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
         todo_id: { type: 'string', description: 'ID zadania' },
         note: { type: 'string', description: 'Treść notatki' },
+        todo_text_hint: { type: 'string', description: 'Fragment tekstu zadania (do confirm)' },
       },
       required: ['todo_id', 'note'],
     },
   },
   {
     name: 'update_todo',
-    description: 'Zaktualizuj pola zadania (tekst, termin, priorytet, przypisanie). Wymaga potwierdzenia.',
+    description: 'Zaktualizuj pola zadania. Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
-        todo_id: { type: 'string', description: 'ID zadania' },
+        todo_id: { type: 'string' },
         text: { type: 'string' },
-        due_date: { type: 'string', description: 'YYYY-MM-DD' },
+        due_date: { type: 'string' },
         pilne: { type: 'boolean' },
         note: { type: 'string' },
         assignee: { type: 'string' },
+        todo_text_hint: { type: 'string', description: 'Fragment tekstu zadania (do confirm)' },
       },
       required: ['todo_id'],
     },
   },
   {
     name: 'add_guest_to_show',
-    description: 'Dodaj gościa do listy gości koncertu. Wymaga potwierdzenia.',
+    description: 'Dodaj gościa do listy gości koncertu (foto/media/rozdane). Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
-        show_id: { type: 'string', description: 'ID koncertu (z get_guest_show)' },
-        name: { type: 'string', description: 'Imię i nazwisko gościa' },
-        tickets: { type: 'number', description: 'Liczba biletów' },
-        media: { type: 'string', description: 'Media/rola gościa (opcjonalnie)' },
+        artist_name_query: { type: 'string', description: 'Fragment nazwy artysty (nie ID!)' },
+        list_type: { type: 'string', enum: ['foto', 'media', 'rozdane'], description: 'Typ listy' },
+        guest_name: { type: 'string', description: 'Imię i nazwisko gościa' },
+        guest_email: { type: 'string', description: 'Email (opcjonalnie)' },
+        guest_from: { type: 'string', description: 'Skąd/organizacja (opcjonalnie)' },
+        guest_tickets: { type: 'number', description: 'Liczba biletów' },
       },
-      required: ['show_id', 'name', 'tickets'],
+      required: ['artist_name_query', 'list_type', 'guest_name', 'guest_tickets'],
     },
   },
   {
-    name: 'update_production_checklist',
-    description: 'Zaktualizuj element checklisty produkcji. Wymaga potwierdzenia.',
+    name: 'add_artist_to_watchlist',
+    description: 'Dodaj artystę do Watchlisty. Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
-        show_id: { type: 'string', description: 'ID koncertu' },
-        item_key: { type: 'string', description: 'Klucz elementu checklisty' },
-        new_status: { description: 'Nowy status (true/false lub string)' },
+        name: { type: 'string', description: 'Nazwa artysty' },
+        genre: { type: 'string', description: 'Gatunek muzyczny' },
+        listeners: { type: 'string', description: 'Miesięczni słuchacze Spotify jako string (np. "5M", "638.3K")' },
+        notes: { type: 'string', description: 'Notatki' },
+        hot: { type: 'boolean', description: 'Czy gorący artysta' },
+        in_promotor: { type: 'boolean', description: 'Czy dodać do Promotor Office' },
+        pl_checked: { type: 'boolean', description: 'Czy zweryfikowany pod PL' },
       },
-      required: ['show_id', 'item_key', 'new_status'],
+      required: ['name'],
+    },
+  },
+  {
+    name: 'update_artist_flags',
+    description: 'Zaktualizuj flagi/dane artysty na Watchliście. Wymaga potwierdzenia.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        artist_name_query: { type: 'string', description: 'Fragment nazwy artysty' },
+        hot: { type: 'boolean' },
+        in_promotor: { type: 'boolean' },
+        pl_checked: { type: 'boolean' },
+        notes: { type: 'string' },
+        genre: { type: 'string' },
+        listeners: { type: 'string' },
+      },
+      required: ['artist_name_query'],
+    },
+  },
+  {
+    name: 'add_marketing_cost',
+    description: 'Dodaj koszt marketingowy do koncertu. Wymaga potwierdzenia. showId = doc ID z get_ticketing_event.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        show_id: { type: 'string', description: 'Doc ID z ticketing_events (z get_ticketing_event)' },
+        artist_name: { type: 'string', description: 'Nazwa artysty — czytelna, do potwierdzenia' },
+        amount: { type: 'number', description: 'Kwota w PLN' },
+        category: { type: 'string', description: 'Kategoria (np. Druk/OOH, Social Media, PR)' },
+        cost_date: { type: 'string', description: 'Data kosztu YYYY-MM-DD' },
+        description: { type: 'string', description: 'Opis kosztu' },
+      },
+      required: ['show_id', 'artist_name', 'amount', 'category'],
+    },
+  },
+  {
+    name: 'update_marketing_cost',
+    description: 'Zaktualizuj istniejący koszt marketingowy po ID dokumentu. Wymaga potwierdzenia.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        cost_id: { type: 'string', description: 'ID dokumentu kosztu' },
+        amount: { type: 'number' },
+        category: { type: 'string' },
+        cost_date: { type: 'string' },
+        description: { type: 'string' },
+      },
+      required: ['cost_id'],
+    },
+  },
+  {
+    name: 'update_production_checklist_item',
+    description: 'Zaznacz/odznacz element checklisty produkcji. Wymaga potwierdzenia.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        artist_name_query: { type: 'string', description: 'Fragment nazwy artysty/koncertu' },
+        item_key: { type: 'string', description: 'Klucz elementu checklisty (np. "plakaty", "rider")' },
+        new_value: { description: 'Nowa wartość (true/false lub string)' },
+      },
+      required: ['artist_name_query', 'item_key', 'new_value'],
+    },
+  },
+  {
+    name: 'update_production_notes',
+    description: 'Zaktualizuj notatki/rider notes produkcji. Wymaga potwierdzenia.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        artist_name_query: { type: 'string', description: 'Fragment nazwy artysty' },
+        new_notes: { type: 'string', description: 'Nowa treść notatek' },
+      },
+      required: ['artist_name_query', 'new_notes'],
+    },
+  },
+  {
+    name: 'update_marketing_notes',
+    description: 'Zaktualizuj notatki marketingowe koncertu. Wymaga potwierdzenia.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        show_name_query: { type: 'string', description: 'Fragment nazwy artysty/koncertu' },
+        new_notes: { type: 'string', description: 'Nowa treść notatek' },
+      },
+      required: ['show_name_query', 'new_notes'],
     },
   },
   {
     name: 'update_marketing_checkpoint',
-    description: 'Zaktualizuj checkpoint marketingowy koncertu. Wymaga potwierdzenia.',
+    description: 'Zaktualizuj checkpoint marketingowy koncertu (po show_id). Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
-        show_id: { type: 'string' },
-        checkpoint_key: { type: 'string', description: 'Klucz w obiekcie checkpoints' },
-        new_value: { description: 'Nowa wartość (bool lub string)' },
+        show_id: { type: 'string', description: 'Doc ID z marketing_shows' },
+        artist_name_hint: { type: 'string', description: 'Nazwa artysty (do confirm, nie do zapisu)' },
+        checkpoint_key: { type: 'string' },
+        new_value: { description: 'bool lub string' },
       },
       required: ['show_id', 'checkpoint_key', 'new_value'],
     },
@@ -331,11 +482,12 @@ const tools = [
     input_schema: {
       type: 'object',
       properties: {
-        event_id: { type: 'string', description: 'ID eventu (z get_ticketing_event)' },
-        date: { type: 'string', description: 'Data snapshota YYYY-MM-DD' },
-        tm: { type: 'number', description: 'Sprzedane przez TicketMaster' },
-        eb: { type: 'number', description: 'Sprzedane przez eBilet' },
-        other: { type: 'number', description: 'Inne kanały' },
+        event_id: { type: 'string', description: 'Doc ID z ticketing_events' },
+        artist_name_hint: { type: 'string', description: 'Nazwa artysty (do confirm)' },
+        date: { type: 'string', description: 'YYYY-MM-DD' },
+        tm: { type: 'number' },
+        eb: { type: 'number' },
+        other: { type: 'number' },
       },
       required: ['event_id', 'date', 'tm', 'eb', 'other'],
     },
@@ -354,7 +506,6 @@ async function sendMessage(chatId, text) {
   });
   if (!res.ok) {
     console.error('sendMessage error:', await res.text());
-    // Fallback bez markdown
     await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -364,26 +515,22 @@ async function sendMessage(chatId, text) {
 }
 
 async function sendConfirmMessage(chatId, text, actionId) {
-  const url = `${TELEGRAM_API}/sendMessage`;
-  const body = {
-    chat_id: chatId,
-    text,
-    parse_mode: 'Markdown',
-    reply_markup: {
-      inline_keyboard: [[
-        { text: '✅ TAK, wykonaj', callback_data: `confirm:${actionId}` },
-        { text: '❌ Anuluj', callback_data: `cancel:${actionId}` },
-      ]],
-    },
-  };
-  const res = await fetch(url, {
+  const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '✅ TAK, wykonaj', callback_data: `confirm:${actionId}` },
+          { text: '❌ Anuluj', callback_data: `cancel:${actionId}` },
+        ]],
+      },
+    }),
   });
-  if (!res.ok) {
-    console.error('sendConfirmMessage error:', await res.text());
-  }
+  if (!res.ok) console.error('sendConfirmMessage error:', await res.text());
 }
 
 async function answerCallbackQuery(callbackId, text = '') {
@@ -402,14 +549,6 @@ async function editMessageText(chatId, messageId, text) {
   });
 }
 
-async function editMessageReplyMarkup(chatId, messageId, replyMarkup = {}) {
-  await fetch(`${TELEGRAM_API}/editMessageReplyMarkup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, message_id: messageId, reply_markup: replyMarkup }),
-  });
-}
-
 // ── Confirm message builders ──────────────────────────────────────────────────
 
 function buildConfirmText(toolName, input) {
@@ -421,26 +560,58 @@ function buildConfirmText(toolName, input) {
       if (input.note) msg += `\n📌 ${input.note}`;
       return msg;
     }
-    case 'update_todo_status':
-      return `Na pewno? Zmienić status zadania na *${input.new_status}*?\nID: \`${input.todo_id}\``;
-    case 'add_todo_note':
-      return `Na pewno? Dopisać notatkę do zadania \`${input.todo_id}\`:\n📌 "${input.note}"`;
+    case 'update_todo_status': {
+      const hint = input.todo_text_hint ? `"${input.todo_text_hint}"` : `(ID: ${input.todo_id})`;
+      return `Na pewno? Zmienić status zadania ${hint} na *${input.new_status}*?`;
+    }
+    case 'add_todo_note': {
+      const hint = input.todo_text_hint ? `"${input.todo_text_hint}"` : `(ID: ${input.todo_id})`;
+      return `Na pewno? Dopisać notatkę do zadania ${hint}:\n📌 "${input.note}"`;
+    }
     case 'update_todo': {
+      const hint = input.todo_text_hint ? `"${input.todo_text_hint}"` : `(ID: ${input.todo_id})`;
       const changes = Object.entries(input)
-        .filter(([k]) => k !== 'todo_id')
+        .filter(([k]) => !['todo_id', 'todo_text_hint'].includes(k))
         .map(([k, v]) => `  • ${k}: ${v}`)
         .join('\n');
-      return `Na pewno? Zaktualizować zadanie \`${input.todo_id}\`:\n${changes}`;
+      return `Na pewno? Zaktualizować zadanie ${hint}:\n${changes}`;
     }
     case 'add_guest_to_show':
-      return `Na pewno? Dodać gościa do listy:\n👤 ${input.name}\n🎫 ${input.tickets} bilet(ów)\n📺 ${input.media || '—'}`;
-    case 'update_production_checklist':
-      return `Na pewno? Zaktualizować checklistę produkcji:\n📋 Koncert: \`${input.show_id}\`\n  ${input.item_key} → ${input.new_status}`;
-    case 'update_marketing_checkpoint':
-      return `Na pewno? Zaktualizować checkpoint marketingowy:\n📊 Koncert: \`${input.show_id}\`\n  ${input.checkpoint_key} → ${input.new_value}`;
+      return `Na pewno? Dodać gościa do listy *${input.list_type}* — *${input.artist_name_query}*:\n👤 ${input.guest_name}\n🎫 ${input.guest_tickets} bilet(ów)${input.guest_from ? `\n📍 ${input.guest_from}` : ''}`;
+    case 'add_artist_to_watchlist': {
+      let msg = `Na pewno? Dodać do Watchlisty:\n🎵 *${input.name}*\n🎸 ${input.genre || '—'}`;
+      if (input.listeners) msg += `\n👂 ${input.listeners}`;
+      if (input.hot) msg += `\n🔥 HOT`;
+      if (input.notes) msg += `\n📌 ${input.notes}`;
+      return msg;
+    }
+    case 'update_artist_flags': {
+      const changes = Object.entries(input)
+        .filter(([k]) => k !== 'artist_name_query')
+        .map(([k, v]) => `  • ${k}: ${v}`)
+        .join('\n');
+      return `Na pewno? Zaktualizować *${input.artist_name_query}*:\n${changes}`;
+    }
+    case 'add_marketing_cost': {
+      const date = input.cost_date || 'dziś';
+      return `Na pewno? Dodać koszt:\n💰 ${input.amount} PLN — ${input.category}\n🎵 Koncert: *${input.artist_name}*\n📅 ${date}${input.description ? `\n📝 ${input.description}` : ''}`;
+    }
+    case 'update_marketing_cost':
+      return `Na pewno? Zaktualizować koszt (ID: ${input.cost_id}):\n${Object.entries(input).filter(([k]) => k !== 'cost_id').map(([k, v]) => `  • ${k}: ${v}`).join('\n')}`;
+    case 'update_production_checklist_item':
+      return `Na pewno? Zaktualizować checklistę produkcji:\n🎵 *${input.artist_name_query}*\n  ✓ ${input.item_key} → ${input.new_value}`;
+    case 'update_production_notes':
+      return `Na pewno? Zaktualizować rider notes/notatki produkcji:\n🎵 *${input.artist_name_query}*\n\n"${String(input.new_notes).slice(0, 120)}${String(input.new_notes).length > 120 ? '...' : ''}"`;
+    case 'update_marketing_notes':
+      return `Na pewno? Zaktualizować notatki marketingowe:\n🎵 *${input.show_name_query}*`;
+    case 'update_marketing_checkpoint': {
+      const name = input.artist_name_hint || input.show_id;
+      return `Na pewno? Zaktualizować checkpoint marketingowy:\n🎵 *${name}*\n  ${input.checkpoint_key} → ${input.new_value}`;
+    }
     case 'add_ticketing_snapshot': {
       const total = (input.tm || 0) + (input.eb || 0) + (input.other || 0);
-      return `Na pewno? Dodać snapshot sprzedaży:\n🎫 Event: \`${input.event_id}\`\n📅 Data: ${input.date}\n  TM: ${input.tm} | eBilet: ${input.eb} | Inne: ${input.other}\n📊 Total: ${total}`;
+      const name = input.artist_name_hint || input.event_id;
+      return `Na pewno? Dodać snapshot sprzedaży:\n🎵 *${name}*\n📅 ${input.date}\n  TM: ${input.tm} | eBilet: ${input.eb} | Inne: ${input.other}\n📊 Total: ${total}`;
     }
     default:
       return `Na pewno wykonać akcję *${toolName}*?`;
@@ -449,101 +620,71 @@ function buildConfirmText(toolName, input) {
 
 function describeAction(toolName, result) {
   switch (toolName) {
-    case 'add_todo':
-      return `Zadanie "${result.text}" dodane i przypisane do ${result.assignee}`;
-    case 'update_todo_status':
-      return `Status zadania zmieniony na "${result.status}"`;
-    case 'add_todo_note':
-      return `Notatka dopisana (łącznie notatek: ${result.notesCount})`;
-    case 'update_todo':
-      return `Zadanie zaktualizowane (pola: ${result.updated.join(', ')})`;
-    case 'add_guest_to_show':
-      return `Gość "${result.guestName}" dodany do listy`;
-    case 'update_production_checklist':
-      return `Checklist "${result.itemKey}" → ${result.newStatus}`;
-    case 'update_marketing_checkpoint':
-      return `Checkpoint "${result.checkpointKey}" → ${result.newValue}`;
-    case 'add_ticketing_snapshot':
-      return `Snapshot z ${result.date}: total ${result.total} biletów`;
-    default:
-      return JSON.stringify(result);
+    case 'add_todo':         return `Zadanie "${result.text}" dodane → ${result.assignee}`;
+    case 'update_todo_status': return `Status zmieniony na "${result.status}"`;
+    case 'add_todo_note':    return `Notatka dopisana (łącznie: ${result.notesCount})`;
+    case 'update_todo':      return `Zadanie zaktualizowane (pola: ${result.updated.join(', ')})`;
+    case 'add_guest_to_show': return `Gość "${result.guestName}" dodany do listy ${result.listType} — ${result.artistName}`;
+    case 'add_artist_to_watchlist': return `Dodano do Watchlisty: ${result.name}`;
+    case 'update_artist_flags': return `Zaktualizowano ${result.name} (pola: ${result.updatedFields.join(', ')})`;
+    case 'add_marketing_cost': return `Dodano koszt: ${result.amount} PLN dla ${result.artistName}`;
+    case 'update_marketing_cost': return `Koszt zaktualizowany (pola: ${result.updatedFields.join(', ')})`;
+    case 'update_production_checklist_item': return `Zaznaczono "${result.itemKey}" dla ${result.artistName}`;
+    case 'update_production_notes': return `Rider notes/notatki produkcji zaktualizowane dla ${result.artistName}`;
+    case 'update_marketing_notes': return `Notatki marketingowe zaktualizowane dla ${result.artistName}`;
+    case 'update_marketing_checkpoint': return `Checkpoint "${result.checkpointKey}" → ${result.newValue}`;
+    case 'add_ticketing_snapshot': return `Snapshot ${result.date}: total ${result.total} biletów`;
+    default: return JSON.stringify(result);
   }
 }
 
 // ── Tool execution ────────────────────────────────────────────────────────────
 
-/**
- * Wykonaj write tool po potwierdzeniu przez usera.
- */
 async function executeWriteTool(toolName, input, authorName) {
   switch (toolName) {
     case 'add_todo':
-      return addTodo({
-        text: input.text,
-        assignee: input.assignee,
-        dueDate: input.due_date,
-        pilne: input.pilne,
-        note: input.note,
-        addedBy: authorName,
-      });
+      return addTodo({ text: input.text, assignee: input.assignee, dueDate: input.due_date, pilne: input.pilne, note: input.note, addedBy: authorName });
     case 'update_todo_status':
       return updateTodoStatus(input.todo_id, input.new_status);
     case 'add_todo_note':
       return addTodoNote(input.todo_id, input.note, authorName);
     case 'update_todo':
-      return updateTodo(input.todo_id, {
-        text: input.text,
-        dueDate: input.due_date,
-        pilne: input.pilne,
-        note: input.note,
-        assignee: input.assignee,
-        assignees: input.assignees,
-      });
+      return updateTodo(input.todo_id, { text: input.text, dueDate: input.due_date, pilne: input.pilne, note: input.note, assignee: input.assignee });
     case 'add_guest_to_show':
-      return addGuestToShow(input.show_id, {
-        name: input.name,
-        tickets: input.tickets,
-        media: input.media,
+      return addGuestToShow(input.artist_name_query, input.list_type, {
+        name: input.guest_name, email: input.guest_email, from: input.guest_from, tickets: input.guest_tickets,
       });
-    case 'update_production_checklist':
-      return updateProductionChecklist(input.show_id, input.item_key, input.new_status);
+    case 'add_artist_to_watchlist':
+      return addArtistToWatchlist({ name: input.name, genre: input.genre, listeners: input.listeners, notes: input.notes, addedBy: authorName, hot: input.hot, inPromotor: input.in_promotor, plChecked: input.pl_checked });
+    case 'update_artist_flags':
+      return updateArtistFlags(input.artist_name_query, { hot: input.hot, inPromotor: input.in_promotor, plChecked: input.pl_checked, notes: input.notes, genre: input.genre, listeners: input.listeners });
+    case 'add_marketing_cost':
+      return addMarketingCost({ showId: input.show_id, artistName: input.artist_name, amount: input.amount, category: input.category, costDate: input.cost_date, description: input.description, addedBy: authorName });
+    case 'update_marketing_cost':
+      return updateMarketingCost(input.cost_id, { amount: input.amount, category: input.category, costDate: input.cost_date, description: input.description });
+    case 'update_production_checklist_item':
+      return updateProductionChecklistItem(input.artist_name_query, input.item_key, input.new_value);
+    case 'update_production_notes':
+      return updateProductionNotes(input.artist_name_query, input.new_notes);
+    case 'update_marketing_notes':
+      return updateMarketingNotes(input.show_name_query, input.new_notes);
     case 'update_marketing_checkpoint':
       return updateMarketingCheckpoint(input.show_id, input.checkpoint_key, input.new_value);
     case 'add_ticketing_snapshot':
-      return addTicketingSnapshot(input.event_id, {
-        date: input.date,
-        tm: input.tm,
-        eb: input.eb,
-        other: input.other,
-      });
+      return addTicketingSnapshot(input.event_id, { date: input.date, tm: input.tm, eb: input.eb, other: input.other });
     default:
       throw new Error(`Nieznany write tool: ${toolName}`);
   }
 }
 
-/**
- * Główny router toolsów.
- * Write tools → pending action + confirm message.
- * Read tools → wywołaj bezpośrednio.
- */
 async function executeTool(name, input, chatId, userId, senderName) {
-  // WRITE — nie wykonuj, stwórz pending action
   if (WRITE_TOOLS.has(name)) {
     const actionId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    pendingActions.set(actionId, {
-      chatId,
-      userId,
-      senderName: senderName || 'Użytkownik',
-      toolName: name,
-      input,
-      createdAt: Date.now(),
-    });
-    const confirmText = buildConfirmText(name, input);
-    await sendConfirmMessage(chatId, confirmText, actionId);
+    pendingActions.set(actionId, { chatId, userId, senderName: senderName || 'Użytkownik', toolName: name, input, createdAt: Date.now() });
+    await sendConfirmMessage(chatId, buildConfirmText(name, input), actionId);
     return 'Pending user confirmation. Poinformuj użytkownika że czeka na jego decyzję i przestań (zakończ turę).';
   }
 
-  // READ
   switch (name) {
     case 'get_todos':
       return getTodos({ assignee: input.assignee, status: input.status, limit: input.limit });
@@ -552,17 +693,21 @@ async function executeTool(name, input, chatId, userId, senderName) {
     case 'get_ticketing_event':
       return getTicketingEvent(input.name_query);
     case 'get_artists':
-      return getArtists({ status: input.status, limit: input.limit });
+      return getArtists({ hot: input.hot, limit: input.limit });
+    case 'get_artist':
+      return getArtist(input.name_query);
     case 'get_marketing_shows':
       return getMarketingShows({ limit: input.limit });
     case 'get_guest_show':
-      return getGuestShow(input.show_name_query);
+      return getGuestShow(input.artist_name_query);
     case 'get_production_show':
-      return getProductionShow(input.show_name_query);
+      return getProductionShow(input.artist_name_query);
     case 'get_production_expenses':
       return getProductionExpenses(input.show_id);
-    case 'get_marketing_costs':
-      return getMarketingCosts(input.show_id);
+    case 'get_marketing_costs_for_show':
+      return getMarketingCostsForShow(input.show_id);
+    case 'get_all_marketing_costs':
+      return getAllMarketingCosts({ limit: input.limit });
     case 'get_projects':
       return getProjects({ limit: input.limit });
     case 'get_ticketing_snapshots':
@@ -572,12 +717,12 @@ async function executeTool(name, input, chatId, userId, senderName) {
   }
 }
 
-// ── In-memory conversation history ───────────────────────────────────────────
+// ── Conversation history ──────────────────────────────────────────────────────
 
 const conversations = {};
 const MAX_HISTORY = 20;
 
-// ── Handlers ─────────────────────────────────────────────────────────────────
+// ── Message handlers ──────────────────────────────────────────────────────────
 
 async function handleMessage(message) {
   const chatId = message.chat.id;
@@ -598,13 +743,12 @@ async function handleMessage(message) {
 
   if (!conversations[chatId]) conversations[chatId] = [];
 
-  const userMessage = {
-    role: 'user',
-    content: `[Wiadomość od: ${senderName}]\n\n${text}`,
-  };
-  let messages = [...conversations[chatId], userMessage];
+  let messages = [
+    ...conversations[chatId],
+    { role: 'user', content: `[Wiadomość od: ${senderName}]\n\n${text}` },
+  ];
   let finalText = '';
-  const MAX_ITERATIONS = 5;
+  const MAX_ITERATIONS = 6;
 
   try {
     for (let i = 0; i < MAX_ITERATIONS; i++) {
@@ -616,10 +760,7 @@ async function handleMessage(message) {
         messages,
       });
 
-      const textBlocks = response.content
-        .filter(b => b.type === 'text')
-        .map(b => b.text)
-        .join('\n');
+      const textBlocks = response.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
       if (textBlocks) finalText = textBlocks;
 
       if (response.stop_reason !== 'tool_use') break;
@@ -638,12 +779,7 @@ async function handleMessage(message) {
           });
         } catch (err) {
           console.error(`[beata] tool error (${toolUse.name}):`, err.message);
-          toolResults.push({
-            type: 'tool_result',
-            tool_use_id: toolUse.id,
-            content: `Error: ${err.message}`,
-            is_error: true,
-          });
+          toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content: `Error: ${err.message}`, is_error: true });
         }
       }
 
@@ -653,7 +789,6 @@ async function handleMessage(message) {
 
     if (!finalText) finalText = '...';
 
-    // Zapisz tylko text exchange w historii (bez tool_use/tool_result bloków)
     conversations[chatId].push(
       { role: 'user', content: `[Wiadomość od: ${senderName}]\n\n${text}` },
       { role: 'assistant', content: finalText }
@@ -678,18 +813,15 @@ async function handleCallbackQuery(cb) {
   const messageId = cb.message.message_id;
   const senderName = cb.from?.first_name || 'Użytkownik';
 
-  // Zawsze odpowiedz — usuwa spinner
   await answerCallbackQuery(cb.id);
 
   const pending = pendingActions.get(actionId);
 
-  // Sprawdź TTL
   if (pending && Date.now() - pending.createdAt > PENDING_TTL_MS) {
     pendingActions.delete(actionId);
     await editMessageText(chatId, messageId, '⚠️ Ta akcja wygasła. Poproś Beatę jeszcze raz.');
     return;
   }
-
   if (!pending) {
     await editMessageText(chatId, messageId, '⚠️ Ta akcja wygasła lub jest nieznana.');
     return;
@@ -705,8 +837,7 @@ async function handleCallbackQuery(cb) {
   if (action === 'confirm') {
     try {
       const result = await executeWriteTool(pending.toolName, pending.input, senderName);
-      const desc = describeAction(pending.toolName, result);
-      await editMessageText(chatId, messageId, `✅ Zrobione: ${desc}`);
+      await editMessageText(chatId, messageId, `✅ Zrobione: ${describeAction(pending.toolName, result)}`);
     } catch (err) {
       console.error('[beata] executeWriteTool error:', err.message);
       await editMessageText(chatId, messageId, `❌ Błąd: ${err.message}`);
@@ -718,7 +849,7 @@ async function handleCallbackQuery(cb) {
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 200, body: 'Beata bot działa (Faza 2).' };
+    return { statusCode: 200, body: 'Beata bot działa (Faza 2.1).' };
   }
 
   let update;
@@ -734,6 +865,5 @@ exports.handler = async (event) => {
     await handleMessage(update.message);
   }
 
-  // Telegram wymaga 200 OK — zawsze
   return { statusCode: 200, body: 'ok' };
 };
