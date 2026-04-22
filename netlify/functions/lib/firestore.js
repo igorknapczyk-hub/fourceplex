@@ -462,22 +462,54 @@ async function addTicketingSnapshot(eventId, { date, tm, eb, other }) {
 
 /**
  * B1: Dodaj artystę do Watchlisty.
+ * KRYTYCZNE: doc ID = String(Date.now()), pole id = number — tak jak Plex (watchlist.html).
  */
-async function addArtistToWatchlist({ name, genre, listeners, notes, addedBy, hot, inPromotor, plChecked }) {
-  const docRef = await db.collection('artists').add({
+async function addArtistToWatchlist({
+  name,
+  genre = '',
+  listeners = '',
+  notes = '',
+  addedBy,
+  spotifyUrl = '',
+  plShow = 'NIE',
+  predMin = 0,
+  predMax = 0,
+  sourceTip = '',
+}) {
+  if (!name || !addedBy) throw new Error('name and addedBy are required');
+
+  const id = Date.now();
+  const now = new Date().toISOString();
+
+  const artistDoc = {
+    id,                            // NUMBER — Plex używa tego do usuwania
+    ts: id,                        // duplikat id (legacy pole w Plex)
     name,
-    genre: genre || '',
-    listeners: listeners || '',
-    notes: notes || '',
+    genre,
+    listeners,                     // string "638.3K" — nie parsuj jako number
+    spotifyUrl,
+    plShow,                        // 'NIE' albo info o poprzednich występach w PL
+    plChecked: true,               // Beata dodaje świadomie = sprawdzone
+    notes,
+    predMin: Number(predMin) || 0,
+    predMax: Number(predMax) || 0,
+    sourceTip,
+    status: 'check',               // domyślny status w Plex Watchlist
+    sentDate: null,
+    source: 'manual',              // Beata = manual (jak user z formularza)
     addedBy: addedBy || 'Beata',
-    dateAdded: new Date().toISOString(),
-    hot: hot ?? false,
-    inPromotor: inPromotor ?? false,
-    plChecked: plChecked ?? false,
-    createdAt: FieldValue.serverTimestamp(),
-  });
-  console.log(`[write] addArtistToWatchlist: "${name}" (by ${addedBy}, id: ${docRef.id})`);
-  return { id: docRef.id, name };
+    dateAdded: now,
+    trend: 'flat',
+    predHistory: [],
+    hot: false,
+    inPromotor: false,
+  };
+
+  // KRYTYCZNE: setDoc z String(id) — nie add(). Plex identyfikuje artystów po doc ID.
+  await db.collection('artists').doc(String(id)).set(artistDoc);
+
+  console.log(`[write] addArtistToWatchlist: id=${id}, name="${name}", by=${addedBy}`);
+  return { id, name };
 }
 
 /**
