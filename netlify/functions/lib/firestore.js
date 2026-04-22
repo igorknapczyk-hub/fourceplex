@@ -655,6 +655,83 @@ async function updateMarketingNotes(showNameQuery, newNotes) {
   return { artistName };
 }
 
+// ── USAGE LOGGER + STATS ─────────────────────────────────────────────────────
+
+/**
+ * Loguje zużycie tokenów po każdym wywołaniu Claude (fire-and-forget).
+ * Ceny Haiku 4.5: input $1/1M, output $5/1M, cache write $1.25/1M, cache read $0.10/1M.
+ */
+async function logUsage({ chatId, userName, model, inputTokens, outputTokens, cacheCreationTokens, cacheReadTokens, stopReason }) {
+  try {
+    const costUsd =
+      (inputTokens * 0.000001) +
+      (outputTokens * 0.000005) +
+      (cacheCreationTokens * 0.00000125) +
+      (cacheReadTokens * 0.0000001);
+
+    await db.collection('beata_usage').add({
+      chatId: String(chatId),
+      userName: userName || 'unknown',
+      model: model || 'unknown',
+      inputTokens,
+      outputTokens,
+      cacheCreationTokens,
+      cacheReadTokens,
+      costUsd,
+      stopReason: stopReason || null,
+      createdAt: FieldValue.serverTimestamp(),
+      date: new Date().toISOString().slice(0, 10),
+    });
+  } catch (err) {
+    console.error('logUsage error:', err);
+  }
+}
+
+/**
+ * Statystyki zużycia z ostatnich N dni.
+ */
+async function getUsageStats({ days = 7 } = {}) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  const snapshot = await db.collection('beata_usage')
+    .where('date', '>=', cutoffStr)
+    .get();
+
+  let totalCost = 0, totalInput = 0, totalOutput = 0, totalCacheRead = 0, totalCacheCreation = 0;
+  const byUser = {};
+  const byDay = {};
+
+  snapshot.forEach(doc => {
+    const d = doc.data();
+    totalCost += d.costUsd || 0;
+    totalInput += d.inputTokens || 0;
+    totalOutput += d.outputTokens || 0;
+    totalCacheRead += d.cacheReadTokens || 0;
+    totalCacheCreation += d.cacheCreationTokens || 0;
+
+    const user = d.userName || 'unknown';
+    byUser[user] = (byUser[user] || 0) + (d.costUsd || 0);
+
+    const day = d.date || 'unknown';
+    byDay[day] = (byDay[day] || 0) + (d.costUsd || 0);
+  });
+
+  return {
+    days,
+    totalRequests: snapshot.size,
+    totalCostUsd: Number(totalCost.toFixed(4)),
+    totalInputTokens: totalInput,
+    totalOutputTokens: totalOutput,
+    totalCacheReadTokens: totalCacheRead,
+    totalCacheCreationTokens: totalCacheCreation,
+    cacheHitRatio: Number((totalCacheRead / Math.max(1, totalCacheRead + totalCacheCreation + totalInput)).toFixed(3)),
+    byUser,
+    byDay,
+  };
+}
+
 // ── Exports ───────────────────────────────────────────────────────────────────
 
 module.exports = {
@@ -693,4 +770,7 @@ module.exports = {
   updateProductionChecklistItem,
   updateProductionNotes,
   updateMarketingNotes,
+  // Usage logger
+  logUsage,
+  getUsageStats,
 };
