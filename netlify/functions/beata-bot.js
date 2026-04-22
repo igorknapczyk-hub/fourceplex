@@ -142,6 +142,22 @@ WAŻNE zasady pisania:
 
 - Gdy dodajesz koszt marketingowy — zawsze podaj artistName czytelnie w confirm.
 
+# DODAWANIE ARTYSTÓW DO WATCHLISTY
+
+Gdy user prosi o dodanie artysty do Watchlisty, dopytaj o brakujące pola jeśli ich nie podał:
+- nazwa (wymagana)
+- gatunek (warto dopytać)
+- monthly listeners Spotify jako string (np. "2.5M" — nie liczba, format jak na Spotify)
+- notatka (kontekst, potencjał w PL, uzasadnienie — min 1-2 zdania)
+- predykcja sali (pred_min, pred_max) — orientacyjnie wg skali:
+  Chmury <200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000,
+  Progresja 1001-1800, COS Torwar 1801-5000, Arena 5001+
+- czy grał kiedyś solo w PL (pl_show: "NIE" albo info o miejscu i roku)
+- spotify_url (opcjonalnie, jeśli user poda)
+
+Jeśli user nie wie pred_min/pred_max — zaproponuj oszacowanie na podstawie listeners i gatunku.
+Jeśli user nie wie pl_show — domyślnie "NIE" (Plex traktuje to jako "nie grał solo w PL").
+
 Jeszcze NIE masz: kalendarza Google, pamięci między sesjami, usuwania danych, Meta Ads API, scheduled briefów.`;
 
 // ── Tool definitions ──────────────────────────────────────────────────────────
@@ -362,17 +378,19 @@ const tools = [
   },
   {
     name: 'add_artist_to_watchlist',
-    description: 'Dodaj artystę do Watchlisty. Wymaga potwierdzenia.',
+    description: 'Dodaj artystę do Watchlisty — trackera artystów do potencjalnego bookingu. Domyślny status: check (do weryfikacji).',
     input_schema: {
       type: 'object',
       properties: {
-        name: { type: 'string', description: 'Nazwa artysty' },
-        genre: { type: 'string', description: 'Gatunek muzyczny' },
-        listeners: { type: 'string', description: 'Miesięczni słuchacze Spotify jako string (np. "5M", "638.3K")' },
-        notes: { type: 'string', description: 'Notatki' },
-        hot: { type: 'boolean', description: 'Czy gorący artysta' },
-        in_promotor: { type: 'boolean', description: 'Czy dodać do Promotor Office' },
-        pl_checked: { type: 'boolean', description: 'Czy zweryfikowany pod PL' },
+        name: { type: 'string', description: 'Nazwa wykonawcy' },
+        genre: { type: 'string', description: 'Gatunek, np. "folk-pop", "electronic"' },
+        listeners: { type: 'string', description: 'Monthly Spotify listeners jako string, np. "2.5M", "640K"' },
+        notes: { type: 'string', description: 'Opis, kontekst, uzasadnienie, potencjał w PL' },
+        spotify_url: { type: 'string', description: 'URL do profilu Spotify artysty (jeśli znany)' },
+        pl_show: { type: 'string', description: 'Info o poprzednich występach w PL albo "NIE"' },
+        pred_min: { type: 'number', description: 'Predykcja min frekwencji solo headliner w Warszawie' },
+        pred_max: { type: 'number', description: 'Predykcja max frekwencji solo headliner w Warszawie' },
+        source_tip: { type: 'string', description: 'Źródło rekomendacji (od kogo, kto polecił)' },
       },
       required: ['name'],
     },
@@ -581,7 +599,10 @@ function buildConfirmText(toolName, input) {
     case 'add_artist_to_watchlist': {
       let msg = `Na pewno? Dodać do Watchlisty:\n🎵 *${input.name}*\n🎸 ${input.genre || '—'}`;
       if (input.listeners) msg += `\n👂 ${input.listeners}`;
-      if (input.hot) msg += `\n🔥 HOT`;
+      if (input.pl_show && input.pl_show !== 'NIE') msg += `\n🇵🇱 ${input.pl_show}`;
+      else msg += `\n🇵🇱 Nie grał w PL`;
+      if (input.pred_min || input.pred_max) msg += `\n📊 Predykcja: ${input.pred_min || 0}–${input.pred_max || 0} os.`;
+      if (input.source_tip) msg += `\n💡 Tip od: ${input.source_tip}`;
       if (input.notes) msg += `\n📌 ${input.notes}`;
       return msg;
     }
@@ -655,7 +676,18 @@ async function executeWriteTool(toolName, input, authorName) {
         name: input.guest_name, email: input.guest_email, from: input.guest_from, tickets: input.guest_tickets,
       });
     case 'add_artist_to_watchlist':
-      return addArtistToWatchlist({ name: input.name, genre: input.genre, listeners: input.listeners, notes: input.notes, addedBy: authorName, hot: input.hot, inPromotor: input.in_promotor, plChecked: input.pl_checked });
+      return addArtistToWatchlist({
+        name: input.name,
+        genre: input.genre,
+        listeners: input.listeners,
+        notes: input.notes,
+        addedBy: authorName,
+        spotifyUrl: input.spotify_url,
+        plShow: input.pl_show,
+        predMin: input.pred_min,
+        predMax: input.pred_max,
+        sourceTip: input.source_tip,
+      });
     case 'update_artist_flags':
       return updateArtistFlags(input.artist_name_query, { hot: input.hot, inPromotor: input.in_promotor, plChecked: input.pl_checked, notes: input.notes, genre: input.genre, listeners: input.listeners });
     case 'add_marketing_cost':
