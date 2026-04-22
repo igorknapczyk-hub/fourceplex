@@ -1,5 +1,5 @@
 // netlify/functions/beata-bot.js
-// FAZA 2.1: bugfix + nowe tools (artyści, koszty marketingowe, checklisty, notatki).
+// Faza 2.1 + optymalizacja: Haiku 4.5, prompt caching, dynamiczna data, usage logger.
 
 const Anthropic = require('@anthropic-ai/sdk');
 const {
@@ -18,6 +18,7 @@ const {
   getArtist,
   getProjects,
   getTicketingSnapshots,
+  getUsageStats,
   // Write — Faza 2
   addTodo,
   updateTodoStatus,
@@ -35,6 +36,8 @@ const {
   updateProductionChecklistItem,
   updateProductionNotes,
   updateMarketingNotes,
+  // Usage logger
+  logUsage,
 } = require('./lib/firestore');
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -64,101 +67,69 @@ const WRITE_TOOLS = new Set([
   'update_marketing_notes',
 ]);
 
-// ── System prompt ─────────────────────────────────────────────────────────────
+// ── System prompt (dynamiczna data per request) ───────────────────────────────
 
-const SYSTEM_PROMPT = `Jesteś Beatą — asystentką AI polskiej agencji koncertowej FOURCE.
+function getSystemPrompt() {
+  const now = new Date();
+  const warsawNow = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
 
-# O FIRMIE
-FOURCE to agencja koncertowa zajmująca się:
-- Bookingiem artystów, organizacją i produkcją koncertów w Polsce
-- Sprzedażą biletów przez TicketMaster i eBilet
-- Kampaniami marketingowymi
-- Produkcją eventów
-- Listami gości i akredytacjami
+  const dniTygodnia = ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota'];
+  const miesiace = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
+
+  const dzienTygodnia = dniTygodnia[warsawNow.getDay()];
+  const dzien = warsawNow.getDate();
+  const miesiac = miesiace[warsawNow.getMonth()];
+  const rok = warsawNow.getFullYear();
+  const iso = warsawNow.toISOString().slice(0, 10);
+  const godzina = warsawNow.toLocaleTimeString('pl-PL', { timeZone: 'Europe/Warsaw', hour: '2-digit', minute: '2-digit' });
+
+  return `Jesteś Beatą — asystentką polskiej agencji koncertowej FOURCE. Zwięzła, konkretna, po polsku.
+
+# AKTUALNA DATA I CZAS
+Dziś: ${dzienTygodnia}, ${dzien} ${miesiac} ${rok} (${iso}). Godzina: ${godzina} (Warszawa).
+Gdy user mówi "piątek" — rozumie najbliższy piątek (licząc od dziś). "Jutro" = dzień po ${iso}. "Za tydzień" = 7 dni od dziś. Gdy user nie precyzuje roku — zakładaj bieżący (${rok}), chyba że data już minęła — wtedy następny (${rok + 1}).
+Przy zapisach do Firestore daty w formacie YYYY-MM-DD.
 
 # ZESPÓŁ
-- Monika — ticketing, social media
 - Igor — produkcja, IT, cyfryzacja
+- Monika — ticketing, marketing assistant
 - Mariusz — marketing, PR
 - Radek — booking, biznes
-- Kamil — grafika (nie używa Fource.Plex, kontakt przez Monikę/Radka)
+- Kamil — grafika (nie używa Plexa, kontakt przez Monikę/Mariusza)
 
-# FOURCE.PLEX — wewnętrzny system agencji
-- **Terrarium** — dashboard + "Jaszczurze Sprawy" (task manager)
-- **Watchlist** — tracker artystów do bookingu, prognozy, trendy
-- **Ticketing** — sprzedaż biletów per koncert, TM/eBilet/Inne, break even
-- **Marketing** — checkpointy, koszty, Meta Ads
-- **Listy Gości** — akredytacje (foto/media/rozdane)
-- **Produkcja** — checklisty, koszty, timetable, rider notes
-- **Promotor Office** — pipeline dealów (avails→oferta→follow-up→period→venue)
-- **Projekty** — projekty specjalne
+# FOURCE.PLEX — wewnętrzny system
+Moduły i kolekcje Firestore:
+- Terrarium/Todos — todos
+- Ticketing — ticketing_events, ticketing_snapshots
+- Watchlist — artists
+- Marketing — marketing_shows, marketing_costs
+- Listy Gości — guest_shows
+- Produkcja — production_shows, production_expenses
+- Projekty — projekty
 
-Backend: Firebase Firestore. Hosting: Netlify.
+# STYL
+Konkretna, krótko, bez wstępów. Bez "Oczywiście", "chętnie pomogę". Emoji max 1-2 per wiadomość.
+Raporty scheduled kończ 🦎. Krótkie odpowiedzi — nie.
+Nie zmyślaj liczb. Gdy nie ma danych — użyj toola. Gdy tool zwraca null/pustkę — powiedz wprost.
 
-# TWOJA OSOBOWOŚĆ
-- Jesteś bezpośrednia, konkretna i profesjonalna — nie owijasz w bawełnę
-- Mówisz po polsku, chyba że ktoś napisze po angielsku
-- Masz lekkie poczucie humoru — jesteś przyjazna, ale skupiona na robocie
-- Nie jesteś nadmiernie entuzjastyczna ani nie używasz zbędnych emoji
-- Jak nie wiesz — mówisz wprost że nie wiesz
-- Krótkie pytania = krótkie odpowiedzi. Długie pytania = wyczerpująca odpowiedź.
-- Gdy raportujesz liczby, bądź zwięzła: "Dakhabrakha: 87% (1043/1200). TM 812, eBilet 231. 🦎"
+# ZASADY DANYCH
+- Używaj nazw wykonawców, nigdy ID dokumentów.
+- guest_shows: identyfikacja przez artistName (nie showId). Goście w polu foto (array), nie subkolekcja.
+- marketing_costs: showId = doc ID z ticketing_events.
+- artists.listeners to STRING (np. "638.3K"), nie number.
+- Gdy tool zwraca _multipleMatches: true — pokaż listę z datami, poproś o doprecyzowanie. Nie wywołuj write toola bez pewności.
 
-# OBECNY STAN (FAZA 2.1)
-Masz dostęp do Firestore Plexa:
-
-**Czytanie:** get_todos, get_ticketing_events, get_ticketing_event, get_artists, get_artist, get_marketing_shows, get_guest_show, get_production_show, get_production_expenses, get_marketing_costs_for_show, get_all_marketing_costs, get_projects, get_ticketing_snapshots.
-
-**Pisanie (z potwierdzeniem):** add_todo, update_todo_status, add_todo_note, update_todo, add_guest_to_show, add_artist_to_watchlist, update_artist_flags, add_marketing_cost, update_marketing_cost, update_production_checklist_item, update_production_notes, update_marketing_notes, update_marketing_checkpoint, add_ticketing_snapshot.
-
-WAŻNE zasady pisania:
-1. Gdy user prosi o zmianę — najpierw upewnij się że masz wszystkie info. Dopytaj jeśli trzeba.
-2. Gdy masz komplet — wywołaj tool. System wyświetli userowi przycisk confirm. Napisz krótko "Sprawdź niżej." lub nic.
-3. Dla update_todo_status — najpierw get_todos, zidentyfikuj zadanie po tekście, pokaż userowi i dopiero wywołaj tool. Do update_todo_status przekaż też todo_text_hint = treść zadania (pierwsze 60 znaków), żeby potwierdzenie było czytelne.
-
-# ZASADY ROZMAWIANIA O KONCERTACH I ARTYSTACH
-
-- Używaj ZAWSZE nazw wykonawców (np. "Dakhabrakha", "Conan Gray") gdy piszesz do usera.
-  NIGDY nie pokazuj userom ID dokumentów (np. "8EbGkb4c6Lrah..."). ID możesz używać wewnętrznie przy wywołaniach toolsów.
-
-- W guest_shows koncert identyfikowany jest przez pole artistName.
-  Nie szukaj po showId w guest_shows — tego pola tam nie ma.
-  Lista gości jest w tablicach foto, media, rozdane bezpośrednio w dokumencie.
-
-- W marketing_costs showId = doc ID z ticketing_events.
-  Gdy user mówi o koszcie dla "Dakhabrakha", najpierw get_ticketing_event("Dakhabrakha"),
-  weź doc ID jako showId.
-
-- W artists (Watchlist) pole listeners to STRING (np. "638.3K") — nie parsuj jako number.
-
-- Gdy tool zwraca _multipleMatches: true — pokaż userowi listę z datami i poproś o doprecyzowanie.
-  Nie wywołuj write toola gdy jest wiele matchów — dopytaj najpierw.
-
-# ZASADY POTWIERDZANIA ZMIAN
-
-- NIE wyświetlaj ID dokumentów w komunikatach do usera. Zamiast
-  "Dodać koszt do showId WWACndvxBa...?" pisz
-  "Dodać koszt 1500 PLN (Druk/OOH) do koncertu Pentatonix?"
-
-- Gdy dodajesz koszt marketingowy — zawsze podaj artistName czytelnie w confirm.
+# ZAPISY (z confirm)
+Gdy user prosi o zmianę: dopytaj o brakujące pola, potem wywołaj tool. System sam pokaże przyciski potwierdzenia. NIE pisz "teraz poproszę o potwierdzenie" — wywołaj tool i ewentualnie krótkie "Dodaję..." lub nic.
+Przy update_todo_status — najpierw get_todos, zidentyfikuj po tekście, przekaż todo_text_hint = fragment treści (do 60 znaków).
+Przy datach — "na piątek" = najbliższy piątek od ${iso}. "Następny piątek" — dopytaj.
 
 # DODAWANIE ARTYSTÓW DO WATCHLISTY
+Wymagane: name. Warto dopytać: genre, listeners (string jak "2.5M"), notes, predMin/predMax (skala: Chmury<200, Hydro 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, Torwar 1801-5000, Arena 5001+), plShow (default "NIE"), spotifyUrl.
 
-Gdy user prosi o dodanie artysty do Watchlisty, dopytaj o brakujące pola jeśli ich nie podał:
-- nazwa (wymagana)
-- gatunek (warto dopytać)
-- monthly listeners Spotify jako string (np. "2.5M" — nie liczba, format jak na Spotify)
-- notatka (kontekst, potencjał w PL, uzasadnienie — min 1-2 zdania)
-- predykcja sali (pred_min, pred_max) — orientacyjnie wg skali:
-  Chmury <200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000,
-  Progresja 1001-1800, COS Torwar 1801-5000, Arena 5001+
-- czy grał kiedyś solo w PL (pl_show: "NIE" albo info o miejscu i roku)
-- spotify_url (opcjonalnie, jeśli user poda)
-
-Jeśli user nie wie pred_min/pred_max — zaproponuj oszacowanie na podstawie listeners i gatunku.
-Jeśli user nie wie pl_show — domyślnie "NIE" (Plex traktuje to jako "nie grał solo w PL").
-
-Jeszcze NIE masz: kalendarza Google, pamięci między sesjami, usuwania danych, Meta Ads API, scheduled briefów.`;
+# CZEGO NIE MASZ JESZCZE
+Kalendarza Google, scheduled briefów, Meta Ads, usuwania.`;
+}
 
 // ── Tool definitions ──────────────────────────────────────────────────────────
 
@@ -166,7 +137,7 @@ const tools = [
   // ── READ TOOLS ──
   {
     name: 'get_todos',
-    description: 'Pobierz zadania z Jaszczurzych Spraw. Domyślnie zwraca otwarte.',
+    description: 'Zadania z Jaszczurzych Spraw (domyślnie otwarte).',
     input_schema: {
       type: 'object',
       properties: {
@@ -178,7 +149,7 @@ const tools = [
   },
   {
     name: 'get_ticketing_events',
-    description: 'Lista koncertów z danymi sprzedaży (TM, eBilet, %, break even).',
+    description: 'Lista koncertów + sprzedaż biletów.',
     input_schema: {
       type: 'object',
       properties: {
@@ -189,7 +160,7 @@ const tools = [
   },
   {
     name: 'get_ticketing_event',
-    description: 'Znajdź konkretny koncert po fragmencie nazwy. Zwraca pełne dane + doc ID (do użycia jako showId w marketing_costs).',
+    description: 'Konkretny koncert po nazwie — zwraca też doc ID (jako showId w kosztach).',
     input_schema: {
       type: 'object',
       properties: {
@@ -200,7 +171,7 @@ const tools = [
   },
   {
     name: 'get_artists',
-    description: 'Lista artystów z Watchlisty. Filtruj hot:true żeby zobaczyć tylko "gorących".',
+    description: 'Artyści z Watchlisty. hot:true = tylko gorący.',
     input_schema: {
       type: 'object',
       properties: {
@@ -211,7 +182,7 @@ const tools = [
   },
   {
     name: 'get_artist',
-    description: 'Znajdź konkretnego artystę po fragmencie nazwy. Zwraca pełne dane z flagami.',
+    description: 'Konkretny artysta po fragmencie nazwy.',
     input_schema: {
       type: 'object',
       properties: {
@@ -222,7 +193,7 @@ const tools = [
   },
   {
     name: 'get_marketing_shows',
-    description: 'Dane marketingowe koncertów (budżety, CTR, CPM, checkpointy).',
+    description: 'Dane marketingowe koncertów (budżety, CTR, checkpointy).',
     input_schema: {
       type: 'object',
       properties: { limit: { type: 'number' } },
@@ -230,7 +201,7 @@ const tools = [
   },
   {
     name: 'get_guest_show',
-    description: 'Lista gości dla koncertu — szuka po nazwie artysty (polu artistName). Zwraca tablice foto/media/rozdane.',
+    description: 'Lista gości koncertu (foto/media/rozdane) po nazwie artysty.',
     input_schema: {
       type: 'object',
       properties: {
@@ -241,7 +212,7 @@ const tools = [
   },
   {
     name: 'get_production_show',
-    description: 'Dane produkcji koncertu: checklist, timetable, rider notes.',
+    description: 'Dane produkcji: checklist, timetable, rider notes.',
     input_schema: {
       type: 'object',
       properties: {
@@ -252,7 +223,7 @@ const tools = [
   },
   {
     name: 'get_production_expenses',
-    description: 'Koszty produkcji dla koncertu (po showId z get_ticketing_event).',
+    description: 'Koszty produkcji (po showId z get_ticketing_event).',
     input_schema: {
       type: 'object',
       properties: {
@@ -263,7 +234,7 @@ const tools = [
   },
   {
     name: 'get_marketing_costs_for_show',
-    description: 'Koszty marketingowe dla konkretnego koncertu (po showId). Zwraca listę + total.',
+    description: 'Koszty marketingowe + total dla koncertu (po showId).',
     input_schema: {
       type: 'object',
       properties: {
@@ -274,7 +245,7 @@ const tools = [
   },
   {
     name: 'get_all_marketing_costs',
-    description: 'Wszystkie koszty marketingowe (sortowane od najnowszych).',
+    description: 'Wszystkie koszty marketingowe (od najnowszych).',
     input_schema: {
       type: 'object',
       properties: { limit: { type: 'number', description: 'Max liczba (default 50)' } },
@@ -290,7 +261,7 @@ const tools = [
   },
   {
     name: 'get_ticketing_snapshots',
-    description: 'Historyczne snapshoty sprzedaży dla eventu.',
+    description: 'Historyczne snapshoty sprzedaży eventu.',
     input_schema: {
       type: 'object',
       properties: {
@@ -300,11 +271,21 @@ const tools = [
       required: ['event_id'],
     },
   },
+  {
+    name: 'get_usage_stats',
+    description: 'Statystyki zużycia Beaty: koszty, tokeny, per user i dzień.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        days: { type: 'number', description: 'Ile dni wstecz (default 7)' },
+      },
+    },
+  },
 
   // ── WRITE TOOLS ──
   {
     name: 'add_todo',
-    description: 'Dodaj zadanie do Jaszczurzych Spraw. Wymaga potwierdzenia.',
+    description: 'Dodaj zadanie. Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
@@ -319,7 +300,7 @@ const tools = [
   },
   {
     name: 'update_todo_status',
-    description: 'Zmień status zadania. Wymaga potwierdzenia. Przekaż todo_text_hint = fragment treści zadania (do 60 znaków) żeby confirm był czytelny.',
+    description: 'Zmień status zadania. Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
@@ -332,7 +313,7 @@ const tools = [
   },
   {
     name: 'add_todo_note',
-    description: 'Dopisz notatkę wykonawczą do zadania. Wymaga potwierdzenia.',
+    description: 'Dopisz notatkę do zadania. Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
@@ -362,7 +343,7 @@ const tools = [
   },
   {
     name: 'add_guest_to_show',
-    description: 'Dodaj gościa do listy gości koncertu (foto/media/rozdane). Wymaga potwierdzenia.',
+    description: 'Dodaj gościa do listy gości (foto/media/rozdane). Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
@@ -378,7 +359,7 @@ const tools = [
   },
   {
     name: 'add_artist_to_watchlist',
-    description: 'Dodaj artystę do Watchlisty — trackera artystów do potencjalnego bookingu. Domyślny status: check (do weryfikacji).',
+    description: 'Dodaj artystę do Watchlisty (status: check). Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
@@ -414,7 +395,7 @@ const tools = [
   },
   {
     name: 'add_marketing_cost',
-    description: 'Dodaj koszt marketingowy do koncertu. Wymaga potwierdzenia. showId = doc ID z get_ticketing_event.',
+    description: 'Dodaj koszt marketingowy. showId z get_ticketing_event. Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
@@ -430,7 +411,7 @@ const tools = [
   },
   {
     name: 'update_marketing_cost',
-    description: 'Zaktualizuj istniejący koszt marketingowy po ID dokumentu. Wymaga potwierdzenia.',
+    description: 'Zaktualizuj istniejący koszt marketingowy po ID. Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
@@ -458,7 +439,7 @@ const tools = [
   },
   {
     name: 'update_production_notes',
-    description: 'Zaktualizuj notatki/rider notes produkcji. Wymaga potwierdzenia.',
+    description: 'Zaktualizuj rider notes/notatki produkcji. Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
@@ -470,7 +451,7 @@ const tools = [
   },
   {
     name: 'update_marketing_notes',
-    description: 'Zaktualizuj notatki marketingowe koncertu. Wymaga potwierdzenia.',
+    description: 'Zaktualizuj notatki marketingowe. Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
@@ -482,7 +463,7 @@ const tools = [
   },
   {
     name: 'update_marketing_checkpoint',
-    description: 'Zaktualizuj checkpoint marketingowy koncertu (po show_id). Wymaga potwierdzenia.',
+    description: 'Zaktualizuj checkpoint marketingowy (po show_id). Wymaga potwierdzenia.',
     input_schema: {
       type: 'object',
       properties: {
@@ -509,6 +490,7 @@ const tools = [
       },
       required: ['event_id', 'date', 'tm', 'eb', 'other'],
     },
+    cache_control: { type: 'ephemeral' },
   },
 ];
 
@@ -744,6 +726,8 @@ async function executeTool(name, input, chatId, userId, senderName) {
       return getProjects({ limit: input.limit });
     case 'get_ticketing_snapshots':
       return getTicketingSnapshots(input.event_id, { limit: input.limit });
+    case 'get_usage_stats':
+      return getUsageStats({ days: input.days });
     default:
       throw new Error(`Nieznany tool: ${name}`);
   }
@@ -782,15 +766,38 @@ async function handleMessage(message) {
   let finalText = '';
   const MAX_ITERATIONS = 6;
 
+  // Wylicz prompt raz per request (świeża data, cache ephemeral ~5 min)
+  const systemPrompt = getSystemPrompt();
+
   try {
     for (let i = 0; i < MAX_ITERATIONS; i++) {
       const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 2048,
-        system: SYSTEM_PROMPT,
+        system: [
+          {
+            type: 'text',
+            text: systemPrompt,
+            cache_control: { type: 'ephemeral' },
+          },
+        ],
         tools,
         messages,
       });
+
+      // Usage logger — fire-and-forget, nie blokuje odpowiedzi
+      if (response.usage) {
+        logUsage({
+          chatId,
+          userName: senderName,
+          model: response.model,
+          inputTokens: response.usage.input_tokens || 0,
+          outputTokens: response.usage.output_tokens || 0,
+          cacheCreationTokens: response.usage.cache_creation_input_tokens || 0,
+          cacheReadTokens: response.usage.cache_read_input_tokens || 0,
+          stopReason: response.stop_reason,
+        }).catch(err => console.error('logUsage failed:', err));
+      }
 
       const textBlocks = response.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
       if (textBlocks) finalText = textBlocks;
@@ -881,7 +888,7 @@ async function handleCallbackQuery(cb) {
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 200, body: 'Beata bot działa (Faza 2.1).' };
+    return { statusCode: 200, body: 'Beata bot działa (Faza 2.1 + Haiku).' };
   }
 
   let update;
