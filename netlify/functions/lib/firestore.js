@@ -659,15 +659,15 @@ async function updateMarketingNotes(showNameQuery, newNotes) {
 
 /**
  * Loguje zużycie tokenów po każdym wywołaniu Claude (fire-and-forget).
- * Ceny Haiku 4.5: input $1/1M, output $5/1M, cache write $1.25/1M, cache read $0.10/1M.
+ * Ceny Sonnet 4.6: input $3/1M, output $15/1M, cache write $3.75/1M, cache read $0.30/1M.
  */
 async function logUsage({ chatId, userName, model, inputTokens, outputTokens, cacheCreationTokens, cacheReadTokens, stopReason }) {
   try {
     const costUsd =
-      (inputTokens * 0.000001) +
-      (outputTokens * 0.000005) +
-      (cacheCreationTokens * 0.00000125) +
-      (cacheReadTokens * 0.0000001);
+      (inputTokens * 0.000003) +
+      (outputTokens * 0.000015) +
+      (cacheCreationTokens * 0.00000375) +
+      (cacheReadTokens * 0.0000003);
 
     await db.collection('beata_usage').add({
       chatId: String(chatId),
