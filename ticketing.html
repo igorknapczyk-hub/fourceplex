@@ -1036,77 +1036,52 @@ async function iEdit(td,evId,field){
 /* ── COUNT ALL — saves today's snapshot for all active events ── */
 async function doCountAll(){
   if(!curUser){notify('Wybierz użytkownika','err');return;}
-  const evs=(window._events||[]).filter(e=>daysLeft(e.date)>=0);
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
+  const evs=(window._events||[]).filter(e=>new Date(e.date)>=cutoff);
   if(!evs.length){notify('Brak aktywnych eventów','err');return;}
-  const today=fd(new Date().toISOString().slice(0,10));
-  let saved=0;
-  for(const ev of evs){
-    const tot=(ev.tm||0)+(ev.eb||0)+(ev.other||0);
-    const pct=ev.cap?Math.round(tot/ev.cap*100):0;
-    const sid=`snap_${ev.id}_${today.replace(/\./g,'_')}`;
-    await window._setDoc(window._doc(window._db,'ticketing_snapshots',sid),{
-      eventId:ev.id,eventName:ev.name,date:today,
-      tm:ev.tm||0,eb:ev.eb||0,other:ev.other||0,
-      total:tot,remains:ev.remains||0,wraps:ev.wraps||0,pct,
-      createdBy:curUser,createdAt:Date.now(),
+  notify('Liczę '+evs.length+' eventów...','info');
+  try{
+    const res=await fetch('/.netlify/functions/count-background',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({events:evs.map(ev=>({
+        id:ev.id,name:ev.name,date:ev.date,
+        onSale:ev.onSale,other:ev.other||0,
+        wraps:ev.wraps||0,cap:ev.cap||0,
+      }))}),
     });
-    saved++;
+    const data=await res.json();
+    if(data.error){notify('Błąd: '+data.error,'err');return;}
+    const ok=(data.results||[]).filter(r=>r.ok).length;
+    const fail=(data.results||[]).filter(r=>!r.ok).length;
+    notify('✅ Policzono: '+ok+' eventów'+(fail?' / błędy: '+fail:''));
+  }catch(err){
+    notify('Błąd połączenia: '+err.message,'err');
   }
-  notify(`✅ Policzono ${saved} eventów — ${today}`);
 }
 
 async function doCountOne(evId){
   const ev=window._events?.find(e=>e.id===evId);
   if(!ev){notify('Nie znaleziono eventu','err');return;}
   if(!curUser){notify('Wybierz użytkownika','err');return;}
-  notify('Pobieram dane z API...','info');
+  notify('Liczę...','info');
   try{
-    // Odpytaj eBilet i TM równolegle
-    // excludeZeroPrices=true: bilety z ceną 0 PLN są wykluczone z liczenia po stronie API
-    const [ebRes,tmRes]=await Promise.all([
-      fetch('/.netlify/functions/ebilet',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({eventName:ev.name,eventDate:ev.date,excludeZeroPrices:true}),
-      }),
-      fetch('/.netlify/functions/tm',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({eventName:ev.name,eventDate:ev.date,onSaleDate:ev.onSale,excludeZeroPrices:true}),
-      }),
-    ]);
-    const ebData=await ebRes.json();
-    const tmData=await tmRes.json();
-    // Użyj dotychczasowych wartości jako fallback jeśli API zwróci błąd
-    // Zwrócone wartości z API już nie zawierają biletów 0 PLN (filtrowanie po stronie serwera)
-    const newEb=ebData.error?ev.eb||0:ebData.eb||0;
-    const newTm=tmData.error?ev.tm||0:tmData.tm||0;
-    const newOther=ev.other||0;
-    const newTot=newTm+newEb+newOther;
-    const newRem=ebData.error?ev.remains||0:ebData.remains||0;
-    const pct=ev.cap?Math.round(newTot/ev.cap*100):0;
-    const nowTs=Date.now();
-    // Zaktualizuj event w Firebase (lastCountedAt = znacznik czasu ostatniego zliczenia)
-    const u={...ev,tm:newTm,eb:newEb,remains:newRem,updatedBy:curUser,updatedAt:nowTs,lastCountedAt:nowTs};
-    delete u.id;
-    await window._setDoc(window._doc(window._db,'ticketing_events',evId),u);
-    // Zapisz snapshot tylko we wtorki
-    if(new Date().getDay()===2){
-      const today=fd(new Date().toISOString().slice(0,10));
-      const sid='snap_'+evId+'_'+today.replace(/\./g,'_');
-      await window._setDoc(window._doc(window._db,'ticketing_snapshots',sid),{
-        eventId:evId,eventName:ev.name,date:today,
-        tm:newTm,eb:newEb,other:newOther,
-        total:newTot,remains:newRem,wraps:ev.wraps||0,pct,
-        createdBy:curUser,createdAt:nowTs,
-      });
-    }
-    // Pokaż wynik
-    const ebInfo=ebData.error?'eBilet: błąd':'eBilet: '+newEb;
-    const tmInfo=tmData.error?'TM: błąd':'TM: '+newTm;
-    notify('✅ '+tmInfo+' / '+ebInfo+' / Total: '+newTot);
+    const res=await fetch('/.netlify/functions/count-background',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({events:[{
+        id:evId,name:ev.name,date:ev.date,
+        onSale:ev.onSale,other:ev.other||0,
+        wraps:ev.wraps||0,cap:ev.cap||0,
+      }]}),
+    });
+    const data=await res.json();
+    if(data.error){notify('Błąd: '+data.error,'err');return;}
+    const r=data.results?.[0];
+    if(r?.ok){notify('✅ TM: '+r.tm+' / eBilet: '+r.eb+' / Total: '+(r.tm+r.eb));}
+    else{notify('Błąd: '+(r?.error||'nieznany'),'err');}
   }catch(err){
-    notify('Błąd API: '+err.message,'err');
+    notify('Błąd połączenia: '+err.message,'err');
   }
 }
 

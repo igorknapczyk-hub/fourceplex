@@ -3,4 +3,8 @@
   functions = "netlify/functions"
 
 [functions]
+  directory = "netlify/functions"
   node_bundler = "esbuild"
+
+[functions."count-background"]
+  schedule = "0 10 * * *"
