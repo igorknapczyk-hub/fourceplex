@@ -1057,9 +1057,7 @@ async function doCountOne(evId){
   if(!ev){notify('Nie znaleziono eventu','err');return;}
   if(!curUser){notify('Wybierz użytkownika','err');return;}
   notify('Liczę...','info');
-  const prevTm=ev.tm||0;
-  const prevEb=ev.eb||0;
-  // Odpał background function — nie czekaj na odpowiedź
+  const prevUpdatedAt=ev.updatedAt||0;
   fetch('/.netlify/functions/count-background',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -1069,21 +1067,16 @@ async function doCountOne(evId){
       wraps:ev.wraps||0,cap:ev.cap||0,
     }]}),
   }).catch(()=>{});
-  // Czekaj aż Firebase się zaktualizuje (max 60 sekund)
   let attempts=0;
   const poll=setInterval(()=>{
     attempts++;
     const updated=window._events?.find(e=>e.id===evId);
     if(!updated)return;
-    const changed=(updated.tm||0)!==prevTm||(updated.eb||0)!==prevEb;
-    if(changed||attempts>=30){
+    const done=(updated.updatedAt||0)>prevUpdatedAt;
+    if(done||attempts>=30){
       clearInterval(poll);
       const tot=(updated.tm||0)+(updated.eb||0)+(updated.other||0);
-      if(changed){
-        notify('✅ TM: '+(updated.tm||0)+' / eBilet: '+(updated.eb||0)+' / Total: '+tot);
-      } else {
-        notify('Brak zmian w danych — sprawdź logi Netlify','info');
-      }
+      notify('✅ TM: '+(updated.tm||0)+' / eBilet: '+(updated.eb||0)+' / Total: '+tot);
     }
   },2000);
 }
