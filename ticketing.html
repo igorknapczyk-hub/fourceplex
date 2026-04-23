@@ -1039,7 +1039,15 @@ async function doCountAll(){
   const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
   const evs=(window._events||[]).filter(e=>new Date(e.date)>=cutoff);
   if(!evs.length){notify('Brak aktywnych eventów','err');return;}
-  notify('Liczę '+evs.length+' eventów w tle...','info');
+  const total=evs.length;
+  // Pokaż trwały komunikat z licznikiem
+  let countingNotif=document.createElement('div');
+  countingNotif.id='counting-notif';
+  countingNotif.className='notif info';
+  countingNotif.style.cssText='position:fixed;bottom:20px;right:20px;z-index:999;min-width:260px';
+  countingNotif.innerHTML='⏳ Liczę 0 / '+total+' eventów...';
+  document.body.appendChild(countingNotif);
+  // Odpal background function
   fetch('/.netlify/functions/count-background',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -1049,7 +1057,31 @@ async function doCountAll(){
       wraps:ev.wraps||0,cap:ev.cap||0,
     }))}),
   }).catch(()=>{});
-  notify('⏳ Dane pojawią się automatycznie gdy funkcja skończy (~20-30 sek)','info');
+  // Śledź postęp przez Firebase — zliczaj ile eventów ma nowszy updatedAt
+  const startTime=Date.now();
+  const prevUpdatedAts={};
+  evs.forEach(ev=>{prevUpdatedAts[ev.id]=ev.updatedAt||0;});
+  const poll=setInterval(()=>{
+    const done=evs.filter(ev=>{
+      const current=window._events?.find(e=>e.id===ev.id);
+      return current&&(current.updatedAt||0)>prevUpdatedAts[ev.id];
+    }).length;
+    const elapsed=Math.round((Date.now()-startTime)/1000);
+    if(countingNotif){
+      countingNotif.innerHTML='⏳ Liczę '+done+' / '+total+' eventów... ('+elapsed+'s)';
+    }
+    if(done>=total){
+      clearInterval(poll);
+      if(countingNotif){countingNotif.remove();countingNotif=null;}
+      notify('✅ Policzono wszystkie '+total+' eventy');
+    }
+    // Timeout po 5 minutach
+    if(elapsed>300){
+      clearInterval(poll);
+      if(countingNotif){countingNotif.remove();countingNotif=null;}
+      notify('⚠ Liczenie zakończone (timeout). Sprawdź wyniki w tabeli','info');
+    }
+  },2000);
 }
 
 async function doCountOne(evId){
