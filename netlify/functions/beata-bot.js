@@ -772,7 +772,7 @@ async function handleMessage(message) {
   try {
     for (let i = 0; i < MAX_ITERATIONS; i++) {
       const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-6',
         max_tokens: 2048,
         system: [
           {
