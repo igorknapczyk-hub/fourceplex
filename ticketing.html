@@ -1039,25 +1039,17 @@ async function doCountAll(){
   const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
   const evs=(window._events||[]).filter(e=>new Date(e.date)>=cutoff);
   if(!evs.length){notify('Brak aktywnych eventów','err');return;}
-  notify('Liczę '+evs.length+' eventów...','info');
-  try{
-    const res=await fetch('/.netlify/functions/count-background',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({events:evs.map(ev=>({
-        id:ev.id,name:ev.name,date:ev.date,
-        onSale:ev.onSale,other:ev.other||0,
-        wraps:ev.wraps||0,cap:ev.cap||0,
-      }))}),
-    });
-    const data=await res.json();
-    if(data.error){notify('Błąd: '+data.error,'err');return;}
-    const ok=(data.results||[]).filter(r=>r.ok).length;
-    const fail=(data.results||[]).filter(r=>!r.ok).length;
-    notify('✅ Policzono: '+ok+' eventów'+(fail?' / błędy: '+fail:''));
-  }catch(err){
-    notify('Błąd połączenia: '+err.message,'err');
-  }
+  notify('Liczę '+evs.length+' eventów w tle...','info');
+  fetch('/.netlify/functions/count-background',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({events:evs.map(ev=>({
+      id:ev.id,name:ev.name,date:ev.date,
+      onSale:ev.onSale,other:ev.other||0,
+      wraps:ev.wraps||0,cap:ev.cap||0,
+    }))}),
+  }).catch(()=>{});
+  notify('⏳ Dane pojawią się automatycznie gdy funkcja skończy (~20-30 sek)','info');
 }
 
 async function doCountOne(evId){
@@ -1065,24 +1057,35 @@ async function doCountOne(evId){
   if(!ev){notify('Nie znaleziono eventu','err');return;}
   if(!curUser){notify('Wybierz użytkownika','err');return;}
   notify('Liczę...','info');
-  try{
-    const res=await fetch('/.netlify/functions/count-background',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({events:[{
-        id:evId,name:ev.name,date:ev.date,
-        onSale:ev.onSale,other:ev.other||0,
-        wraps:ev.wraps||0,cap:ev.cap||0,
-      }]}),
-    });
-    const data=await res.json();
-    if(data.error){notify('Błąd: '+data.error,'err');return;}
-    const r=data.results?.[0];
-    if(r?.ok){notify('✅ TM: '+r.tm+' / eBilet: '+r.eb+' / Total: '+(r.tm+r.eb));}
-    else{notify('Błąd: '+(r?.error||'nieznany'),'err');}
-  }catch(err){
-    notify('Błąd połączenia: '+err.message,'err');
-  }
+  const prevTm=ev.tm||0;
+  const prevEb=ev.eb||0;
+  // Odpał background function — nie czekaj na odpowiedź
+  fetch('/.netlify/functions/count-background',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({events:[{
+      id:evId,name:ev.name,date:ev.date,
+      onSale:ev.onSale,other:ev.other||0,
+      wraps:ev.wraps||0,cap:ev.cap||0,
+    }]}),
+  }).catch(()=>{});
+  // Czekaj aż Firebase się zaktualizuje (max 60 sekund)
+  let attempts=0;
+  const poll=setInterval(()=>{
+    attempts++;
+    const updated=window._events?.find(e=>e.id===evId);
+    if(!updated)return;
+    const changed=(updated.tm||0)!==prevTm||(updated.eb||0)!==prevEb;
+    if(changed||attempts>=30){
+      clearInterval(poll);
+      const tot=(updated.tm||0)+(updated.eb||0)+(updated.other||0);
+      if(changed){
+        notify('✅ TM: '+(updated.tm||0)+' / eBilet: '+(updated.eb||0)+' / Total: '+tot);
+      } else {
+        notify('Brak zmian w danych — sprawdź logi Netlify','info');
+      }
+    }
+  },2000);
 }
 
 /* ── STATS ── */
