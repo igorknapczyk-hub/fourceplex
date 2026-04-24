@@ -5,6 +5,14 @@
 const { initializeApp, cert, getApps } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 
+function normalize(str) {
+  return (str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 let db;
 function getDb() {
   if (db) return db;
@@ -49,6 +57,7 @@ async function fetchEbilet(token, eventName, eventDate) {
   const target = new Date(eventDate);
   const matches = items.filter(item => {
     if (!item.event_time) return false;
+    if (!normalize(item.event_name).includes(normalize(eventName))) return false;
     const d = new Date(item.event_time);
     return d.getFullYear() === target.getFullYear()
         && d.getMonth()    === target.getMonth()
@@ -116,7 +125,7 @@ async function fetchTm(sessionId, eventName, eventDate, onSaleDate) {
   }
   const target = new Date(eventDate);
   const filtered = allTrx.filter(t => {
-    if (!t.eventTitle?.toLowerCase().includes(eventName.toLowerCase())) return false;
+    if (!normalize(t.eventTitle).includes(normalize(eventName))) return false;
     if (!t.eventDate) return true;
     const p = t.eventDate.split('/');
     if (p.length !== 3) return true;
