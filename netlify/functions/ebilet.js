@@ -176,7 +176,7 @@ exports.handler = async function (event) {
       return {
         statusCode: 404,
         headers: { ...CORS, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: `Brak wyników dla "${eventName}" od ${dateFrom}` }),
+        body: JSON.stringify({ error: `Brak wyników dla "${eventName}" od ${eventDate}` }),
       };
     }
 
