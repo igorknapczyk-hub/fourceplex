@@ -33,7 +33,7 @@ exports.handler = async function(event) {
         fetchEbilet(ebToken, ev.name, ev.date),
         fetchTm(tmSession, ev.name, ev.date, ev.onSale),
       ]);
-      await saveToFirebase(ev.id, ev, tmResult.tm, ebResult.eb, ebResult.remains);
+      await saveToFirebase(ev.id, ev, tmResult.tm, ebResult.eb, ebResult.remains, ebResult.cap);
       results.push({ id: ev.id, tm: tmResult.tm, eb: ebResult.eb, ok: true });
     } catch(err) {
       results.push({ id: ev.id, error: err.message, ok: false });
