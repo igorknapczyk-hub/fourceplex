@@ -143,13 +143,13 @@ async function fetchTm(sessionId, eventName, eventDate, onSaleDate) {
   return { tm: Math.max(0, sold) };
 }
 
-async function saveToFirebase(evId, ev, tm, eb, remains) {
+async function saveToFirebase(evId, ev, tm, eb, remains, ebCap) {
   const db = getDb();
   const tot = tm + eb + (ev.other || 0);
   const pct = ev.cap ? Math.round(tot / ev.cap * 100) : 0;
   const now = Date.now();
   await db.collection('ticketing_events').doc(evId).update({
-    tm, eb, remains, updatedAt: now, updatedBy: 'auto', lastCountedAt: now,
+    tm, eb, remains, ebCap: ebCap || 0, updatedAt: now, updatedBy: 'auto', lastCountedAt: now,
   });
   const d = new Date();
   const dateStr = `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
