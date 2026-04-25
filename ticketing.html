@@ -170,7 +170,7 @@ textarea.form-input{resize:vertical;min-height:52px}
 }
 .pan-right::-webkit-scrollbar{display:none}
 .pan-right table{border-collapse:collapse;table-layout:fixed}
-.pan-right table thead th{background:var(--bg)}
+.pan-right table thead th{background:var(--bg) !important;position:sticky;top:0;z-index:25}
 
 /* Shared thead styles */
 .pan-left table thead th,
@@ -791,16 +791,18 @@ function renderTable(){
   document.getElementById('tblMid').style.minWidth=midW+'px';
 
   // RIGHT PANEL — LIVE cols
-  const RL={tm:62,eb:90,pct:46,act:52};
+  const RL={t:58,w:38,tm:58,eb:100,pct:46,act:52};
   const RL_W=Object.values(RL).reduce((s,v)=>s+v,0);
   document.getElementById('panRight').style.width=RL_W+'px';
   document.getElementById('panRight').style.display='';
   document.getElementById('panRight').style.borderRight='2px solid rgba(200,240,96,.22)';
   document.getElementById('tblRight').style.width=RL_W+'px';
-  const rcg=`<colgroup><col style="width:${RL.tm}px"><col style="width:${RL.eb}px"><col style="width:${RL.pct}px"><col style="width:${RL.act}px"></colgroup>`;
-  const rr1=`<tr><th class="r1 dg live-hdr" colspan="4" style="width:${RL_W}px"><span style="color:var(--accent)">LIVE ●</span></th></tr>`;
+  const rcg=`<colgroup><col style="width:${RL.t}px"><col style="width:${RL.w}px"><col style="width:${RL.tm}px"><col style="width:${RL.eb}px"><col style="width:${RL.pct}px"><col style="width:${RL.act}px"></colgroup>`;
+  const rr1=`<tr><th class="r1 dg live-hdr" colspan="6" style="width:${RL_W}px"><span style="color:var(--accent)">LIVE ●</span></th></tr>`;
   const rr2=`<tr>
-  <th class="r2 live-bg" style="width:${RL.tm}px;text-align:right;padding-right:8px;border-left:1px solid rgba(200,240,96,.15)">TM</th>
+  <th class="r2 live-bg" style="width:${RL.t}px;text-align:right;padding-right:8px;border-left:1px solid rgba(200,240,96,.15)">T</th>
+  <th class="r2 live-bg" style="width:${RL.w}px;text-align:right;padding-right:8px">W</th>
+  <th class="r2 live-bg" style="width:${RL.tm}px;text-align:right;padding-right:8px">TM</th>
   <th class="r2 live-bg" style="width:${RL.eb}px;text-align:right;padding-right:8px">eB / pula</th>
   <th class="r2 live-bg" style="width:${RL.pct}px;text-align:right;padding-right:8px">%</th>
   <th class="r2" style="width:${RL.act}px"></th>
@@ -906,35 +908,28 @@ function renderTable(){
     else if(days<=21)rc2='row-warn';
     else rc2='row-ok';
     if(pct>=100)rc2='row-ok';
-    const remColor2=rem===0?'var(--teal)':typeof rem==='number'&&rem<50?'var(--amber)':'var(--text3)';
-    const pctCol2=pctColor(pct);
-    // LIVE Wraps = diff vs last real Tuesday snapshot
-    const evRealTue=(allSnaps[ev.id]||[])
-      .filter(s=>s.createdBy!=='seed'&&parseSnapDate(s.date).getDay()===2)
-      .sort((a,b)=>parseSnapDate(b.date)-parseSnapDate(a.date));
-    const lastRS=evRealTue[0];
-    const liveWDiff=lastRS!=null?tot-(lastRS.total||0):null;
-    const liveWHtml=liveWDiff!=null
-      ?`<span style="color:${liveWDiff>0?'var(--teal)':liveWDiff<0?'var(--red)':'var(--text2)'}">${liveWDiff>0?'+':''}${liveWDiff}</span>`
-      :'—';
+    const tot2=(ev.tm||0)+(ev.eb||0)+(ev.other||0);
+    const pct2=ev.cap?Math.round(tot2/ev.cap*100):0;
+    const pctCol2=pctColor(pct2);
     rH+=`<tr class="${rc2}" data-id="${ev.id}">
-      <td class="num-b live-bg" style="width:${RL.tm}px;border-left:1px solid rgba(200,240,96,.12)">${ev.tm||0}</td>
-      <td class="num live-bg" style="width:${RL.eb}px">
-        <span style="color:var(--accent)">${ev.eb||0}</span>
-        <span style="color:var(--text3);font-size:9px"> /${ev.ebCap||'?'}</span>
-      </td>
-      <td class="num live-bg" style="width:${RL.pct}px;color:${pctCol2}">${ev.cap?pct+'%':'—'}</td>
-      <td style="width:${RL.act}px;padding:0 5px">
-        <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">
-          <span class="icon-btn edit" onclick="openEdit('${ev.id}')" title="Edytuj">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
-          </span>
-          <span class="icon-btn del" onclick="confirmDelete('${ev.id}')" title="Usuń">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9"/></svg>
-          </span>
-        </div>
-      </td>
-    </tr>`;
+  <td class="num-b live-bg" style="width:${RL.t}px;border-left:1px solid rgba(200,240,96,.12)">${tot2}</td>
+  <td class="num live-bg" style="width:${RL.w}px">${ev.wraps||0}</td>
+  <td class="num live-bg" style="width:${RL.tm}px">${ev.tm||0}</td>
+  <td class="num live-bg" style="width:${RL.eb}px">
+    <span>${ev.eb||0}</span><span style="color:var(--text3);font-size:9px"> /${ev.ebCap||'?'}</span>
+  </td>
+  <td class="num live-bg" style="width:${RL.pct}px;color:${pctCol2}">${ev.cap?pct2+'%':'—'}</td>
+  <td style="width:${RL.act}px;padding:0 5px">
+    <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">
+      <span class="icon-btn edit" onclick="openEdit('${ev.id}')" title="Edytuj">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
+      </span>
+      <span class="icon-btn del" onclick="confirmDelete('${ev.id}')" title="Usuń">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9"/></svg>
+      </span>
+    </div>
+  </td>
+</tr>`;
   });
   document.getElementById('tbRight').innerHTML=rH;
 
