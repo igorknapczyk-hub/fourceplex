@@ -160,7 +160,7 @@ textarea.form-input{resize:vertical;min-height:52px}
 /* RIGHT frozen panel — LIVE block + actions (sits between left and middle) */
 .pan-right{
   flex-shrink: 0;
-  border-left: 2px solid rgba(200,240,96,.22);
+  border-right: 2px solid rgba(200,240,96,.22);
   background: var(--bg);
   z-index: 20;
   overflow-y: scroll;
@@ -170,7 +170,6 @@ textarea.form-input{resize:vertical;min-height:52px}
 }
 .pan-right::-webkit-scrollbar{display:none}
 .pan-right table{border-collapse:collapse;table-layout:fixed}
-.pan-right table thead th{background:var(--bg) !important;position:sticky;top:0;z-index:25}
 
 /* Shared thead styles */
 .pan-left table thead th,
@@ -285,6 +284,10 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
 .icon-btn.del:hover{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.1);color:var(--red)}
 .icon-btn.edit:hover{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.1);color:var(--purple)}
 
+/* ALERT CHIPS */
+.alert-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:3px;flex-shrink:0;font-size:10px;line-height:1}
+.alert-10-btn{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:var(--amber)}
+.alert-5-btn{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:var(--red)}
 
 /* MODAL (index.html style) */
 #modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
@@ -699,6 +702,12 @@ function mkPct(pct,cap){
   if(!cap)return'—';
   return`<span style="color:${pctColor(pct)};font-family:var(--mono);font-size:11px">${pct}%</span>`;
 }
+/* ── ALERT CHIP for name cell ── */
+function alertBtn(pct){
+  if(pct>=95&&pct<100)return'<span class="alert-btn alert-5-btn" title="Ostatnie bilety — 5%">⚠</span>';
+  if(pct>=89&&pct<95) return'<span class="alert-btn alert-10-btn" title="Ostatnie bilety — 10%">⚠</span>';
+  return'';
+}
 
 /* ── RENDER TABLE ── */
 function renderTable(){
@@ -744,9 +753,9 @@ function renderTable(){
   const LW={calc:46,name:179,date:93};
   const LEFT_W=Object.values(LW).reduce((s,v)=>s+v,0);
   const SW={dni:52,venue:118,cena:62,cap:52,onsale:60,be:60};
-  const BW={tm:58,eb:58,oth:52,t:62,w:46,pct:46};
+  const BW={tm:68,eb:68,oth:58,t:72,w:50,pct:52,r:62};
   const BLOCK_W=Object.values(BW).reduce((s,v)=>s+v,0);
-  const BCOLS=['TM','eB','Inne','T','W','%'];
+  const BCOLS=['TM','eB','Inne','T','W','%','R'];
 
   // LEFT PANEL THEAD
   const lpW=LW.calc+LW.name+LW.date;
@@ -790,23 +799,25 @@ function renderTable(){
   document.getElementById('tblMid').style.width=midW+'px';
   document.getElementById('tblMid').style.minWidth=midW+'px';
 
-  // RIGHT PANEL — LIVE cols
-  const RL={t:58,w:38,tm:58,eb:100,pct:46,act:52};
+  // RIGHT PANEL — LIVE cols same widths as snapshot BW
+  const RL={tm:68,eb:68,oth:58,t:72,w:50,pct:52,r:62,act:56};
   const RL_W=Object.values(RL).reduce((s,v)=>s+v,0);
   document.getElementById('panRight').style.width=RL_W+'px';
   document.getElementById('panRight').style.display='';
   document.getElementById('panRight').style.borderRight='2px solid rgba(200,240,96,.22)';
   document.getElementById('tblRight').style.width=RL_W+'px';
-  const rcg=`<colgroup><col style="width:${RL.t}px"><col style="width:${RL.w}px"><col style="width:${RL.tm}px"><col style="width:${RL.eb}px"><col style="width:${RL.pct}px"><col style="width:${RL.act}px"></colgroup>`;
-  const rr1=`<tr><th class="r1 dg live-hdr" colspan="6" style="width:${RL_W}px"><span style="color:var(--accent)">LIVE ●</span></th></tr>`;
+  const rcg=`<colgroup><col style="width:${RL.t}px"><col style="width:${RL.tm}px"><col style="width:${RL.eb}px"><col style="width:${RL.oth}px"><col style="width:${RL.w}px"><col style="width:${RL.pct}px"><col style="width:${RL.r}px"><col style="width:${RL.act}px"></colgroup>`;
+  const rr1=`<tr><th class="r1 dg live-hdr" colspan="8" style="width:${RL_W}px"><span style="color:var(--accent)">LIVE ●</span></th></tr>`;
   const rr2=`<tr>
-  <th class="r2 live-bg" style="width:${RL.t}px;text-align:right;padding-right:8px;border-left:1px solid rgba(200,240,96,.15)">T</th>
-  <th class="r2 live-bg" style="width:${RL.w}px;text-align:right;padding-right:8px">W</th>
-  <th class="r2 live-bg" style="width:${RL.tm}px;text-align:right;padding-right:8px">TM</th>
-  <th class="r2 live-bg" style="width:${RL.eb}px;text-align:right;padding-right:8px">eB / pula</th>
-  <th class="r2 live-bg" style="width:${RL.pct}px;text-align:right;padding-right:8px">%</th>
-  <th class="r2" style="width:${RL.act}px"></th>
-</tr>`;
+    <th class="r2 live-bg" style="width:${RL.t}px;text-align:right;padding-right:8px;border-left:1px solid rgba(200,240,96,.15)">T</th>
+    <th class="r2 live-bg" style="width:${RL.tm}px;text-align:right;padding-right:8px">TM</th>
+    <th class="r2 live-bg" style="width:${RL.eb}px;text-align:right;padding-right:8px">eB</th>
+    <th class="r2 live-bg" style="width:${RL.oth}px;text-align:right;padding-right:8px">Inne</th>
+    <th class="r2 live-bg" style="width:${RL.w}px;text-align:right;padding-right:8px">W</th>
+    <th class="r2 live-bg" style="width:${RL.pct}px;text-align:right;padding-right:8px">%</th>
+    <th class="r2 live-bg" style="width:${RL.r}px;text-align:right;padding-right:8px">R</th>
+    <th class="r2" style="width:${RL.act}px"></th>
+  </tr>`;
   document.getElementById('thdRight').innerHTML=rcg+rr1+rr2;
 
   // BUILD ROWS
@@ -834,6 +845,7 @@ function renderTable(){
 
     const remColor=rem===0?'var(--teal)':typeof rem==='number'&&rem<50?'var(--amber)':'var(--text3)';
     const pctCol=pctColor(pct);
+    const aBtn=alertBtn(pct);
 
     // LEFT ROW — [timestamp | ⊞ | alert] | name | date  (all in one line → fixed 34px height)
     let lastCtBlock='';
@@ -848,6 +860,7 @@ function renderTable(){
         <div style="display:flex;align-items:center;justify-content:center;gap:3px;height:100%">
           ${lastCtBlock}
           <span class="calc-btn" onclick="doCountOne('${ev.id}')" title="Zlicz (wymaga API)">⊞</span>
+          ${aBtn}
         </div>
       </td>
       <td class="name-c" style="width:${LW.name}px">${ev.name}</td>
@@ -881,12 +894,14 @@ function renderTable(){
         mr+=`<td class="num-b" style="width:${BW.t}px">${s.total||0}</td>`;
         mr+=`<td class="num" style="width:${BW.w}px">${wHtml}</td>`;
         mr+=`<td class="num" style="width:${BW.pct}px;color:${pctColor(sp)}">${ev.cap?sp+'%':'—'}</td>`;
+        mr+=`<td class="num" style="width:${BW.r}px;color:var(--text3)">${s.remains||0}</td>`;
       }else{
         // No real data — show XX (nie wymyślamy liczb)
         const xxStyle='color:var(--text3);letter-spacing:.04em';
         mr+=`<td class="num bl-sep" style="width:${BW.tm}px;${xxStyle}">XX</td>`;
         ['eb','oth','t','w'].forEach(k=>mr+=`<td class="num" style="width:${BW[k]}px;${xxStyle}">XX</td>`);
         mr+=`<td style="width:${BW.pct}px"></td>`;
+        mr+=`<td class="num" style="width:${BW.r}px;${xxStyle}">XX</td>`;
       }
     });
     mr+='</tr>';
@@ -908,28 +923,36 @@ function renderTable(){
     else if(days<=21)rc2='row-warn';
     else rc2='row-ok';
     if(pct>=100)rc2='row-ok';
-    const tot2=(ev.tm||0)+(ev.eb||0)+(ev.other||0);
-    const pct2=ev.cap?Math.round(tot2/ev.cap*100):0;
-    const pctCol2=pctColor(pct2);
+    const remColor2=rem===0?'var(--teal)':typeof rem==='number'&&rem<50?'var(--amber)':'var(--text3)';
+    const pctCol2=pctColor(pct);
+    // LIVE Wraps = diff vs last real Tuesday snapshot
+    const evRealTue=(allSnaps[ev.id]||[])
+      .filter(s=>s.createdBy!=='seed'&&parseSnapDate(s.date).getDay()===2)
+      .sort((a,b)=>parseSnapDate(b.date)-parseSnapDate(a.date));
+    const lastRS=evRealTue[0];
+    const liveWDiff=lastRS!=null?tot-(lastRS.total||0):null;
+    const liveWHtml=liveWDiff!=null
+      ?`<span style="color:${liveWDiff>0?'var(--teal)':liveWDiff<0?'var(--red)':'var(--text2)'}">${liveWDiff>0?'+':''}${liveWDiff}</span>`
+      :'—';
     rH+=`<tr class="${rc2}" data-id="${ev.id}">
-  <td class="num-b live-bg" style="width:${RL.t}px;border-left:1px solid rgba(200,240,96,.12)">${tot2}</td>
-  <td class="num live-bg" style="width:${RL.w}px">${ev.wraps||0}</td>
-  <td class="num live-bg" style="width:${RL.tm}px">${ev.tm||0}</td>
-  <td class="num live-bg" style="width:${RL.eb}px">
-    <span>${ev.eb||0}</span><span style="color:var(--text3);font-size:9px"> /${ev.ebCap||'?'}</span>
-  </td>
-  <td class="num live-bg" style="width:${RL.pct}px;color:${pctCol2}">${ev.cap?pct2+'%':'—'}</td>
-  <td style="width:${RL.act}px;padding:0 5px">
-    <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">
-      <span class="icon-btn edit" onclick="openEdit('${ev.id}')" title="Edytuj">
-        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
-      </span>
-      <span class="icon-btn del" onclick="confirmDelete('${ev.id}')" title="Usuń">
-        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9"/></svg>
-      </span>
-    </div>
-  </td>
-</tr>`;
+      <td class="num-b live-bg" style="width:${RL.t}px;font-weight:700;border-left:1px solid rgba(200,240,96,.12)">${tot}</td>
+      <td class="num live-bg" style="width:${RL.tm}px">${ev.tm||0}</td>
+      <td class="num live-bg" style="width:${RL.eb}px">${ev.eb||0}</td>
+      <td class="num ec live-bg" style="width:${RL.oth}px" data-evid="${ev.id}" data-field="other" data-val="${ev.other||0}" onclick="iEdit(this,'${ev.id}','other')" title="Edytuj Inne">${ev.other||0}</td>
+      <td class="num live-bg" style="width:${RL.w}px">${liveWHtml}</td>
+      <td class="num live-bg" style="width:${RL.pct}px;color:${pctCol2}">${ev.cap?pct+'%':'—'}</td>
+      <td class="num live-bg" style="width:${RL.r}px;color:${remColor2}">${rem}</td>
+      <td style="width:${RL.act}px;padding:0 5px">
+        <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">
+          <span class="icon-btn edit" onclick="openEdit('${ev.id}')" title="Edytuj">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
+          </span>
+          <span class="icon-btn del" onclick="confirmDelete('${ev.id}')" title="Usuń">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9"/></svg>
+          </span>
+        </div>
+      </td>
+    </tr>`;
   });
   document.getElementById('tbRight').innerHTML=rH;
 
