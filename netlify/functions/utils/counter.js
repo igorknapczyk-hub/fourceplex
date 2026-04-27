@@ -48,7 +48,7 @@ async function fetchEbilet(token, eventName, eventDate) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify({
-      query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time sales_ticket_count free_seats_without_reservations all_seats}}}`,
+      query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time sales_ticket_count free_seats_without_reservations all_seats sales_gross}}}`,
       variables: { n: eventName },
     }),
   });
@@ -63,8 +63,9 @@ async function fetchEbilet(token, eventName, eventDate) {
         && d.getMonth()    === target.getMonth()
         && d.getDate()     === target.getDate();
   });
+  const paid = matches.filter(m => (m.sales_gross ?? 0) > 0);
   return {
-    eb:      matches.reduce((s, m) => s + (m.sales_ticket_count ?? 0), 0),
+    eb:      paid.reduce((s, m) => s + (m.sales_ticket_count ?? 0), 0),
     remains: matches.reduce((s, m) => s + (m.free_seats_without_reservations ?? 0), 0),
     cap:     matches.reduce((s, m) => s + (m.all_seats ?? 0), 0),
   };
