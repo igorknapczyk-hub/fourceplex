@@ -48,7 +48,7 @@ async function fetchEbilet(token, eventName, eventDate) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify({
-      query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time sales_ticket_count free_seats_without_reservations all_seats sales_gross}}}`,
+      query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time sales_ticket_count free_seats_without_reservations all_seats sales_gross sales_net}}}`,
       variables: { n: eventName },
     }),
   });
@@ -63,7 +63,10 @@ async function fetchEbilet(token, eventName, eventDate) {
         && d.getMonth()    === target.getMonth()
         && d.getDate()     === target.getDate();
   });
-  const paid = matches.filter(m => (m.sales_gross ?? 0) > 0);
+  console.log(`[ebilet-debug] ${eventName} ${eventDate} — ${matches.length} pul:`);
+  matches.forEach(m => console.log(`  "${m.event_name}" | count=${m.sales_ticket_count} gross=${m.sales_gross} net=${m.sales_net}`));
+  const paid = matches.filter(m => (m.sales_gross ?? 0) > 0 && (m.sales_net ?? 0) > 0);
+  console.log(`[ebilet-debug] paid pule: ${paid.length}, paid bilety: ${paid.reduce((s,m)=>s+(m.sales_ticket_count??0),0)}`);
   return {
     eb:      paid.reduce((s, m) => s + (m.sales_ticket_count ?? 0), 0),
     remains: matches.reduce((s, m) => s + (m.free_seats_without_reservations ?? 0), 0),
