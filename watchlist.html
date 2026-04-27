@@ -1042,14 +1042,15 @@ async function autoFill(){
 Dla plShow: sprawdź czy artysta grał kiedykolwiek w Polsce (koncert, festival). Jeśli nie — wpisz 'NIE'. Jeśli tak — podaj nazwę miejsca/festiwalu i rok.
 Predict solo headliner Warszawa: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-5000, duża Arena 5001+`;
   try{
-    const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt}]})});
+    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout — spróbuj ponownie')),20000));
+    const resp=await Promise.race([fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt}]})}),timeout]);
     const data=await resp.json();
     const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
     let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}
     [['fGenre',p.genre||''],['fListeners',p.listeners||''],['fSpotify',p.spotifyUrl||''],['fPlShow',p.plShow||'NIE'],['fPredMin',p.predMin||''],['fPredMax',p.predMax||'']].forEach(([id,v])=>{const el=document.getElementById(id);el.value=v;el.classList.add('ai-filled');});
     const fn=document.getElementById('fNotes');fn.value=[p.notes||'',p.predictReasoning?`\nPredict: ${p.predictReasoning}`:''].join('').trim();fn.classList.add('ai-filled');
     notify(`Dane dla "${name}" znalezione ✓`);
-  }catch(e){notify('Błąd — wypełnij ręcznie lub sprawdź hosting','err');}
+  }catch(e){const msg=e.message?.includes('Timeout')?'Timeout — spróbuj ponownie za chwilę':'Błąd AI — spróbuj ponownie';notify(msg,'err');}
   finally{document.getElementById('fillInd').style.display='none';document.getElementById('autoFillBtn').disabled=false;}
 }
 
@@ -1083,13 +1084,14 @@ async function runAiSearch(){
 TYLKO JSON: {"artists":[{"name":"","genre":"","listeners":"XM","spotifyUrl":"URL lub ''","plShow":"NIE lub info","predMin":N,"predMax":N,"notes":"1 zdanie + sala"}]}
 Skale: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-5000, duża Arena 5001+`;
   try{
-    const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
+    const fetchPromise=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})});
+    const resp=await Promise.race([fetchPromise,new Promise((_,r)=>setTimeout(()=>r(new Error('Timeout')),20000))]);
     const data=await resp.json();
     const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
     let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}
     window._aiRes=p.artists||[];
     res.innerHTML=window._aiRes.map((a,i)=>{const venue=venueForPredict(a.predMax);return`<div class="ai-row"><div class="ai-info"><div class="ai-name">${a.name}</div><div class="ai-meta">${a.genre} · ${a.listeners}${a.plShow&&a.plShow!=='NIE'?` · PL: ${a.plShow}`:''}</div>${a.notes?`<div class="ai-note">${a.notes}</div>`:''}</div><div class="ai-pred">${(a.predMin||0).toLocaleString()}–${(a.predMax||0).toLocaleString()} biletów${venue?`<small>${venue}</small>`:''}</div><button class="btn btn-purple" id="aibtn${i}" onclick="addFromAi(${i})">+ Dodaj</button></div>`;}).join('');
-  }catch(e){res.innerHTML=`<div class="load-row" style="color:var(--red)">Błąd. Sprawdź hosting lub spróbuj ponownie.</div>`;}
+  }catch(e){const msg=e.message?.includes('Timeout')?'Timeout — spróbuj ponownie za chwilę':'Błąd AI — spróbuj ponownie';res.innerHTML=`<div class="load-row" style="color:var(--red)">${msg}</div>`;}
 }
 
 function addFromAi(i){
@@ -1114,7 +1116,8 @@ ${details}
 Wyszukaj aktualne informacje.
 TYLKO JSON: {"artists":[${sel.map(a=>`{"name":"${a.name}","currentBuzz":"opis","recentActivity":"ostatnie wydawnictwa/trasy","polishPotential":"ocena","predictUpdated":{"min":N,"max":N},"venue":"sala Warszawa","growthOutlook":"rosnący/stabilny/malejący"}`).join(',')}],"winner":"imię artysty z największym potencjałem","verdict":"2-3 zdania po polsku — kto wygrywa i dlaczego"}`;
   try{
-    const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt}]})});
+    const fetchPromise=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:900,messages:[{role:'user',content:prompt}]})});
+    const resp=await Promise.race([fetchPromise,new Promise((_,r)=>setTimeout(()=>r(new Error('Timeout')),20000))]);
     const data=await resp.json();
     const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
     let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}
@@ -1136,7 +1139,7 @@ TYLKO JSON: {"artists":[${sel.map(a=>`{"name":"${a.name}","currentBuzz":"opis","
     if(p.verdict){const vd=document.getElementById('compareVerdict');vd.style.display='block';vd.innerHTML=`<strong>Wniosek MARKET:</strong> ${p.verdict}`;}
     aiArtists.forEach(ai=>{const a=artists.find(x=>x.name===ai.name);if(a&&ai.predictUpdated){a.predMin=ai.predictUpdated.min||a.predMin;a.predMax=ai.predictUpdated.max||a.predMax;a.trendUpdated=new Date().toISOString();saveArtistToDb(a);}});
     renderTable();
-  }catch(e){document.getElementById('compareLoading').style.display='none';document.getElementById('compareGrid').innerHTML=`<div style="color:var(--red);font-family:var(--mono);font-size:12px;padding:14px">Błąd analizy. Wymaga hostingu — sprawdź wdrożenie.</div>`;}
+  }catch(e){document.getElementById('compareLoading').style.display='none';const msg=e.message?.includes('Timeout')?'Timeout — spróbuj ponownie za chwilę':'Błąd AI — spróbuj ponownie';document.getElementById('compareGrid').innerHTML=`<div style="color:var(--red);font-family:var(--mono);font-size:12px;padding:14px">${msg}</div>`;}
 }
 
 /* ── IMPORT ── */
