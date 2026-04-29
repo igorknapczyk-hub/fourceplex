@@ -30,8 +30,8 @@ exports.handler = async function(event) {
   for (const ev of events) {
     try {
       const [ebResult, tmResult] = await Promise.all([
-        fetchEbilet(ebToken, ev.name, ev.date),
-        fetchTm(tmSession, ev.name, ev.date, ev.onSale),
+        fetchEbilet(ebToken, ev.name, ev.date, ev.altName||''),
+        fetchTm(tmSession, ev.name, ev.date, ev.onSale, ev.altName||''),
       ]);
       await saveToFirebase(ev.id, ev, tmResult.tm, ebResult.eb, ebResult.remains, ebResult.cap);
       results.push({ id: ev.id, tm: tmResult.tm, eb: ebResult.eb, ok: true });
