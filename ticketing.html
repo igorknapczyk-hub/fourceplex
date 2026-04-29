@@ -747,7 +747,7 @@ function renderTable(){
   const snapDates=[...dateSet].sort((a,b)=>parseSnapDate(b)-parseSnapDate(a)).filter(d=>parseSnapDate(d).getDay()===2);
 
   // Column widths — calc wider to fit timestamp+button side by side
-  const LW={calc:58,name:179,date:93,vip:26};
+  const LW={calc:58,name:179,date:93,vip:16};
   const LEFT_W=Object.values(LW).reduce((s,v)=>s+v,0);
   const SW={dni:52,venue:118,cena:62,cap:52,onsale:60,be:60};
   const BW={tm:58,eb:58,oth:52,t:62,w:46,pct:46,c:46};
@@ -1048,8 +1048,8 @@ async function doCountAll(){
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({events:evs.map(ev=>({
-      id:ev.id,name:ev.name,date:ev.date,
-      onSale:ev.onSale,other:ev.other||0,
+      id:ev.id,name:ev.name,altName:ev.altName||'',date:ev.date,
+      onSale:ev.onSale,other:ev.other||0,comps:ev.comps||0,
       wraps:ev.wraps||0,cap:ev.cap||0,
     }))}),
   }).catch(()=>{});
@@ -1090,8 +1090,8 @@ async function doCountOne(evId){
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({events:[{
-      id:evId,name:ev.name,date:ev.date,
-      onSale:ev.onSale,other:ev.other||0,
+      id:evId,name:ev.name,altName:ev.altName||'',date:ev.date,
+      onSale:ev.onSale,other:ev.other||0,comps:ev.comps||0,
       wraps:ev.wraps||0,cap:ev.cap||0,
     }]}),
   }).catch(()=>{});
