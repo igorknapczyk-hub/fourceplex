@@ -43,30 +43,44 @@ async function getEbiletToken() {
   return data.access_token;
 }
 
-async function fetchEbilet(token, eventName, eventDate) {
-  const res = await fetch(process.env.EBILET_GRAPHQL_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-    body: JSON.stringify({
-      query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time sales_ticket_count free_seats_without_reservations all_seats sales_gross sales_net}}}`,
-      variables: { n: eventName },
-    }),
-  });
-  const data = await res.json();
-  const items = data?.data?.sales?.items ?? [];
+async function fetchEbilet(token, eventName, eventDate, altName) {
   const target = new Date(eventDate);
-  const matches = items.filter(item => {
+  const normMain = normalize(eventName);
+  const normAlt  = altName ? normalize(altName) : '';
+
+  // Zapytaj eBilet dla każdej nazwy osobno, deduplikuj wyniki po kluczu event_name|event_time
+  const terms = [...new Set([eventName, altName].filter(Boolean))];
+  const seenKeys = new Set();
+  const allItems = [];
+
+  for (const term of terms) {
+    const res = await fetch(process.env.EBILET_GRAPHQL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({
+        query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time sales_ticket_count free_seats_without_reservations all_seats sales_gross sales_net}}}`,
+        variables: { n: term },
+      }),
+    });
+    const data = await res.json();
+    for (const item of (data?.data?.sales?.items ?? [])) {
+      const key = `${item.event_name}|${item.event_time}`;
+      if (!seenKeys.has(key)) { seenKeys.add(key); allItems.push(item); }
+    }
+  }
+
+  // Filtruj po dacie i nazwie (OR: główna lub alternatywna) — client-side
+  const matches = allItems.filter(item => {
     if (!item.event_time) return false;
-    if (!normalize(item.event_name).includes(normalize(eventName))) return false;
     const d = new Date(item.event_time);
-    return d.getFullYear() === target.getFullYear()
-        && d.getMonth()    === target.getMonth()
-        && d.getDate()     === target.getDate();
+    if (d.getFullYear() !== target.getFullYear()
+     || d.getMonth()    !== target.getMonth()
+     || d.getDate()     !== target.getDate()) return false;
+    const itemNorm = normalize(item.event_name);
+    return itemNorm.includes(normMain) || (normAlt && itemNorm.includes(normAlt));
   });
-  console.log(`[ebilet-debug] ${eventName} ${eventDate} — ${matches.length} pul:`);
-  matches.forEach(m => console.log(`  "${m.event_name}" | count=${m.sales_ticket_count} gross=${m.sales_gross} net=${m.sales_net}`));
+
   const paid = matches.filter(m => (m.sales_gross ?? 0) > 0 && (m.sales_net ?? 0) > 0);
-  console.log(`[ebilet-debug] paid pule: ${paid.length}, paid bilety: ${paid.reduce((s,m)=>s+(m.sales_ticket_count??0),0)}`);
   return {
     eb:      paid.reduce((s, m) => s + (m.sales_ticket_count ?? 0), 0),
     remains: matches.reduce((s, m) => s + (m.free_seats_without_reservations ?? 0), 0),
@@ -92,7 +106,7 @@ async function getTmSession() {
   return data.sessionId;
 }
 
-async function fetchTm(sessionId, eventName, eventDate, onSaleDate) {
+async function fetchTm(sessionId, eventName, eventDate, onSaleDate, altName) {
   const pad = n => String(n).padStart(2, '0');
   const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} 00:00:00`;
   const anchor = new Date(eventDate); anchor.setDate(anchor.getDate() + 7);
@@ -129,7 +143,10 @@ async function fetchTm(sessionId, eventName, eventDate, onSaleDate) {
   }
   const target = new Date(eventDate);
   const filtered = allTrx.filter(t => {
-    if (!normalize(t.eventTitle).includes(normalize(eventName))) return false;
+    const titleNorm = normalize(t.eventTitle);
+    const matchesMain = titleNorm.includes(normalize(eventName));
+    const matchesAlt  = altName && titleNorm.includes(normalize(altName));
+    if (!matchesMain && !matchesAlt) return false;
     if (!t.eventDate) return true;
     const p = t.eventDate.split('/');
     if (p.length !== 3) return true;
@@ -149,7 +166,7 @@ async function fetchTm(sessionId, eventName, eventDate, onSaleDate) {
 
 async function saveToFirebase(evId, ev, tm, eb, remains, ebCap) {
   const db = getDb();
-  const tot = tm + eb + (ev.other || 0);
+  const tot = Math.max(0, tm + eb + (ev.other || 0) - (ev.comps || 0));
   const pct = ev.cap ? Math.round(tot / ev.cap * 100) : 0;
   const now = Date.now();
   await db.collection('ticketing_events').doc(evId).update({
@@ -160,7 +177,7 @@ async function saveToFirebase(evId, ev, tm, eb, remains, ebCap) {
   const sid = `snap_${evId}_${dateStr.replace(/\./g,'_')}`;
   await db.collection('ticketing_snapshots').doc(sid).set({
     eventId: evId, eventName: ev.name, date: dateStr,
-    tm, eb, other: ev.other||0, total: tot,
+    tm, eb, other: ev.other||0, comps: ev.comps||0, total: tot,
     remains, wraps: ev.wraps||0, pct,
     createdBy: 'auto', createdAt: now,
   });
