@@ -44,41 +44,47 @@ async function getEbiletToken() {
 }
 
 async function fetchEbilet(token, eventName, eventDate, altName) {
-  const queryOne = async (name) => {
+  const target = new Date(eventDate);
+  const normMain = normalize(eventName);
+  const normAlt  = altName ? normalize(altName) : '';
+
+  // Zapytaj eBilet dla każdej nazwy osobno, deduplikuj wyniki po kluczu event_name|event_time
+  const terms = [...new Set([eventName, altName].filter(Boolean))];
+  const seenKeys = new Set();
+  const allItems = [];
+
+  for (const term of terms) {
     const res = await fetch(process.env.EBILET_GRAPHQL_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({
         query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time sales_ticket_count free_seats_without_reservations all_seats sales_gross sales_net}}}`,
-        variables: { n: name },
+        variables: { n: term },
       }),
     });
     const data = await res.json();
-    const items = data?.data?.sales?.items ?? [];
-    const target = new Date(eventDate);
-    const matches = items.filter(item => {
-      if (!item.event_time) return false;
-      if (!normalize(item.event_name).includes(normalize(name))) return false;
-      const d = new Date(item.event_time);
-      return d.getFullYear() === target.getFullYear()
-          && d.getMonth()    === target.getMonth()
-          && d.getDate()     === target.getDate();
-    });
-    const paid = matches.filter(m => (m.sales_gross ?? 0) > 0 && (m.sales_net ?? 0) > 0);
-    return {
-      eb:      paid.reduce((s, m) => s + (m.sales_ticket_count ?? 0), 0),
-      remains: matches.reduce((s, m) => s + (m.free_seats_without_reservations ?? 0), 0),
-      cap:     matches.reduce((s, m) => s + (m.all_seats ?? 0), 0),
-    };
-  };
+    for (const item of (data?.data?.sales?.items ?? [])) {
+      const key = `${item.event_name}|${item.event_time}`;
+      if (!seenKeys.has(key)) { seenKeys.add(key); allItems.push(item); }
+    }
+  }
 
-  const main = await queryOne(eventName);
-  if (!altName) return main;
-  const alt = await queryOne(altName);
+  // Filtruj po dacie i nazwie (OR: główna lub alternatywna) — client-side
+  const matches = allItems.filter(item => {
+    if (!item.event_time) return false;
+    const d = new Date(item.event_time);
+    if (d.getFullYear() !== target.getFullYear()
+     || d.getMonth()    !== target.getMonth()
+     || d.getDate()     !== target.getDate()) return false;
+    const itemNorm = normalize(item.event_name);
+    return itemNorm.includes(normMain) || (normAlt && itemNorm.includes(normAlt));
+  });
+
+  const paid = matches.filter(m => (m.sales_gross ?? 0) > 0 && (m.sales_net ?? 0) > 0);
   return {
-    eb:      main.eb + alt.eb,
-    remains: main.remains + alt.remains,
-    cap:     main.cap + alt.cap,
+    eb:      paid.reduce((s, m) => s + (m.sales_ticket_count ?? 0), 0),
+    remains: matches.reduce((s, m) => s + (m.free_seats_without_reservations ?? 0), 0),
+    cap:     matches.reduce((s, m) => s + (m.all_seats ?? 0), 0),
   };
 }
 
