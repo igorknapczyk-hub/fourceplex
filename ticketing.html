@@ -284,10 +284,10 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
 .icon-btn.del:hover{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.1);color:var(--red)}
 .icon-btn.edit:hover{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.1);color:var(--purple)}
 
-/* ALERT CHIPS */
-.alert-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:3px;flex-shrink:0;font-size:10px;line-height:1}
-.alert-10-btn{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:var(--amber)}
-.alert-5-btn{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:var(--red)}
+
+/* VIP BADGE */
+.vip-btn{display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:7px;font-weight:700;letter-spacing:.04em;padding:1px 4px;border-radius:3px;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35);color:var(--purple);cursor:default;flex-shrink:0}
+#_vip_tip{position:fixed;z-index:9999;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:10px;font-family:var(--sans);padding:5px 9px;box-shadow:0 4px 12px rgba(0,0,0,.4);white-space:nowrap;pointer-events:none;display:none}
 
 /* MODAL (index.html style) */
 #modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
@@ -460,6 +460,10 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
         <div class="fsec">Podstawowe dane</div>
         <div class="fg3">
           <div><div class="form-label">Artysta *</div><input class="form-input" type="text" id="fName" placeholder="np. Schur"></div>
+          <div>
+            <div class="form-label">Alternatywna nazwa</div>
+            <input class="form-input" type="text" id="fAltName" placeholder="np. Eivør">
+          </div>
           <div><div class="form-label">Data eventu *</div><input class="form-input" type="date" id="fDate"></div>
           <div><div class="form-label">Venue</div><input class="form-input" type="text" id="fVenue" placeholder="np. Hydrozagadka" list="vList">
             <datalist id="vList"><option value="Hydrozagadka"><option value="BARdzo Bardzo"><option value="Drizzly Grizzly"><option value="Schron"><option value="Niebo"><option value="Piekło nad Niebem"><option value="Progresja"><option value="COS Torwar"><option value="Proxima"><option value="Palladium"><option value="Chmury"></datalist>
@@ -473,13 +477,12 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
           <div><div class="form-label">TicketMaster (TM)</div><input class="form-input" type="number" id="fTM" placeholder="0" min="0"></div>
           <div><div class="form-label">eBilet (eB)</div><input class="form-input" type="number" id="fEB" placeholder="0" min="0"></div>
           <div><div class="form-label">Inne</div><input class="form-input" type="number" id="fOther" placeholder="0" min="0"></div>
-          <div><div class="form-label">Remains (R)</div><input class="form-input" type="number" id="fRemains" placeholder="pozostałe" min="0"></div>
+          <div><div class="form-label">Comps</div><input class="form-input" type="number" id="fComps" placeholder="np. 10" min="0"></div>
           <div><div class="form-label">Wraps</div><input class="form-input" type="number" id="fWraps" placeholder="0" min="0"></div>
           <div><div class="form-label">VIP / notatka</div><input class="form-input" type="text" id="fVip" placeholder="np. notatka"></div>
         </div>
         <div class="fsec">Dodatkowe</div>
         <div class="fg2">
-          <div><div class="form-label">Internal Buys</div><input class="form-input" type="number" id="fInternalBuys" placeholder="0" min="0"></div>
           <div><div class="form-label">Break Even (puste = 50% CAP)</div><input class="form-input" type="number" id="fBreakEven" placeholder="auto" min="0"></div>
           <div class="ff"><div class="form-label">Notatki</div><textarea class="form-input" id="fNotes" placeholder="Obserwacje..."></textarea></div>
         </div>
@@ -661,7 +664,7 @@ function notify(msg,t=''){const n=document.createElement('div');n.className='not
 function togglePanel(id){const p=document.getElementById(id),was=p.classList.contains('open');closeAllPanels();if(!was)p.classList.add('open');}
 function closePanel(id){document.getElementById(id).classList.remove('open');}
 function closeAllPanels(){document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('open'));editId=null;document.getElementById('fDeleteBtn').style.display='none';document.getElementById('formTitle').textContent='Dodaj event';clearForm();}
-function clearForm(){['fName','fDate','fVenue','fPrice','fCap','fOnSale','fBreakEven','fInternalBuys','fVip','fTM','fEB','fOther','fRemains','fWraps','fNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
+function clearForm(){['fName','fAltName','fDate','fVenue','fPrice','fCap','fOnSale','fBreakEven','fVip','fTM','fEB','fOther','fComps','fWraps','fNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
 function sortBy(col){if(_sCol===col)_sDir*=-1;else{_sCol=col;_sDir=1;}renderTable();}
 
 /* ── TAB STATE ── */
@@ -701,12 +704,6 @@ const RCOLS=['TM','eB','Inne','T','W','%','R',''];
 function mkPct(pct,cap){
   if(!cap)return'—';
   return`<span style="color:${pctColor(pct)};font-family:var(--mono);font-size:11px">${pct}%</span>`;
-}
-/* ── ALERT CHIP for name cell ── */
-function alertBtn(pct){
-  if(pct>=95&&pct<100)return'<span class="alert-btn alert-5-btn" title="Ostatnie bilety — 5%">⚠</span>';
-  if(pct>=89&&pct<95) return'<span class="alert-btn alert-10-btn" title="Ostatnie bilety — 10%">⚠</span>';
-  return'';
 }
 
 /* ── RENDER TABLE ── */
@@ -750,26 +747,27 @@ function renderTable(){
   const snapDates=[...dateSet].sort((a,b)=>parseSnapDate(b)-parseSnapDate(a)).filter(d=>parseSnapDate(d).getDay()===2);
 
   // Column widths — calc wider to fit timestamp+button side by side
-  const LW={calc:46,name:179,date:93};
+  const LW={calc:58,name:179,date:93,vip:26};
   const LEFT_W=Object.values(LW).reduce((s,v)=>s+v,0);
   const SW={dni:52,venue:118,cena:62,cap:52,onsale:60,be:60};
-  const BW={tm:68,eb:68,oth:58,t:72,w:50,pct:52,r:62};
+  const BW={tm:58,eb:58,oth:52,t:62,w:46,pct:46,c:46};
   const BLOCK_W=Object.values(BW).reduce((s,v)=>s+v,0);
-  const BCOLS=['TM','eB','Inne','T','W','%','R'];
+  const BCOLS=['TM','eB','Inne','T','W','%','C'];
 
   // LEFT PANEL THEAD
-  const lpW=LW.calc+LW.name+LW.date;
+  const lpW=LW.calc+LW.name+LW.date+LW.vip;
   const lpThead=`
   <colgroup>
-    <col style="width:${LW.calc}px"><col style="width:${LW.name}px"><col style="width:${LW.date}px">
+    <col style="width:${LW.calc}px"><col style="width:${LW.name}px"><col style="width:${LW.date}px"><col style="width:${LW.vip}px">
   </colgroup>
   <tr>
-    <th class="r1"></th><th class="r1"></th><th class="r1"></th>
+    <th class="r1"></th><th class="r1"></th><th class="r1"></th><th class="r1"></th>
   </tr>
   <tr>
     <th class="r2"></th>
     <th class="r2" style="cursor:pointer" onclick="sortBy('name')">Artysta</th>
     <th class="r2" style="cursor:pointer" onclick="sortBy('date')">Data</th>
+    <th class="r2"></th>
   </tr>`;
   const lpTable=document.querySelector('#panLeft table');
   if(lpTable){lpTable.querySelector('thead').innerHTML=lpThead;lpTable.style.width=lpW+'px';}
@@ -799,23 +797,23 @@ function renderTable(){
   document.getElementById('tblMid').style.width=midW+'px';
   document.getElementById('tblMid').style.minWidth=midW+'px';
 
-  // RIGHT PANEL — LIVE cols same widths as snapshot BW
-  const RL={tm:68,eb:68,oth:58,t:72,w:50,pct:52,r:62,act:56};
+  // RIGHT PANEL — LIVE cols
+  const RL={t:58,w:38,tm:58,eb:100,oth:46,pct:46,c:46,act:52};
   const RL_W=Object.values(RL).reduce((s,v)=>s+v,0);
   document.getElementById('panRight').style.width=RL_W+'px';
   document.getElementById('panRight').style.display='';
   document.getElementById('panRight').style.borderRight='2px solid rgba(200,240,96,.22)';
   document.getElementById('tblRight').style.width=RL_W+'px';
-  const rcg=`<colgroup><col style="width:${RL.t}px"><col style="width:${RL.tm}px"><col style="width:${RL.eb}px"><col style="width:${RL.oth}px"><col style="width:${RL.w}px"><col style="width:${RL.pct}px"><col style="width:${RL.r}px"><col style="width:${RL.act}px"></colgroup>`;
+  const rcg=`<colgroup><col style="width:${RL.t}px"><col style="width:${RL.w}px"><col style="width:${RL.tm}px"><col style="width:${RL.eb}px"><col style="width:${RL.oth}px"><col style="width:${RL.pct}px"><col style="width:${RL.c}px"><col style="width:${RL.act}px"></colgroup>`;
   const rr1=`<tr><th class="r1 dg live-hdr" colspan="8" style="width:${RL_W}px"><span style="color:var(--accent)">LIVE ●</span></th></tr>`;
   const rr2=`<tr>
     <th class="r2 live-bg" style="width:${RL.t}px;text-align:right;padding-right:8px;border-left:1px solid rgba(200,240,96,.15)">T</th>
+    <th class="r2 live-bg" style="width:${RL.w}px;text-align:right;padding-right:8px">W</th>
     <th class="r2 live-bg" style="width:${RL.tm}px;text-align:right;padding-right:8px">TM</th>
     <th class="r2 live-bg" style="width:${RL.eb}px;text-align:right;padding-right:8px">eB</th>
     <th class="r2 live-bg" style="width:${RL.oth}px;text-align:right;padding-right:8px">Inne</th>
-    <th class="r2 live-bg" style="width:${RL.w}px;text-align:right;padding-right:8px">W</th>
     <th class="r2 live-bg" style="width:${RL.pct}px;text-align:right;padding-right:8px">%</th>
-    <th class="r2 live-bg" style="width:${RL.r}px;text-align:right;padding-right:8px">R</th>
+    <th class="r2 live-bg" style="width:${RL.c}px;text-align:right;padding-right:8px">C</th>
     <th class="r2" style="width:${RL.act}px"></th>
   </tr>`;
   document.getElementById('thdRight').innerHTML=rcg+rr1+rr2;
@@ -826,7 +824,6 @@ function renderTable(){
     const days=daysLeft(ev.date);
     const tot=(ev.tm||0)+(ev.eb||0)+(ev.other||0);
     const pct=ev.cap?Math.round(tot/ev.cap*100):0;
-    const rem=ev.remains!=null?ev.remains:(ev.cap?ev.cap-tot:'—');
     const be=ev.breakEven||(ev.cap?Math.round(ev.cap*.5):0);
     const beHit=be>0&&tot>=be;
 
@@ -843,9 +840,7 @@ function renderTable(){
     else if(days<=21)dbadge=`<span class="db ds">${days}d</span>`;
     else dbadge=`<span class="db do">${days}d</span>`;
 
-    const remColor=rem===0?'var(--teal)':typeof rem==='number'&&rem<50?'var(--amber)':'var(--text3)';
     const pctCol=pctColor(pct);
-    const aBtn=alertBtn(pct);
 
     // LEFT ROW — [timestamp | ⊞ | alert] | name | date  (all in one line → fixed 34px height)
     let lastCtBlock='';
@@ -860,11 +855,11 @@ function renderTable(){
         <div style="display:flex;align-items:center;justify-content:center;gap:3px;height:100%">
           ${lastCtBlock}
           <span class="calc-btn" onclick="doCountOne('${ev.id}')" title="Zlicz (wymaga API)">⊞</span>
-          ${aBtn}
         </div>
       </td>
       <td class="name-c" style="width:${LW.name}px">${ev.name}</td>
       <td class="date-c" style="width:${LW.date}px">${fd(ev.date)}</td>
+      <td style="width:${LW.vip}px;text-align:center;padding:0 2px">${ev.vip?`<span class="vip-btn" data-tip="${ev.vip.replace(/"/g,'&quot;')}">VIP</span>`:''}</td>
     </tr>`;
 
     // MIDDLE ROW
@@ -874,7 +869,7 @@ function renderTable(){
     mr+=`<td style="width:${SW.cena}px;font-family:var(--mono);font-size:10px;color:var(--text3)">${ev.price||'—'}</td>`;
     mr+=`<td class="num" style="width:${SW.cap}px;color:var(--text3)">${ev.cap||'—'}</td>`;
     mr+=`<td style="width:${SW.onsale}px;font-family:var(--mono);font-size:10px;color:var(--text3)">${ev.onSale?fs(ev.onSale):'—'}</td>`;
-    const beHtml=be?(beHit?`<span class="be-v be-hit">${be} 💰</span>`:`<span class="be-v">${be}</span>`):'—';
+    const beHtml=be?(beHit?`<span class="be-v be-hit">${be}</span>`:`<span class="be-v">${be}</span>`):'—';
     mr+=`<td style="width:${SW.be}px;text-align:right;padding-right:8px">${beHtml}</td>`;
 
     snapDates.forEach((dt,di)=>{
@@ -890,18 +885,18 @@ function renderTable(){
         const wHtml=wDiff!=null?`<span style="color:${wDiff>0?'var(--teal)':wDiff<0?'var(--red)':'var(--text2)'}">${wDiff>0?'+':''}${wDiff}</span>`:'—';
         mr+=`<td class="num bl-sep" style="width:${BW.tm}px">${s.tm||0}</td>`;
         mr+=`<td class="num" style="width:${BW.eb}px">${s.eb||0}</td>`;
-        mr+=`<td class="num ec" style="width:${BW.oth}px;color:var(--text2)" data-snapid="${s.id}" data-evid="${ev.id}" data-val="${s.other||0}" onclick="iEditSnap(this)" title="Edytuj Inne">${s.other||0}</td>`;
+        mr+=`<td class="num ec" style="width:${BW.oth}px;color:var(--text2)" data-snapid="${s.id}" data-evid="${ev.id}" data-val="${s.other||0}" data-field="other" onclick="iEditSnap(this)" title="Edytuj Inne">${s.other||0}</td>`;
         mr+=`<td class="num-b" style="width:${BW.t}px">${s.total||0}</td>`;
         mr+=`<td class="num" style="width:${BW.w}px">${wHtml}</td>`;
         mr+=`<td class="num" style="width:${BW.pct}px;color:${pctColor(sp)}">${ev.cap?sp+'%':'—'}</td>`;
-        mr+=`<td class="num" style="width:${BW.r}px;color:var(--text3)">${s.remains||0}</td>`;
+        mr+=`<td class="num ec" style="width:${BW.c}px;color:var(--text3)" data-snapid="${s.id}" data-evid="${ev.id}" data-val="${s.comps||0}" data-field="comps" onclick="iEditSnap(this)" title="Comps">${s.comps||0}</td>`;
       }else{
         // No real data — show XX (nie wymyślamy liczb)
         const xxStyle='color:var(--text3);letter-spacing:.04em';
         mr+=`<td class="num bl-sep" style="width:${BW.tm}px;${xxStyle}">XX</td>`;
         ['eb','oth','t','w'].forEach(k=>mr+=`<td class="num" style="width:${BW[k]}px;${xxStyle}">XX</td>`);
         mr+=`<td style="width:${BW.pct}px"></td>`;
-        mr+=`<td class="num" style="width:${BW.r}px;${xxStyle}">XX</td>`;
+        mr+=`<td class="num" style="width:${BW.c}px;color:var(--text3)">—</td>`;
       }
     });
     mr+='</tr>';
@@ -914,34 +909,32 @@ function renderTable(){
   let rH='';
   rows.forEach(ev=>{
     const days=daysLeft(ev.date);
-    const tot=(ev.tm||0)+(ev.eb||0)+(ev.other||0);
-    const pct=ev.cap?Math.round(tot/ev.cap*100):0;
-    const rem=ev.remains!=null?ev.remains:(ev.cap?ev.cap-tot:'—');
+    const tot2=Math.max(0,(ev.tm||0)+(ev.eb||0)+(ev.other||0)-(ev.comps||0));
+    const pct2=ev.cap?Math.round(tot2/ev.cap*100):0;
     let rc2;
     if(days<-2)rc2='row-past';
     else if(days<=7)rc2='row-urgent';
     else if(days<=21)rc2='row-warn';
     else rc2='row-ok';
-    if(pct>=100)rc2='row-ok';
-    const remColor2=rem===0?'var(--teal)':typeof rem==='number'&&rem<50?'var(--amber)':'var(--text3)';
-    const pctCol2=pctColor(pct);
+    if(pct2>=100)rc2='row-ok';
+    const pctCol2=pctColor(pct2);
     // LIVE Wraps = diff vs last real Tuesday snapshot
     const evRealTue=(allSnaps[ev.id]||[])
       .filter(s=>s.createdBy!=='seed'&&parseSnapDate(s.date).getDay()===2)
       .sort((a,b)=>parseSnapDate(b.date)-parseSnapDate(a.date));
     const lastRS=evRealTue[0];
-    const liveWDiff=lastRS!=null?tot-(lastRS.total||0):null;
+    const liveWDiff=lastRS!=null?tot2-(lastRS.total||0):null;
     const liveWHtml=liveWDiff!=null
       ?`<span style="color:${liveWDiff>0?'var(--teal)':liveWDiff<0?'var(--red)':'var(--text2)'}">${liveWDiff>0?'+':''}${liveWDiff}</span>`
       :'—';
     rH+=`<tr class="${rc2}" data-id="${ev.id}">
-      <td class="num-b live-bg" style="width:${RL.t}px;font-weight:700;border-left:1px solid rgba(200,240,96,.12)">${tot}</td>
+      <td class="num-b live-bg" style="width:${RL.t}px;font-weight:700;border-left:1px solid rgba(200,240,96,.12)">${tot2}</td>
+      <td class="num live-bg" style="width:${RL.w}px">${liveWHtml}</td>
       <td class="num live-bg" style="width:${RL.tm}px">${ev.tm||0}</td>
       <td class="num live-bg" style="width:${RL.eb}px">${ev.eb||0}</td>
-      <td class="num ec live-bg" style="width:${RL.oth}px" data-evid="${ev.id}" data-field="other" data-val="${ev.other||0}" onclick="iEdit(this,'${ev.id}','other')" title="Edytuj Inne">${ev.other||0}</td>
-      <td class="num live-bg" style="width:${RL.w}px">${liveWHtml}</td>
-      <td class="num live-bg" style="width:${RL.pct}px;color:${pctCol2}">${ev.cap?pct+'%':'—'}</td>
-      <td class="num live-bg" style="width:${RL.r}px;color:${remColor2}">${rem}</td>
+      <td class="num live-bg ec" style="width:${RL.oth}px;color:var(--text3)" data-val="${ev.other||0}" onclick="iEdit(this,'${ev.id}','other')" title="Inne — kliknij żeby edytować">${ev.other||0}</td>
+      <td class="num live-bg" style="width:${RL.pct}px;color:${pctCol2}">${ev.cap?pct2+'%':'—'}</td>
+      <td class="num live-bg ec" style="width:${RL.c}px;color:var(--text3)" data-val="${ev.comps||0}" onclick="iEdit(this,'${ev.id}','comps')" title="Comps — kliknij żeby edytować">${ev.comps||0}</td>
       <td style="width:${RL.act}px;padding:0 5px">
         <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">
           <span class="icon-btn edit" onclick="openEdit('${ev.id}')" title="Edytuj">
@@ -993,24 +986,27 @@ function bindHover(){
   });
 }
 
-/* ── iEditSnap — 'Inne' in snapshot ── */
+/* ── iEditSnap — 'Inne' / 'Comps' in snapshot ── */
 async function iEditSnap(td){
   const snapId=td.getAttribute('data-snapid');
   const evId=td.getAttribute('data-evid');
+  const field=td.getAttribute('data-field')||'other';
   const inp=document.createElement('input');
   inp.type='text';inp.inputMode='numeric';inp.className='ie';inp.value=td.getAttribute('data-val')||'0';
   td.innerHTML='';td.appendChild(inp);inp.focus();inp.select();
   const done=async()=>{
     const val=Math.max(0,parseInt(inp.value)||0);
     const snap=(window._snaps?.[evId]||[]).find(s=>s.id===snapId);if(!snap)return;
-    const newTot=(snap.tm||0)+(snap.eb||0)+val;
     const ev=window._events.find(e=>e.id===evId);
+    const other=field==='other'?val:(snap.other||0);
+    const comps=field==='comps'?val:(snap.comps||0);
+    const newTot=Math.max(0,(snap.tm||0)+(snap.eb||0)+other-comps);
     const newRem=ev?.cap?Math.max(0,ev.cap-newTot):(snap.remains||0);
     const newPct=ev?.cap?Math.round(newTot/ev.cap*100):0;
-    const u={...snap,other:val,total:newTot,remains:newRem,pct:newPct,updatedBy:curUser,updatedAt:Date.now()};
+    const u={...snap,other,comps,total:newTot,remains:newRem,pct:newPct,updatedBy:curUser,updatedAt:Date.now()};
     delete u.id;
     await window._setDoc(window._doc(window._db,'ticketing_snapshots',snapId),u);
-    notify('Inne ('+snap.date+') → '+val,'info');
+    notify((field==='comps'?'Comps':'Inne')+' ('+snap.date+') → '+val,'info');
   };
   inp.addEventListener('blur',done);
   inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderTable();});
@@ -1140,13 +1136,15 @@ async function saveEvent(){
   if(!name||!date){notify('Wypełnij nazwę i datę','err');return;}
   const g=id=>parseInt(document.getElementById(id).value)||0;
   const gv=id=>document.getElementById(id).value.trim();
-  const data={name,date,venue:gv('fVenue'),price:gv('fPrice'),cap:g('fCap'),onSale:gv('fOnSale'),
-    breakEven:g('fBreakEven'),internalBuys:g('fInternalBuys'),vip:gv('fVip'),
-    tm:g('fTM'),eb:g('fEB'),other:g('fOther'),remains:g('fRemains'),wraps:g('fWraps'),notes:gv('fNotes')};
+  const data={name,date,altName:gv('fAltName'),venue:gv('fVenue'),price:gv('fPrice'),cap:g('fCap'),onSale:gv('fOnSale'),
+    breakEven:g('fBreakEven'),vip:gv('fVip'),
+    tm:g('fTM'),eb:g('fEB'),other:g('fOther'),comps:g('fComps'),wraps:g('fWraps'),notes:gv('fNotes')};
   if(editId){
     const old=window._events.find(e=>e.id===editId)||{};
     data.addedBy=old.addedBy||curUser;data.addedAt=old.addedAt||Date.now();
     data.updatedBy=curUser;data.updatedAt=Date.now();
+    if(old.lastCountedAt)data.lastCountedAt=old.lastCountedAt;
+    if(old.ebCap!=null)data.ebCap=old.ebCap;
     await window._setDoc(window._doc(window._db,'ticketing_events',editId),data);
     notify('Event zaktualizowany');
   }else{
@@ -1163,11 +1161,11 @@ function openEdit(id){
   document.getElementById('formTitle').textContent='Edytuj event';
   document.getElementById('fDeleteBtn').style.display='';
   const F=(fid,v)=>{const el=document.getElementById(fid);if(el)el.value=v||'';};
-  F('fName',ev.name);F('fDate',ev.date);F('fVenue',ev.venue);F('fPrice',ev.price);
+  F('fName',ev.name);F('fAltName',ev.altName);F('fDate',ev.date);F('fVenue',ev.venue);F('fPrice',ev.price);
   F('fCap',ev.cap);F('fOnSale',ev.onSale);F('fBreakEven',ev.breakEven);
-  F('fInternalBuys',ev.internalBuys);F('fVip',ev.vip);
+  F('fVip',ev.vip);
   F('fTM',ev.tm);F('fEB',ev.eb);F('fOther',ev.other);
-  F('fRemains',ev.remains);F('fWraps',ev.wraps);F('fNotes',ev.notes);
+  F('fComps',ev.comps||0);F('fWraps',ev.wraps);F('fNotes',ev.notes);
   document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('open'));
   document.getElementById('addPanel').classList.add('open');
 }
@@ -1188,6 +1186,30 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 
 Object.assign(window,{openModal,closeModal,openUserModal,selectForPin,confirmPin,togglePanel,closePanel,closeAllPanels,sortBy,switchTab,confirmDelete,renderTable,saveEvent,openEdit,deleteCurrentEvent,iEdit,iEditSnap,doCountAll,doCountOne,notify});
+
+/* ── VIP FLOATING TOOLTIP ── */
+(function(){
+  let tip=null;
+  function getTip(){
+    if(!tip){tip=document.createElement('div');tip.id='_vip_tip';document.body.appendChild(tip);}
+    return tip;
+  }
+  document.addEventListener('mouseover',e=>{
+    const btn=e.target.closest('.vip-btn');
+    if(!btn)return;
+    const text=btn.getAttribute('data-tip');
+    if(!text)return;
+    const t=getTip();
+    t.textContent=text;
+    t.style.display='block';
+    const r=btn.getBoundingClientRect();
+    t.style.left=Math.round(r.left+r.width/2-t.offsetWidth/2)+'px';
+    t.style.top=Math.round(r.top-t.offsetHeight-6)+'px';
+  });
+  document.addEventListener('mouseout',e=>{
+    if(e.target.closest('.vip-btn')&&tip)tip.style.display='none';
+  });
+})();
 </script>
 <script>
 /* ── THEME ── */
