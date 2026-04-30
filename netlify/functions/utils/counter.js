@@ -63,14 +63,13 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
       }),
     });
     const data = await res.json();
-    const rawItems = data?.data?.sales?.items ?? [];
     // Dodaj wszystkie rekordy z tego termu których klucze nie wystąpiły w POPRZEDNICH termach
-    for (const item of rawItems) {
+    for (const item of (data?.data?.sales?.items ?? [])) {
       const key = item.event_external_id || `${item.event_name}|${item.event_time}`;
       if (!seenKeys.has(key)) allItems.push(item);
     }
     // Zarejestruj klucze z tego termu na potrzeby dedup kolejnych termów
-    for (const item of rawItems) {
+    for (const item of (data?.data?.sales?.items ?? [])) {
       const key = item.event_external_id || `${item.event_name}|${item.event_time}`;
       seenKeys.add(key);
     }
