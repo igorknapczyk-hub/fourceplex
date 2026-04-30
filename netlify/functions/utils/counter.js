@@ -80,7 +80,7 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
     return itemNorm.includes(normMain) || (normAlt && itemNorm.includes(normAlt));
   });
 
-  const paid = matches.filter(m => (m.sales_gross ?? 0) > 0 && (m.sales_net ?? 0) > 0);
+  const paid = matches.filter(m => (m.sales_gross ?? 0) > 0);
   return {
     eb:      paid.reduce((s, m) => s + (m.sales_ticket_count ?? 0), 0),
     remains: matches.reduce((s, m) => s + (m.free_seats_without_reservations ?? 0), 0),
