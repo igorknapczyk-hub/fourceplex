@@ -63,7 +63,9 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
       }),
     });
     const data = await res.json();
-    for (const item of (data?.data?.sales?.items ?? [])) {
+    const rawItems = data?.data?.sales?.items ?? [];
+    console.log(`[eb] term="${term}" raw=${rawItems.length}:`, JSON.stringify(rawItems.map(i=>({id:i.event_external_id,t:i.event_time,cnt:i.sales_ticket_count,gross:i.sales_gross}))));
+    for (const item of rawItems) {
       const key = item.event_external_id || `${item.event_name}|${item.event_time}`;
       if (!seenKeys.has(key)) { seenKeys.add(key); allItems.push(item); }
     }
