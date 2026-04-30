@@ -26,8 +26,8 @@ exports.handler = async function() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ events: evs.map(ev => ({
-        id: ev.id, name: ev.name, date: ev.date,
-        onSale: ev.onSale, other: ev.other||0,
+        id: ev.id, name: ev.name, altName: ev.altName||'', date: ev.date,
+        onSale: ev.onSale, other: ev.other||0, comps: ev.comps||0,
         wraps: ev.wraps||0, cap: ev.cap||0,
       })) }),
     });
