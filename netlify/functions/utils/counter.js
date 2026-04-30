@@ -63,7 +63,9 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
       }),
     });
     const data = await res.json();
-    for (const item of (data?.data?.sales?.items ?? [])) {
+    const rawItems = data?.data?.sales?.items ?? [];
+    console.log(`[eb-debug] term="${term}" → ${rawItems.length} wyników z API`);
+    for (const item of rawItems) {
       const key = `${item.event_name}|${item.event_time}`;
       if (!seenKeys.has(key)) { seenKeys.add(key); allItems.push(item); }
     }
@@ -79,6 +81,9 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
     const itemNorm = normalize(item.event_name);
     return itemNorm.includes(normMain) || (normAlt && itemNorm.includes(normAlt));
   });
+
+  console.log(`[eb-debug] ${eventName} ${eventDate} → allItems=${allItems.length} matches=${matches.length}`);
+  matches.forEach(m => console.log(`  name="${m.event_name}" time=${m.event_time} count=${m.sales_ticket_count} gross=${m.sales_gross} net=${m.sales_net}`));
 
   const paid = matches.filter(m => (m.sales_gross ?? 0) > 0);
   return {
