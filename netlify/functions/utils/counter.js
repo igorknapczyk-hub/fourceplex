@@ -58,13 +58,13 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({
-        query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time sales_ticket_count free_seats_without_reservations all_seats sales_gross sales_net}}}`,
+        query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time event_external_id sales_ticket_count free_seats_without_reservations all_seats sales_gross sales_net}}}`,
         variables: { n: term },
       }),
     });
     const data = await res.json();
     for (const item of (data?.data?.sales?.items ?? [])) {
-      const key = `${item.event_name}|${item.event_time}`;
+      const key = item.event_external_id || `${item.event_name}|${item.event_time}`;
       if (!seenKeys.has(key)) { seenKeys.add(key); allItems.push(item); }
     }
   }
