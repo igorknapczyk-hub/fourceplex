@@ -64,10 +64,15 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
     });
     const data = await res.json();
     const rawItems = data?.data?.sales?.items ?? [];
-    console.log(`[eb] term="${term}" raw=${rawItems.length}:`, JSON.stringify(rawItems.map(i=>({id:i.event_external_id,t:i.event_time,cnt:i.sales_ticket_count,gross:i.sales_gross}))));
+    // Dodaj wszystkie rekordy z tego termu których klucze nie wystąpiły w POPRZEDNICH termach
     for (const item of rawItems) {
       const key = item.event_external_id || `${item.event_name}|${item.event_time}`;
-      if (!seenKeys.has(key)) { seenKeys.add(key); allItems.push(item); }
+      if (!seenKeys.has(key)) allItems.push(item);
+    }
+    // Zarejestruj klucze z tego termu na potrzeby dedup kolejnych termów
+    for (const item of rawItems) {
+      const key = item.event_external_id || `${item.event_name}|${item.event_time}`;
+      seenKeys.add(key);
     }
   }
 
