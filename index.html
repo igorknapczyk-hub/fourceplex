@@ -40,11 +40,31 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .fource-brand span{color:var(--accent)}
 .brand-logo{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--text);letter-spacing:.06em}
 .brand-tag{font-size:10px;color:var(--text3);font-family:var(--mono);border:1px solid var(--border2);padding:2px 7px;border-radius:4px;margin-left:8px}
-.topbar-right{display:flex;align-items:center;gap:14px}
+.topbar-right{display:flex;align-items:center;gap:10px}
 .live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .topbar-stat{font-family:var(--mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
 .topbar-stat strong{color:var(--accent)}
+/* ── TOPBAR NOTIFICATION PILLS ── */
+.topbar-notif{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:var(--bg3);transition:border-color .2s,background .2s;user-select:none;white-space:nowrap}
+.notif-count{font-size:13px;font-weight:500;line-height:1}
+.notif-lbl{font-size:10px;color:var(--text3)}
+.notif-sep{width:1px;height:14px;background:var(--border2);margin:0 2px}
+.notif-todo .notif-count{color:var(--accent)}
+.notif-todo.active{border-color:rgba(200,240,96,.3);background:rgba(200,240,96,.07)}
+.notif-todo.flash{animation:notifFlash 2.8s ease forwards}
+@keyframes notifFlash{0%{box-shadow:0 0 0 0 rgba(200,240,96,.55)}35%{box-shadow:0 0 0 7px rgba(200,240,96,.08)}100%{box-shadow:0 0 0 0 rgba(200,240,96,0)}}
+.notif-zlecone .notif-count{color:var(--purple)}
+.notif-zlecone.active{border-color:rgba(167,139,250,.28);background:rgba(167,139,250,.07)}
+.notif-wtoku .notif-count{color:var(--blue)}
+.notif-wtoku.active{border-color:rgba(96,165,250,.28);background:rgba(96,165,250,.07)}
+.notif-notes{border-color:rgba(251,191,36,.35)!important;background:rgba(251,191,36,.08)!important;cursor:pointer}
+.notif-notes:hover{background:rgba(251,191,36,.15)!important}
+.notif-notes .notif-count{color:var(--amber)}
+.notif-notes .notif-lbl{color:rgba(251,191,36,.55)}
+/* new note dot on todo-item rows */
+.note-new-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;box-shadow:0 0 0 2px rgba(251,191,36,.22);margin-top:3px;cursor:pointer}
+.note-new-dot:hover{box-shadow:0 0 0 3px rgba(251,191,36,.35)}
 .user-badge{background:var(--bg3);border:1px solid var(--border2);padding:4px 10px;border-radius:6px;font-size:12px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px}
 .user-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 
@@ -329,7 +349,27 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     <div><span class="brand-logo">TERRARIUM</span><span class="brand-tag">Fource.Plex</span></div>
   </div>
   <div class="topbar-right">
-    <div class="topbar-stat"><div class="live-dot"></div>&nbsp;<strong id="todo-top-count">0</strong> zadań</div>
+    <!-- Do zrobienia -->
+    <div class="topbar-notif notif-todo" id="notif-todo" title="Zadania Do zrobienia i Zablokowane">
+      <strong class="notif-count" id="notif-todo-count">0</strong>
+      <span class="notif-lbl">do zrobienia</span>
+    </div>
+    <!-- Zlecone -->
+    <div class="topbar-notif notif-zlecone" id="notif-zlecone" title="Zadania zlecone przez Ciebie">
+      <strong class="notif-count" id="notif-zlecone-count">0</strong>
+      <span class="notif-lbl">zlecone</span>
+    </div>
+    <!-- W toku -->
+    <div class="topbar-notif notif-wtoku" id="notif-wtoku" title="Zadania W toku">
+      <strong class="notif-count" id="notif-wtoku-count">0</strong>
+      <span class="notif-lbl">w toku</span>
+    </div>
+    <!-- Nowe notatki (ukryte gdy 0) -->
+    <div class="topbar-notif notif-notes" id="notif-notes" style="display:none" onclick="jumpToNewNotes()" title="Nowe notatki wykonania — kliknij aby przejść">
+      <svg viewBox="0 0 14 14" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" style="flex-shrink:0;color:var(--amber)"><path d="M2 2h10v8H8l-3 2v-2H2z"/></svg>
+      <strong class="notif-count" id="notif-notes-count">0</strong>
+      <span class="notif-lbl">nowych notatek</span>
+    </div>
     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Tryb jasny / ciemny">
       <svg id="theme-icon" viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
     </button>
@@ -800,12 +840,14 @@ function buildTodoEl(t){
   const prioBadge=pilne?`<span class="prio-badge pilne">PILNE</span>`:'';
   const statusBadge=`<span class="status-badge ${status}" onclick="setTodoStatus('${t.id}','${status}')" title="Kliknij aby zmienić status">${STATUS_LABELS[status]}</span>`;
   const noteHtml=t.note?`<div class="todo-note">${escHtml(t.note)}</div>`:'';
+  const hasNewNote=_tasksWithNewNotes&&_tasksWithNewNotes.has(t.id);
+  const newNoteDot=hasNewNote?`<div class="note-new-dot" title="Nowe notatki wykonania" onclick="event.stopPropagation();openTaskDetail('${t.id}')"></div>`:'';
 
   const el=document.createElement('div');
   el.className='todo-item'+(pilne?' pilne':'')+(isUrgent?' overdue':'');
   el.dataset.id=t.id;
   el.style.cursor='pointer';
-  el.onclick=function(e){if(!e.target.closest('.todo-edit')&&!e.target.closest('.todo-del'))openTaskDetail(t.id);};
+  el.onclick=function(e){if(!e.target.closest('.todo-edit')&&!e.target.closest('.todo-del')&&!e.target.closest('.note-new-dot'))openTaskDetail(t.id);};
   el.innerHTML=`
     <div class="todo-meta" style="flex:1;min-width:0">
       <div class="todo-text${status==='zrobione'?' done':''}" style="margin-bottom:3px">${escHtml(t.text)}</div>
@@ -818,6 +860,7 @@ function buildTodoEl(t){
         <span class="author-tag">od <span style="color:${ac}">${escHtml(t.addedBy||'?')}</span></span>
       </div>
     </div>
+    ${newNoteDot}
     <div class="todo-edit" onclick="event.stopPropagation();editTodo('${t.id}')">✎</div>
     <div class="todo-del" onclick="event.stopPropagation();deleteTodo('${t.id}')">✕</div>`;
   return el;
@@ -878,31 +921,101 @@ function renderTodos(todos){
   if(badge)badge.textContent=`${pending} zadań`;
   if(badgePilne){badgePilne.style.display=pilne?'':'none';badgePilne.textContent=`${pilne} pilnych`;}
 
+  /* topbar notification pills — ALWAYS based on currentUser, not promotorFilter */
+  const myAll=PROMOTOR_USERS.includes(currentUser)?active:active.filter(t=>isVisibleTodo(t));
+  const myReceived=myAll.filter(t=>{const asgns=getAssignees(t);return asgns.length===0||asgns.includes(currentUser);});
+  const myOutgoing=myAll.filter(t=>{const asgns=getAssignees(t);return t.addedBy===currentUser&&asgns.length>0&&!asgns.includes(currentUser);});
+  const todoCount=myReceived.filter(t=>['todo','zablokowane'].includes(getTodoStatus(t))).length;
+  const wtokuCount=myReceived.filter(t=>getTodoStatus(t)==='wtoku').length;
+  const zleconeCount=myOutgoing.filter(t=>getTodoStatus(t)!=='zrobione').length;
+  const ntTodo=document.getElementById('notif-todo');
+  const ntTodoCount=document.getElementById('notif-todo-count');
+  const ntWtoku=document.getElementById('notif-wtoku');
+  const ntWtokuCount=document.getElementById('notif-wtoku-count');
+  const ntZlecone=document.getElementById('notif-zlecone');
+  const ntZleconeCount=document.getElementById('notif-zlecone-count');
+  if(ntTodoCount)ntTodoCount.textContent=todoCount;
+  if(ntTodo){
+    ntTodo.classList.toggle('active',todoCount>0);
+    if(_prevTodoCount!==null&&todoCount>_prevTodoCount){
+      ntTodo.classList.remove('flash');
+      void ntTodo.offsetWidth; /* reflow */
+      ntTodo.classList.add('flash');
+      setTimeout(()=>ntTodo.classList.remove('flash'),3000);
+    }
+  }
+  _prevTodoCount=todoCount;
+  if(ntWtokuCount)ntWtokuCount.textContent=wtokuCount;
+  if(ntWtoku)ntWtoku.classList.toggle('active',wtokuCount>0);
+  if(ntZleconeCount)ntZleconeCount.textContent=zleconeCount;
+  if(ntZlecone)ntZlecone.classList.toggle('active',zleconeCount>0);
+
+  /* new exec-notes detection */
+  const seenTs=getNotesSeenTs();
+  let newNotesCount=0;
+  const newNoteTaskIds=new Set();
+  visible.forEach(t=>{
+    const notes=Array.isArray(t.execNotes)?t.execNotes:[];
+    const hasNew=notes.some(n=>n.addedBy!==currentUser&&n.addedAt&&new Date(n.addedAt).getTime()>seenTs);
+    if(hasNew){newNotesCount++;newNoteTaskIds.add(t.id);}
+  });
+  _tasksWithNewNotes=newNoteTaskIds;
+  const ntNotes=document.getElementById('notif-notes');
+  const ntNotesCount=document.getElementById('notif-notes-count');
+  if(ntNotes)ntNotes.style.display=newNotesCount>0?'':'none';
+  if(ntNotesCount)ntNotesCount.textContent=newNotesCount;
+
   /* update tab counts */
   const cntO=document.getElementById('tab-cnt-otrzymane');
   const cntZ=document.getElementById('tab-cnt-zlecone');
   if(cntO)cntO.textContent=received.length?`(${received.length})`:'';
   if(cntZ)cntZ.textContent=outgoing.length?`(${outgoing.length})`:'';
 
-  /* hide/show tabs (PROMOTOR bez filtra widzi "Pozostałe" zamiast tabów) */
+  /* hide/show tabs:
+     PROMOTOR bez filtra + są "Pozostałe" → sekcje (tabs ukryte)
+     wszystko inne → tabs widoczne i aktywne */
+  const useSection=isPromotor&&!promotorFilterAssignee&&others.length>0;
   const tabsEl=document.getElementById('todo-tabs');
-  const showTabs=!(isPromotor&&!promotorFilterAssignee&&others.length>0);
-  if(tabsEl)tabsEl.style.display=showTabs?'':'none';
+  if(tabsEl)tabsEl.style.display=useSection?'none':'';
 
   list.innerHTML='';
 
-  if(isPromotor&&!promotorFilterAssignee){
-    /* PROMOTOR bez filtra — stary widok bez tabów */
+  if(useSection){
+    /* widok sekcji (PROMOTOR widzi wszystkich + "Pozostałe") */
     if(received.length){addSectionHeader(list,'Otrzymane');sortTodoSection(received).forEach(t=>list.appendChild(buildTodoEl(t)));}
     if(outgoing.length){addSectionHeader(list,'Zlecone przeze mnie');sortTodoSection(outgoing).forEach(t=>list.appendChild(buildTodoEl(t)));}
     if(others.length){addSectionHeader(list,'Pozostałe');sortTodoSection(others).forEach(t=>list.appendChild(buildTodoEl(t)));}
     if(!received.length&&!outgoing.length&&!others.length)list.innerHTML='<div class="empty-state">Brak zadań</div>';
   } else {
-    /* normalny widok z tabami */
+    /* normalny widok z tabami (wszyscy użytkownicy, w tym PROMOTOR) */
     const shown=currentTodoTab==='otrzymane'?received:outgoing;
     if(!shown.length){list.innerHTML='<div class="empty-state">Brak zadań</div>';return;}
     sortTodoSection(shown).forEach(t=>list.appendChild(buildTodoEl(t)));
   }
+}
+
+/* ── TOPBAR NOTIF STATE ── */
+let _prevTodoCount=null;
+let _tasksWithNewNotes=new Set();
+const NOTES_SEEN_KEY=()=>`fp_notes_seen_${currentUser||'anon'}`;
+function getNotesSeenTs(){
+  if(!currentUser)return Date.now();
+  const v=localStorage.getItem(NOTES_SEEN_KEY());
+  if(v)return parseInt(v,10);
+  /* First load — set baseline to now so old notes don't flood */
+  const now=Date.now();
+  localStorage.setItem(NOTES_SEEN_KEY(),now);
+  return now;
+}
+function markNotesSeen(){
+  if(currentUser)localStorage.setItem(NOTES_SEEN_KEY(),Date.now());
+}
+function jumpToNewNotes(){
+  if(!_tasksWithNewNotes||!_tasksWithNewNotes.size)return;
+  const firstId=[..._tasksWithNewNotes][0];
+  markNotesSeen();
+  renderTodos(_latestTodos);
+  openTaskDetail(firstId);
 }
 
 let _latestTodos=[];
@@ -957,6 +1070,9 @@ function renderTaskDetail(t){
   if(empty)empty.style.display='none';
   if(closeBtn)closeBtn.style.display='';
   if(titleEl)titleEl.textContent=t.text.length>28?t.text.slice(0,28)+'…':t.text;
+
+  /* Mark exec-notes as seen when task detail is opened */
+  if(_tasksWithNewNotes&&_tasksWithNewNotes.has(t.id)){markNotesSeen();renderTodos(_latestTodos);}
 
   const status=getTodoStatus(t);
   const pilne=isTodoPilne(t);
