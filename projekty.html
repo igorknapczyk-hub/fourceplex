@@ -448,7 +448,7 @@ let allProjects=[],selectedId=null,saveTimer=null,nfTags=[],editTags=[],trashId=
 onSnapshot(projCol,snap=>{
   allProjects=snap.docs.map(d=>({id:d.id,...d.data()}));
   allProjects.sort((a,b)=>(b.updatedAt?.toMillis?.()??0)-(a.updatedAt?.toMillis?.()??0));
-  document.getElementById('top-count').textContent=allProjects.length;
+  const _tc=document.getElementById('top-count');if(_tc)_tc.textContent=allProjects.length;
   renderList();
   if(selectedId){const p=allProjects.find(p=>p.id===selectedId);if(p)refreshHeader(p);}
   if(!allProjects.length)seed();

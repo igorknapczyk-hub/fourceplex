@@ -829,7 +829,7 @@ async function initFirebase(){
       promoterIds=new Set(artists.filter(a=>a.hot).map(a=>a.id));
       promotorOfficeIds=new Set(artists.filter(a=>a.inPromotor).map(a=>a.id));
       checkReminders();renderStats();renderTable();
-      document.getElementById('topCount').textContent=artists.length;
+      const _tc=document.getElementById('topCount');if(_tc)_tc.textContent=artists.length;
       const banner=document.getElementById('fbConnecting');if(banner)banner.style.display='none';
     });
     scheduleWeeklyRefresh();
@@ -912,7 +912,7 @@ function renderStats(){
   const t=artists.length,ai=artists.filter(a=>a.source==='ai').length;
   const sent=artists.filter(a=>a.status==='sent'||a.status==='reminder').length;
   const rem=artists.filter(a=>a.status==='reminder').length;
-  document.getElementById('topCount').textContent=t;
+  const _tc2=document.getElementById('topCount');if(_tc2)_tc2.textContent=t;
   document.getElementById('statsBar').innerHTML=`
     <div class="stat-block"><div class="stat-label">Artystów</div><div class="stat-value">${t}</div><div class="stat-sub">na liście Watchlist</div></div>
     <div class="stat-block"><div class="stat-label">AI-sourced</div><div class="stat-value">${ai}<span>/${t}</span></div><div class="stat-sub up">auto-odkryte</div></div>

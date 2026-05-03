@@ -521,7 +521,7 @@ function renderList(){
     !q||(a.name||'').toLowerCase().includes(q)||(a.genre||'').toLowerCase().includes(q)
   );
   const artists=allFiltered.filter(a=>currentTab==='done'?!!a.dealDone:!a.dealDone);
-  document.getElementById('top-count').textContent=(window._poArtists||[]).length;
+  const _tc=document.getElementById('top-count');if(_tc)_tc.textContent=(window._poArtists||[]).length;
 
   /* aktualizuj taby */
   const allProgress=allFiltered.filter(a=>!a.dealDone).length;

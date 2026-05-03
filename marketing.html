@@ -687,7 +687,7 @@ function renderList(){
     shows.sort((a,b)=>b.date.localeCompare(a.date));
   }
 
-  document.getElementById('top-shows-count').textContent=(window._shows||[]).length;
+  const _tsc=document.getElementById('top-shows-count');if(_tsc)_tsc.textContent=(window._shows||[]).length;
 
   const el=document.getElementById('show-list');
   if(!shows.length){

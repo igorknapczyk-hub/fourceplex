@@ -456,7 +456,7 @@ function switchTab(tab){
 function renderList(){
   const filtered=allShows.filter(s=>currentTab==='active'?isActive(s):!isActive(s));
   if(currentTab==='past')filtered.reverse();
-  document.getElementById('top-count').textContent=allShows.filter(s=>isActive(s)).length;
+  const _tc=document.getElementById('top-count');if(_tc)_tc.textContent=allShows.filter(s=>isActive(s)).length;
   const el=document.getElementById('show-list');
   if(!filtered.length){el.innerHTML='<div class="empty-list">'+(currentTab==='active'?'Brak aktywnych':'Brak przeszłych')+'</div>';return;}
   el.innerHTML='';

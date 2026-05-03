@@ -549,7 +549,7 @@ function renderList(){
   const filtered=allShows
     .filter(s=>currentTab==='active'?isActive(s):!isActive(s))
     .sort((a,b)=>currentTab==='active'?(a.date||'').localeCompare(b.date||''):(b.date||'').localeCompare(a.date||''));
-  document.getElementById('top-shows-count').textContent=allShows.filter(s=>isActive(s)).length;
+  const _tsc=document.getElementById('top-shows-count');if(_tsc)_tsc.textContent=allShows.filter(s=>isActive(s)).length;
   if(!filtered.length){
     listEl.innerHTML=`<div class="empty-list">${currentTab==='active'?'Brak aktywnych koncertów':'Brak przeszłych koncertów'}</div>`;
     return;

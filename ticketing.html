@@ -805,7 +805,7 @@ function renderTable(){
   } else {
     rows.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   }
-  document.getElementById('topCount').textContent=rows.length;
+  const _tc=document.getElementById('topCount');if(_tc)_tc.textContent=rows.length;
 
   const allSnaps=window._snaps||{};
   const dateSet=new Set();
