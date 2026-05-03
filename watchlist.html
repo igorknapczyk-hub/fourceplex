@@ -866,9 +866,9 @@ function scheduleWeeklyRefresh(){
 }
 function setRefreshStatus(state,label){
   const dot=document.getElementById('refreshDot'),lbl=document.getElementById('refreshLabel');
-  if(state==='active'){dot.classList.add('active');lbl.textContent=label||'odświeżam trendy...';}
-  else if(state==='pending'){dot.classList.remove('active');lbl.textContent=label||'trendy nieaktualne';}
-  else{dot.classList.remove('active');lbl.textContent='trendy aktualne';}
+  if(state==='active'){if(dot)dot.classList.add('active');if(lbl)lbl.textContent=label||'odświeżam trendy...';}
+  else if(state==='pending'){if(dot)dot.classList.remove('active');if(lbl)lbl.textContent=label||'trendy nieaktualne';}
+  else{if(dot)dot.classList.remove('active');if(lbl)lbl.textContent='trendy aktualne';}
 }
 async function processRefreshQueue(){
   if(!refreshQueue.length){refreshing=false;setRefreshStatus('idle');saveData();render();return;}
