@@ -5,6 +5,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  timeout = 26
 
 [functions."count-scheduled"]
   schedule = "0 8 * * *"

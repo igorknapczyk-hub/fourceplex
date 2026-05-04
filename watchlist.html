@@ -1103,12 +1103,20 @@ async function autoFill(){
   if(!name){alert('Wpisz najpierw nazwę artysty.');return;}
   document.getElementById('fillInd').style.display='flex';
   document.getElementById('autoFillBtn').disabled=true;
-  const prompt=`Ekspert bookingu. Artysta: "${name}". TYLKO JSON bez markdown:
-{"genre":"po polsku","listeners":"np. 3.2M","spotifyUrl":"pełny URL spotify lub ''","plShow":"NIE lub np. 'Open'er Festival 2023' jeśli grał w Polsce","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania buzz"}
-Dla plShow: sprawdź czy artysta grał kiedykolwiek w Polsce (koncert, festival). Jeśli nie — wpisz 'NIE'. Jeśli tak — podaj nazwę miejsca/festiwalu i rok.
-Predict solo headliner Warszawa: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-5000, duża Arena 5001+`;
+  const prompt=`Przeszukaj internet i znajdź AKTUALNE dane dla artysty: "${name}".
+
+Priorytetyzuj wyniki z wyszukiwania nad wiedzą treningową — szczególnie dla:
+1. Spotify Monthly Listeners — podaj najnowszą liczbę (szukaj "spotify ${name} monthly listeners 2025")
+2. Ostatni koncert/festiwal w Polsce — sprawdź 2024-2025, akceptuj też 2023 (szukaj "${name} Polska koncert festiwal")
+3. Gatunek muzyczny po polsku
+
+Odpowiedz WYŁĄCZNIE tym JSON (bez markdown, bez komentarzy):
+{"genre":"gatunek po polsku","listeners":"np. 3.2M","spotifyUrl":"https://open.spotify.com/artist/... lub ''","plShow":"NIE lub 'nazwa miejsca/festiwalu + rok'","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania o aktualnym momencie artysty"}
+
+Skala biletów na solo headliner w Warszawie (predMin/predMax):
+Chmury<200 | Hydrozagadka 200-400 | Niebo 401-700 | Proxima 701-1000 | Progresja 1001-1800 | COS Torwar 1801-5000 | duża Arena 5001+`;
   try{
-    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout — spróbuj ponownie')),20000));
+    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout — spróbuj ponownie')),25000));
     const resp=await Promise.race([fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt}]})}),timeout]);
     const data=await resp.json();
     const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -1151,7 +1159,7 @@ TYLKO JSON: {"artists":[{"name":"","genre":"","listeners":"XM","spotifyUrl":"URL
 Skale: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-5000, duża Arena 5001+`;
   try{
     const fetchPromise=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})});
-    const resp=await Promise.race([fetchPromise,new Promise((_,r)=>setTimeout(()=>r(new Error('Timeout')),20000))]);
+    const resp=await Promise.race([fetchPromise,new Promise((_,r)=>setTimeout(()=>r(new Error('Timeout')),25000))]);
     const data=await resp.json();
     const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
     let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}
@@ -1183,7 +1191,7 @@ Wyszukaj aktualne informacje.
 TYLKO JSON: {"artists":[${sel.map(a=>`{"name":"${a.name}","currentBuzz":"opis","recentActivity":"ostatnie wydawnictwa/trasy","polishPotential":"ocena","predictUpdated":{"min":N,"max":N},"venue":"sala Warszawa","growthOutlook":"rosnący/stabilny/malejący"}`).join(',')}],"winner":"imię artysty z największym potencjałem","verdict":"2-3 zdania po polsku — kto wygrywa i dlaczego"}`;
   try{
     const fetchPromise=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:900,messages:[{role:'user',content:prompt}]})});
-    const resp=await Promise.race([fetchPromise,new Promise((_,r)=>setTimeout(()=>r(new Error('Timeout')),20000))]);
+    const resp=await Promise.race([fetchPromise,new Promise((_,r)=>setTimeout(()=>r(new Error('Timeout')),25000))]);
     const data=await resp.json();
     const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
     let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}
