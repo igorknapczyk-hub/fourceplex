@@ -628,8 +628,10 @@ function venueForPredict(max){
   if(max<=700)return'Niebo';
   if(max<=1000)return'Proxima';
   if(max<=1800)return'Progresja';
-  if(max<=5000)return'COS Torwar';
-  return'duża Arena';
+  if(max<=7000)return'COS Torwar';
+  if(max<=15000)return'Duża Arena';
+  if(max<=50000)return'Stadion';
+  return'Stadion';
 }
 
 const SESSION_KEY_WL='fourceplex_current_user';
@@ -884,7 +886,7 @@ async function processRefreshQueue(){
 async function refreshArtistTrend(a){
   const prompt=`Artysta: "${a.name}". Oceń aktualny trend popularności (hype) 2025-2026.
 TYLKO JSON: {"trend":"up|down|flat","predMin":N,"predMax":N,"note":"1 zdanie co się zmieniło"}
-Predict solo headliner Warszawa: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-5000, duża Arena 5001+`;
+predMin/predMax — realistyczny szacunek biletów solo headliner Warszawa, bez limitu górnego. Dokładność co 100 poniżej 1800, co 1000 powyżej 1800. NIE dopasowuj do venue, podaj szczery szacunek popytu. Bierz pod uwagę sale europejskie (UK/DE/FR), listeners, trend, popularność gatunku w Polsce. Venue auto: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
   try{
     const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
@@ -971,9 +973,10 @@ function trendIcon(a){
 }
 function predictCell(a){
   if(!a.predMax&&!a.predMin)return'<span style="color:var(--text3)">—</span>';
-  const pct=Math.min(100,Math.round((a.predMax||0)/5000*100));
-  const venue=venueForPredict(a.predMax);
-  return`<div class="predict-wrap">${trendIcon(a)}<div class="predict-track"><div class="predict-fill" style="width:${pct}%"></div></div><span class="predict-num">${(a.predMin||0).toLocaleString()}–${(a.predMax||0).toLocaleString()}</span>${venue?`<span class="venue-tag">${venue}</span>`:''}</div>`;
+  const max=a.predMax||0;
+  const pct=max>=15000?100:max>=7000?Math.round(70+(max-7000)/8000*30):Math.round(Math.min(70,max/7000*70));
+  const venue=venueForPredict(max)||venueForPredict(100);
+  return`<div class="predict-wrap">${trendIcon(a)}<div class="predict-track"><div class="predict-fill" style="width:${pct}%"></div></div><span class="predict-num">${(a.predMin||0).toLocaleString()}–${max.toLocaleString()}</span>${max>0?`<span class="venue-tag">${venue}</span>`:''}</div>`;
 }
 function spotifyCell(a){
   const svg=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>`;
@@ -1103,21 +1106,28 @@ async function autoFill(){
   if(!name){alert('Wpisz najpierw nazwę artysty.');return;}
   document.getElementById('fillInd').style.display='flex';
   document.getElementById('autoFillBtn').disabled=true;
-  const prompt=`Przeszukaj internet i znajdź AKTUALNE dane dla artysty: "${name}".
-
-Priorytetyzuj wyniki z wyszukiwania nad wiedzą treningową — szczególnie dla:
-1. Spotify Monthly Listeners — podaj najnowszą liczbę (szukaj "spotify ${name} monthly listeners 2025")
-2. Ostatni koncert/festiwal w Polsce — sprawdź 2024-2025, akceptuj też 2023 (szukaj "${name} Polska koncert festiwal")
-3. Gatunek muzyczny po polsku
+  const prompt=`Jesteś ekspertem muzycznym i bookingowym. Podaj dane dla artysty: "${name}".
 
 Odpowiedz WYŁĄCZNIE tym JSON (bez markdown, bez komentarzy):
-{"genre":"gatunek po polsku","listeners":"np. 3.2M","spotifyUrl":"https://open.spotify.com/artist/... lub ''","plShow":"NIE lub 'nazwa miejsca/festiwalu + rok'","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania o aktualnym momencie artysty"}
+{"genre":"gatunek po polsku","listeners":"np. 3.2M","spotifyUrl":"https://open.spotify.com/artist/... lub ''","plShow":"NIE lub 'nazwa miejsca/festiwalu + rok'","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania o aktualnym buzz/momencie artysty"}
 
-Skala biletów na solo headliner w Warszawie (predMin/predMax):
-Chmury<200 | Hydrozagadka 200-400 | Niebo 401-700 | Proxima 701-1000 | Progresja 1001-1800 | COS Torwar 1801-5000 | duża Arena 5001+`;
+Zasady:
+- genre: po polsku (np. "indie pop", "hip-hop", "electronic")
+- listeners: przybliżone Spotify Monthly Listeners (np. "4.2M")
+- spotifyUrl: pełny URL profilu Spotify lub pusty string
+- plShow: czy artysta grał kiedykolwiek solo/headliner w Polsce — jeśli tak podaj "nazwa miejsca lub festiwalu + rok", jeśli nie — "NIE"
+- predMin/predMax: patrz instrukcja poniżej
+
+Podaj predMin i predMax jako realistyczny szacunek sprzedaży biletów na solo headlinerski koncert w Warszawie, bez limitu górnego.
+- Dokładność: co 100 biletów przy wartościach poniżej 1800 (np. 600-700, 1200-1400)
+- Dokładność: co 1000 biletów przy wartościach powyżej 1800 (np. 2000-3000, 8000-10000)
+- Dla supergwiazd możesz szacować 20000-50000 lub więcej
+- Bierz pod uwagę: rozmiar sal w których artysta gra w Europie (UK/DE/FR), monthly listeners i ich trend, popularność gatunku w Polsce, momentum artysty w ostatnich 12 miesiącach
+- NIE dopasowuj sztucznie do venue — podaj szczery szacunek popytu, system sam dopasuje venue
+Venue zostanie dobrane automatycznie: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
   try{
     const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout — spróbuj ponownie')),25000));
-    const resp=await Promise.race([fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt}]})}),timeout]);
+    const resp=await Promise.race([fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})}),timeout]);
     const data=await resp.json();
     const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
     let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}
@@ -1155,8 +1165,8 @@ async function runAiSearch(){
   res.innerHTML=`<div class="load-row"><div class="sp"></div>Szukam propozycji...</div>`;
   const existing=artists.map(a=>a.name).join(', ');
   const prompt=`5 artystów NIE GRALI headliner solo w Polsce. Gatunek: "${genre||'dowolny'}", region: "${region||'globalny'}", poziom: ${hypeMap[hype]}. Pomiń: ${existing||'brak'}.
-TYLKO JSON: {"artists":[{"name":"","genre":"","listeners":"XM","spotifyUrl":"URL lub ''","plShow":"NIE lub info","predMin":N,"predMax":N,"notes":"1 zdanie + sala"}]}
-Skale: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-5000, duża Arena 5001+`;
+TYLKO JSON: {"artists":[{"name":"","genre":"","listeners":"XM","spotifyUrl":"URL lub ''","plShow":"NIE lub info","predMin":N,"predMax":N,"notes":"1 zdanie o momencie artysty"}]}
+predMin/predMax — realistyczny szacunek biletów solo headliner Warszawa, bez limitu górnego. Dokładność co 100 poniżej 1800, co 1000 powyżej 1800. NIE dopasowuj do venue, system sam dobiera. Bierz pod uwagę sale europejskie (UK/DE/FR), listeners, trend, popularność gatunku w Polsce. Dla supergwiazd 20000-50000+. Venue auto: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
   try{
     const fetchPromise=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})});
     const resp=await Promise.race([fetchPromise,new Promise((_,r)=>setTimeout(()=>r(new Error('Timeout')),25000))]);
@@ -1187,8 +1197,8 @@ async function runAiCompare(){
   const details=sel.map(a=>`${a.name}: ${a.genre}, ${a.listeners} listeners, Predict ${a.predMin}-${a.predMax} biletów, trend: ${a.trend||'nieznany'}, PL Show: ${a.plShow||'NIE'}`).join('\n');
   const prompt=`Ekspert bookingu FOURCE. Porównaj tych artystów pod kątem potencjału koncertowego w Polsce:
 ${details}
-Wyszukaj aktualne informacje.
-TYLKO JSON: {"artists":[${sel.map(a=>`{"name":"${a.name}","currentBuzz":"opis","recentActivity":"ostatnie wydawnictwa/trasy","polishPotential":"ocena","predictUpdated":{"min":N,"max":N},"venue":"sala Warszawa","growthOutlook":"rosnący/stabilny/malejący"}`).join(',')}],"winner":"imię artysty z największym potencjałem","verdict":"2-3 zdania po polsku — kto wygrywa i dlaczego"}`;
+TYLKO JSON: {"artists":[${sel.map(a=>`{"name":"${a.name}","currentBuzz":"opis","recentActivity":"ostatnie wydawnictwa/trasy","polishPotential":"ocena","predictUpdated":{"min":N,"max":N},"venue":"sala Warszawa","growthOutlook":"rosnący/stabilny/malejący"}`).join(',')}],"winner":"imię artysty z największym potencjałem","verdict":"2-3 zdania po polsku — kto wygrywa i dlaczego"}
+predictUpdated min/max — realistyczny szacunek biletów solo headliner Warszawa, bez limitu górnego. Dokładność co 100 poniżej 1800, co 1000 powyżej 1800. NIE dopasowuj do venue, podaj szczery szacunek popytu. Bierz pod uwagę sale europejskie (UK/DE/FR), listeners, trend, popularność gatunku w Polsce. Dla supergwiazd 20000-50000+. Venue auto: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
   try{
     const fetchPromise=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:900,messages:[{role:'user',content:prompt}]})});
     const resp=await Promise.race([fetchPromise,new Promise((_,r)=>setTimeout(()=>r(new Error('Timeout')),25000))]);
@@ -1238,7 +1248,8 @@ async function processFile(file){
   render();setTimeout(()=>{prog.style.display='none';},3000);
 }
 async function importSingle(name){
-  const prompt=`Artysta: "${name}". TYLKO JSON: {"genre":"po polsku","listeners":"np. 2.1M","spotifyUrl":"URL lub ''","plShow":"NIE lub info","predMin":N,"predMax":N,"notes":"1 zdanie"}`;
+  const prompt=`Artysta: "${name}". TYLKO JSON: {"genre":"po polsku","listeners":"np. 2.1M","spotifyUrl":"URL lub ''","plShow":"NIE lub info","predMin":N,"predMax":N,"notes":"1 zdanie"}
+predMin/predMax — realistyczny szacunek biletów solo headliner Warszawa, bez limitu górnego. Dokładność co 100 poniżej 1800, co 1000 powyżej 1800. NIE dopasowuj do venue. Venue auto: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
   const now=new Date().toISOString();
   try{
     const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:prompt}]})});
