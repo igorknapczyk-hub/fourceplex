@@ -8,4 +8,4 @@
   timeout = 26
 
 [functions."count-scheduled"]
-  schedule = "0 8 * * *"
+  schedule = "30 7 * * *"

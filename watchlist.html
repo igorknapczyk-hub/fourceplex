@@ -190,8 +190,6 @@ input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--ac
 
 /* PREDICT + TREND */
 .predict-wrap{display:flex;align-items:center;gap:5px;flex-wrap:nowrap}
-.predict-track{width:32px;height:3px;background:var(--bg4);border-radius:2px;flex-shrink:0}
-.predict-fill{height:3px;border-radius:2px;background:var(--accent)}
 .predict-num{font-family:var(--mono);font-size:10px;color:var(--text2);white-space:nowrap}
 .venue-tag{font-family:var(--mono);font-size:9px;color:var(--blue);background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);padding:1px 5px;border-radius:3px;white-space:nowrap}
 .trend-up{color:var(--teal);font-size:13px;flex-shrink:0}
@@ -896,7 +894,7 @@ predMin/predMax — realistyczny szacunek biletów solo headliner Warszawa, bez 
     if(p.predMin)a.predMin=p.predMin;if(p.predMax)a.predMax=p.predMax;
     if(!a.predHistory)a.predHistory=[];a.predHistory.push(p.predMax||a.predMax);if(a.predHistory.length>10)a.predHistory=a.predHistory.slice(-10);
     a.trendUpdated=new Date().toISOString();
-    if(p.note)a.notes=(a.notes?a.notes+' | ':'')+`[${new Date().toLocaleDateString('pl')}] ${p.note}`;
+    if(p.note)a.trendNote=p.note;
     saveArtistToDb(a);renderTable();
   }catch(e){}
 }
@@ -971,12 +969,22 @@ function trendIcon(a){
   if(a.trend==='down')return`<span class="trend-down" title="Trend spadkowy">↓</span>`;
   return`<span class="trend-flat" title="Trend stabilny">→</span>`;
 }
+function buildTip(a){
+  // Strip accumulated [DD.MM.YYYY] entries from legacy notes field
+  const base=(a.notes||'').replace(/(\s*\|\s*)?\[\d{2}\.\d{2}\.\d{4}\][^|]*/g,'').replace(/\|\s*$/,'').trim();
+  let parts=[];
+  if(base)parts.push(base);
+  if(a.trendNote){
+    const dateStr=a.trendUpdated?new Date(a.trendUpdated).toLocaleDateString('pl'):'';
+    parts.push((dateStr?`[${dateStr}] `:'')+a.trendNote);
+  }
+  return parts.join('\n\n').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+}
 function predictCell(a){
   if(!a.predMax&&!a.predMin)return'<span style="color:var(--text3)">—</span>';
   const max=a.predMax||0;
-  const pct=max>=15000?100:max>=7000?Math.round(70+(max-7000)/8000*30):Math.round(Math.min(70,max/7000*70));
   const venue=venueForPredict(max)||venueForPredict(100);
-  return`<div class="predict-wrap">${trendIcon(a)}<div class="predict-track"><div class="predict-fill" style="width:${pct}%"></div></div><span class="predict-num">${(a.predMin||0).toLocaleString()}–${max.toLocaleString()}</span>${max>0?`<span class="venue-tag">${venue}</span>`:''}</div>`;
+  return`<div class="predict-wrap">${trendIcon(a)}<span class="predict-num">${(a.predMin||0).toLocaleString()}–${max.toLocaleString()}</span>${max>0?`<span class="venue-tag">${venue}</span>`:''}</div>`;
 }
 function spotifyCell(a){
   const svg=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>`;
@@ -1006,7 +1014,7 @@ function renderTable(){
     if(inPromoter)rc+=' row-hot';
     return`<tr class="${rc}">
       <td style="text-align:center;padding:0 4px"><input type="checkbox" ${sel?'checked':''} onchange="toggleSel(${a.id})"></td>
-      <td class="name-cell"><span class="art-name-wrap${a.notes?' has-notes':''}" data-notes="${(a.notes||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" onmouseenter="showTip(event,this)" onmousemove="moveTip(event)" onmouseleave="hideTip()">${a.name}</span></td>
+      <td class="name-cell"><span class="art-name-wrap${(a.notes||a.trendNote)?' has-notes':''}" data-notes="${buildTip(a)}" onmouseenter="showTip(event,this)" onmousemove="moveTip(event)" onmouseleave="hideTip()">${a.name}</span></td>
       <td>${spotifyCell(a)}</td>
       <td>${statusSel(a)}</td>
       <td>${predictCell(a)}</td>

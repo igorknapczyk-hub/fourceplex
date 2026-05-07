@@ -188,7 +188,14 @@ textarea.form-input{resize:vertical;min-height:52px}
 .pan-right::-webkit-scrollbar{display:none}
 .pan-right table{border-collapse:collapse;table-layout:fixed}
 
-/* Shared thead styles */
+/* Shared thead styles — thead itself is the sticky unit (prevents r1/r2 sub-pixel sliding) */
+.pan-left thead,
+.pan-mid  thead,
+.pan-right thead{
+  position: sticky;
+  top: 0;
+  z-index: 16;
+}
 .pan-left table thead th,
 .pan-mid  table thead th,
 .pan-right table thead th{
@@ -202,21 +209,20 @@ textarea.form-input{resize:vertical;min-height:52px}
   background: var(--bg2);
   text-align: left;
   white-space: nowrap;
-  position: sticky;
-  z-index: 15;
+  position: relative;
   vertical-align: middle;
   border-bottom: 1px solid var(--border);
 }
 .pan-left  table thead th.r1,
 .pan-mid   table thead th.r1,
-.pan-right table thead th.r1{ top:0; height:18px; z-index:16; }
+.pan-right table thead th.r1{ height:18px; border-bottom:none; }
 .pan-left  table thead th.r2,
 .pan-mid   table thead th.r2,
-.pan-right table thead th.r2{ top:18px; height:18px; }
+.pan-right table thead th.r2{ height:18px; }
 
 /* Date-group header */
 .dg{text-align:center!important;color:var(--text3);border-left:1px solid rgba(255,255,255,.06)}
-.dg.live-hdr{color:var(--accent);border-left:1px solid rgba(200,240,96,.25);background:rgba(200,240,96,.04)!important}
+.dg.live-hdr{color:var(--accent);border-left:1px solid rgba(200,240,96,.25);background:var(--bg2)!important}
 
 /* TD base */
 .pan-left  table td,
