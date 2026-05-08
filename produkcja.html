@@ -296,6 +296,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
     <div class="slide-field"><div class="sfl">Artysta / Wydarzenie *</div><input class="sinput" type="text" id="f-artist" placeholder="np. Dakhabrakha"></div>
     <div class="slide-field"><div class="sfl">Data *</div><input class="sinput" type="date" id="f-date"></div>
     <div class="slide-field"><div class="sfl">Venue</div><input class="sinput" type="text" id="f-venue" placeholder="np. Progresja, Warszawa"></div>
+    <div class="slide-field"><div class="sfl">Support</div><input class="sinput" type="text" id="f-support" placeholder="np. OqueStrada (lub puste)"></div>
   </div>
   <div class="slide-actions">
     <button class="btn" id="slide-cancel-btn">Anuluj</button>
@@ -307,7 +308,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
   <div id="setlist-modal">
     <div class="setlist-header">
       <div>
-        <div class="setlist-title-sm">Setlista koncertu</div>
+        <div class="setlist-title-sm">Setlista do ZAiKS</div>
         <div class="setlist-artist" id="setlist-artist-name"></div>
       </div>
       <button class="btn btn-sm" id="setlist-close-btn">Zamknij</button>
@@ -521,6 +522,7 @@ function openPanel(show){
   document.getElementById('f-artist').value=show?show.artistName||'':'';
   document.getElementById('f-date').value=show?show.date||'':'';
   document.getElementById('f-venue').value=show?show.venue||'':'';
+  document.getElementById('f-support').value=show?show.support||'':'';
   document.getElementById('slide-title').textContent=show?'Edytuj koncert':'Nowy koncert';
   document.getElementById('slide-panel').classList.add('open');
   document.getElementById('slide-overlay').classList.add('open');
@@ -540,14 +542,15 @@ document.getElementById('save-btn').addEventListener('click',async()=>{
   const artist=document.getElementById('f-artist').value.trim();
   const date=document.getElementById('f-date').value;
   const venue=document.getElementById('f-venue').value.trim();
+  const support=document.getElementById('f-support').value.trim();
   if(!artist||!date){alert('Wypełnij Artysta i Data');return;}
   const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Zapisuję...';
   try{
     if(editingId){
-      await updShow(editingId,{artistName:artist,date,venue:venue||''});
+      await updShow(editingId,{artistName:artist,date,venue:venue||'',support:support||''});
       closePanel();
     } else {
-      const ref=await addShow({artistName:artist,date,venue:venue||'',checkpoints:{},cpNotes:{},timetableText:'',notesText:'',createdBy:currentUser||'?'});
+      const ref=await addShow({artistName:artist,date,venue:venue||'',support:support||'',checkpoints:{},cpNotes:{},timetableText:'',notesText:'',createdBy:currentUser||'?'});
       selectedShowId=ref.id;closePanel();currentTab='active';switchTab('active');
     }
   }catch(e){console.error(e);alert('Błąd: '+e.message);}
@@ -788,7 +791,7 @@ function renderDetail(show){
     +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">'
     +'<div>'
     +'<div class="detail-title">'+esc(show.artistName||'–')+'</div>'
-    +'<div class="detail-sub"><span>'+fmtDate(show.date)+' · '+esc(show.venue||'–')+'</span><span style="color:var(--teal)">'+pct+'% advancing</span></div>'
+    +'<div class="detail-sub"><span>'+fmtDate(show.date)+' · '+esc(show.venue||'–')+(show.support?' · support: '+esc(show.support):'')+' </span><span style="color:var(--teal)">'+pct+'% advancing</span></div>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
     +'<div id="rider-wrap" style="display:flex;align-items:center;gap:4px">'
@@ -797,7 +800,7 @@ function renderDetail(show){
       :'<button class="btn btn-sm" id="rider-btn-add" style="color:var(--amber);border-color:rgba(251,191,36,.25)" title="Dodaj link do Google Drive z Riderem">📎 Rider&nbsp;[brak]</button>')
     +'<input id="rider-input" type="url" placeholder="Wklej link Google Drive…" style="display:none;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:11px;padding:4px 9px;border-radius:5px;outline:none;width:230px;transition:border-color .15s" value="'+esc(show.riderUrl||'')+'">'
     +'</div>'
-    +'<button class="btn btn-sm btn-purple" id="btn-setlist"'+(past?'':' disabled title="Dostępne po koncercie"')+'>🎵 Setlista</button>'
+    +'<button class="btn btn-sm btn-purple" id="btn-setlist"'+(past?'':' disabled title="Dostępne po koncercie"')+'>🎵 ZAiKS</button>'
     +'<button class="btn btn-sm" id="btn-edit">✏️ Edytuj</button>'
     +'</div>'
     +'</div>'
@@ -990,9 +993,10 @@ function exportXLS(show){
   URL.revokeObjectURL(url);
 }
 
-/* setlist */
+/* zaiks / setlist */
 function openSetlist(show){
-  document.getElementById('setlist-artist-name').textContent=show.artistName+(show.venue?' — '+show.venue:'');
+  const supportPart=show.support?' + '+show.support:'';
+  document.getElementById('setlist-artist-name').textContent=show.artistName+supportPart+(show.venue?' — '+show.venue:'');
   document.getElementById('setlist-body').innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px;color:var(--text3);font-family:var(--mono);font-size:11px"><div class="chat-spinner"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><span>Szukam setlisty…</span></div>';
   document.getElementById('setlist-overlay').classList.add('open');
   fetchSetlist(show);
@@ -1000,18 +1004,54 @@ function openSetlist(show){
 document.getElementById('setlist-close-btn').addEventListener('click',()=>document.getElementById('setlist-overlay').classList.remove('open'));
 document.getElementById('setlist-close-btn2').addEventListener('click',()=>document.getElementById('setlist-overlay').classList.remove('open'));
 document.getElementById('setlist-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('setlist-overlay'))document.getElementById('setlist-overlay').classList.remove('open');});
+
+async function fetchSetlistFromApi(artistName,date){
+  const res=await fetch('/.netlify/functions/setlist-fm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({artistName,date})});
+  if(!res.ok)throw new Error('HTTP '+res.status+' dla '+artistName);
+  return await res.json();
+}
+
+function buildZaiksText(show,headlinerData,supportData){
+  const parts=[];
+  parts.push('=== HEADLINER: '+show.artistName+' ===');
+  if(!headlinerData.found){
+    parts.push('(nie znaleziono żadnej setlisty na setlist.fm)');
+  }else{
+    if(!headlinerData.isExactMatch){
+      const fb=headlinerData.fallbackInfo||{};
+      parts.push('[UWAGA: setlista z koncertu '+(fb.cityName||'?')+(fb.countryName?', '+fb.countryName:'')+', '+(fb.eventDate||'?')+' — nie z naszego koncertu]');
+    }
+    for(const song of(headlinerData.songs||[])){
+      parts.push(song.title+', '+song.performer);
+    }
+  }
+  if(supportData!==null){
+    parts.push('');
+    parts.push('=== SUPPORT: '+show.support+' ===');
+    if(!supportData.found){
+      parts.push('(nie znaleziono żadnej setlisty na setlist.fm)');
+    }else{
+      if(!supportData.isExactMatch){
+        const fb=supportData.fallbackInfo||{};
+        parts.push('[UWAGA: setlista z koncertu '+(fb.cityName||'?')+(fb.countryName?', '+fb.countryName:'')+', '+(fb.eventDate||'?')+' — nie z naszego koncertu]');
+      }
+      for(const song of(supportData.songs||[])){
+        parts.push(song.title+', '+song.performer);
+      }
+    }
+  }
+  return parts.join('\n');
+}
+
 async function fetchSetlist(show){
   try{
-    const res=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
-        system:'Jesteś asystentem szukającym setlist koncertów. Znajdź setlistę wykonawcy z podanej daty i venue, głównie na setlist.fm. Wypisz kolejne numery jako listę numerowaną. Jeśli nie znajdziesz tej daty, podaj ostatnią dostępną i zaznacz to. Odpowiadaj po polsku.',
-        tools:[{type:'web_search_20250305',name:'web_search'}],
-        messages:[{role:'user',content:'Znajdź setlistę: '+show.artistName+', '+show.date+', '+(show.venue||'')}]})
-    });
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    const text=(data&&data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n')||'(brak odpowiedzi)';
-    document.getElementById('setlist-body').innerHTML='<textarea style="width:100%;min-height:280px;background:var(--bg3);border:none;color:var(--text);font-family:var(--mono);font-size:12px;line-height:1.7;padding:12px;border-radius:6px;outline:none;resize:none" readonly>'+esc(text)+'</textarea>';
+    const headlinerData=await fetchSetlistFromApi(show.artistName,show.date);
+    let supportData=null;
+    if(show.support&&show.support.trim()){
+      supportData=await fetchSetlistFromApi(show.support.trim(),show.date);
+    }
+    const text=buildZaiksText(show,headlinerData,supportData);
+    document.getElementById('setlist-body').innerHTML='<textarea style="width:100%;min-height:380px;background:var(--bg3);border:none;color:var(--text);font-family:var(--mono);font-size:12px;line-height:1.7;padding:12px;border-radius:6px;outline:none;resize:none" readonly>'+esc(text)+'</textarea>';
   }catch(e){
     document.getElementById('setlist-body').innerHTML='<div style="padding:20px;font-family:var(--mono);font-size:11px;color:var(--red)">Błąd: '+esc(e.message)+'</div>';
   }
