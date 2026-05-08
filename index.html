@@ -63,9 +63,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .notif-notes:hover{background:rgba(251,191,36,.15)!important}
 .notif-notes .notif-count{color:var(--amber)}
 .notif-notes .notif-lbl{color:rgba(251,191,36,.55)}
-/* new note dot on todo-item rows */
-.note-new-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;box-shadow:0 0 0 2px rgba(251,191,36,.22);margin-top:3px;cursor:pointer}
-.note-new-dot:hover{box-shadow:0 0 0 3px rgba(251,191,36,.35)}
+/* new note badge on todo-item rows */
+.note-new-dot{font-family:var(--mono);font-size:8px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);border:1px solid rgba(251,191,36,.45);border-radius:4px;padding:1px 5px;flex-shrink:0;cursor:pointer;white-space:nowrap;transition:background .15s}
+.note-new-dot:hover{background:rgba(251,191,36,.1)}
 .user-badge{background:var(--bg3);border:1px solid var(--border2);padding:4px 10px;border-radius:6px;font-size:12px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px}
 .user-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 
@@ -641,9 +641,8 @@ function getAssignees(t){
 
 function isVisibleTodo(t){
   if(!currentUser)return false;
-  if(PROMOTOR_USERS.includes(currentUser))return true;
   const asgns=getAssignees(t);
-  if(asgns.length===0)return true;           // ogólne — każdy widzi
+  if(asgns.length===0)return true;            // ogólne — każdy widzi
   if(asgns.includes(currentUser))return true; // przypisane do mnie
   if(t.addedBy===currentUser)return true;     // moje zlecone
   return false;
@@ -661,9 +660,9 @@ function renderAssigneeButtons(){
   const noneActive=selectedAssignees.size===0;
   const none=document.createElement('span');
   none.className='a-btn'+(noneActive?' sel':'');
-  if(noneActive)none.style.cssText='background:rgba(255,255,255,.06);color:var(--text2)';
-  none.textContent='ogólne';
-  none.onclick=()=>{selectedAssignees.clear();renderAssigneeButtons();};
+  if(noneActive)none.style.cssText='background:rgba(200,240,96,.15);color:var(--accent);border-color:rgba(200,240,96,.4)';
+  none.textContent='Do wszystkich';
+  none.onclick=()=>{selectedAssignees.clear();renderAssigneeButtons()};
   row.appendChild(none);
   Object.entries(ASSIGNEES).forEach(([name,color])=>{
     const btn=document.createElement('span');
@@ -688,27 +687,10 @@ function toggleEditPilne(){
   if(el)el.classList.toggle('on',_editIsPilne);
 }
 
-/* ── UI: PROMOTOR filter row ── */
+/* ── UI: PROMOTOR filter row — disabled, every user sees only their own tasks ── */
 function renderFilterRow(){
-  const isPromotor=PROMOTOR_USERS.includes(currentUser);
   const wrap=document.getElementById('todo-filter-wrap');
-  if(!wrap)return;
-  if(!isPromotor){wrap.style.display='none';return;}
-  wrap.style.display='block';
-  const row=document.getElementById('todo-filter-row');row.innerHTML='';
-  const all=document.createElement('button');
-  all.className='filter-btn'+(promotorFilterAssignee===null?' active':'');
-  all.textContent='Wszyscy';
-  all.onclick=()=>{promotorFilterAssignee=null;renderFilterRow();renderTodos(_latestTodos);};
-  row.appendChild(all);
-  Object.entries(ASSIGNEES).forEach(([name,color])=>{
-    const btn=document.createElement('button');
-    btn.className='filter-btn'+(promotorFilterAssignee===name?' active':'');
-    btn.style.setProperty('--fc',color);
-    btn.innerHTML=`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};margin-right:4px;vertical-align:middle"></span>${name}`;
-    btn.onclick=()=>{promotorFilterAssignee=name;renderFilterRow();renderTodos(_latestTodos);};
-    row.appendChild(btn);
-  });
+  if(wrap)wrap.style.display='none';
 }
 
 /* ── SORT ── */
@@ -782,9 +764,9 @@ function renderEditAssignees(){
   const noneActive=_editSelectedAssignees.size===0;
   const none=document.createElement('span');
   none.className='a-btn'+(noneActive?' sel':'');
-  if(noneActive)none.style.cssText='background:rgba(255,255,255,.06);color:var(--text2)';
-  none.textContent='ogólne';
-  none.onclick=()=>{_editSelectedAssignees.clear();renderEditAssignees();};
+  if(noneActive)none.style.cssText='background:rgba(200,240,96,.15);color:var(--accent);border-color:rgba(200,240,96,.4)';
+  none.textContent='Do wszystkich';
+  none.onclick=()=>{_editSelectedAssignees.clear();renderEditAssignees()};
   row.appendChild(none);
   Object.entries(ASSIGNEES).forEach(([name,color])=>{
     const sel=_editSelectedAssignees.has(name);
@@ -842,7 +824,7 @@ function buildTodoEl(t){
   const statusBadge=`<span class="status-badge ${status}" onclick="setTodoStatus('${t.id}','${status}')" title="Kliknij aby zmienić status">${STATUS_LABELS[status]}</span>`;
   const noteHtml=t.note?`<div class="todo-note">${escHtml(t.note)}</div>`:'';
   const hasNewNote=_tasksWithNewNotes&&_tasksWithNewNotes.has(t.id);
-  const newNoteDot=hasNewNote?`<div class="note-new-dot" title="Nowe notatki wykonania" onclick="event.stopPropagation();openTaskDetail('${t.id}')"></div>`:'';
+  const newNoteDot=hasNewNote?`<div class="note-new-dot" onclick="event.stopPropagation();openTaskDetail('${t.id}')">Nowa notatka</div>`:'';
 
   const el=document.createElement('div');
   el.className='todo-item'+(pilne?' pilne':'')+(isUrgent?' overdue':'');
@@ -887,34 +869,18 @@ function renderTodos(todos){
   });
   const active=todos.filter(t=>!shouldAutoDelete(t));
 
-  /* widoczność */
-  let visible;
-  const isPromotor=PROMOTOR_USERS.includes(currentUser);
-  if(isPromotor&&promotorFilterAssignee){
-    visible=active.filter(t=>{
-      const asgns=getAssignees(t);
-      return asgns.length===0||asgns.includes(promotorFilterAssignee);
-    });
-  } else if(isPromotor){
-    visible=active;
-  } else {
-    visible=active.filter(t=>isVisibleTodo(t));
-  }
+  /* widoczność — każdy widzi tylko swoje zadania */
+  const visible=active.filter(t=>isVisibleTodo(t));
 
-  /* podział na sekcje */
-  const targetUser=isPromotor&&promotorFilterAssignee?promotorFilterAssignee:currentUser;
+  /* podział: otrzymane (przypisane do mnie + ogólne) / zlecone (stworzone przeze mnie dla innych) */
   const received=visible.filter(t=>{
     const asgns=getAssignees(t);
-    return asgns.length===0||asgns.includes(targetUser);
+    return asgns.length===0||asgns.includes(currentUser);
   });
   const outgoing=visible.filter(t=>{
     const asgns=getAssignees(t);
-    return t.addedBy===targetUser&&asgns.length>0&&!asgns.includes(targetUser);
+    return t.addedBy===currentUser&&asgns.length>0&&!asgns.includes(currentUser);
   });
-  const others=isPromotor&&!promotorFilterAssignee?visible.filter(t=>{
-    const asgns=getAssignees(t);
-    return !(asgns.length===0||asgns.includes(currentUser))&&t.addedBy!==currentUser;
-  }):[];
 
   /* badge counts */
   const pending=visible.filter(t=>getTodoStatus(t)!=='zrobione').length;
@@ -922,13 +888,10 @@ function renderTodos(todos){
   if(badge)badge.textContent=`${pending} zadań`;
   if(badgePilne){badgePilne.style.display=pilne?'':'none';badgePilne.textContent=`${pilne} pilnych`;}
 
-  /* topbar notification pills — ALWAYS based on currentUser, not promotorFilter */
-  const myAll=PROMOTOR_USERS.includes(currentUser)?active:active.filter(t=>isVisibleTodo(t));
-  const myReceived=myAll.filter(t=>{const asgns=getAssignees(t);return asgns.length===0||asgns.includes(currentUser);});
-  const myOutgoing=myAll.filter(t=>{const asgns=getAssignees(t);return t.addedBy===currentUser&&asgns.length>0&&!asgns.includes(currentUser);});
-  const todoCount=myReceived.filter(t=>['todo','zablokowane'].includes(getTodoStatus(t))).length;
-  const wtokuCount=myReceived.filter(t=>getTodoStatus(t)==='wtoku').length;
-  const zleconeCount=myOutgoing.filter(t=>getTodoStatus(t)!=='zrobione').length;
+  /* topbar notification pills */
+  const todoCount=received.filter(t=>['todo','zablokowane'].includes(getTodoStatus(t))).length;
+  const wtokuCount=received.filter(t=>getTodoStatus(t)==='wtoku').length;
+  const zleconeCount=outgoing.filter(t=>getTodoStatus(t)!=='zrobione').length;
   const ntTodo=document.getElementById('notif-todo');
   const ntTodoCount=document.getElementById('notif-todo-count');
   const ntWtoku=document.getElementById('notif-wtoku');
@@ -972,27 +935,14 @@ function renderTodos(todos){
   if(cntO)cntO.textContent=received.length?`(${received.length})`:'';
   if(cntZ)cntZ.textContent=outgoing.length?`(${outgoing.length})`:'';
 
-  /* hide/show tabs:
-     PROMOTOR bez filtra + są "Pozostałe" → sekcje (tabs ukryte)
-     wszystko inne → tabs widoczne i aktywne */
-  const useSection=isPromotor&&!promotorFilterAssignee&&others.length>0;
+  /* zawsze widok z tabami */
   const tabsEl=document.getElementById('todo-tabs');
-  if(tabsEl)tabsEl.style.display=useSection?'none':'';
+  if(tabsEl)tabsEl.style.display='';
 
   list.innerHTML='';
-
-  if(useSection){
-    /* widok sekcji (PROMOTOR widzi wszystkich + "Pozostałe") */
-    if(received.length){addSectionHeader(list,'Otrzymane');sortTodoSection(received).forEach(t=>list.appendChild(buildTodoEl(t)));}
-    if(outgoing.length){addSectionHeader(list,'Zlecone przeze mnie');sortTodoSection(outgoing).forEach(t=>list.appendChild(buildTodoEl(t)));}
-    if(others.length){addSectionHeader(list,'Pozostałe');sortTodoSection(others).forEach(t=>list.appendChild(buildTodoEl(t)));}
-    if(!received.length&&!outgoing.length&&!others.length)list.innerHTML='<div class="empty-state">Brak zadań</div>';
-  } else {
-    /* normalny widok z tabami (wszyscy użytkownicy, w tym PROMOTOR) */
-    const shown=currentTodoTab==='otrzymane'?received:outgoing;
-    if(!shown.length){list.innerHTML='<div class="empty-state">Brak zadań</div>';return;}
-    sortTodoSection(shown).forEach(t=>list.appendChild(buildTodoEl(t)));
-  }
+  const shown=currentTodoTab==='otrzymane'?received:outgoing;
+  if(!shown.length){list.innerHTML='<div class="empty-state">Brak zadań</div>';return;}
+  sortTodoSection(shown).forEach(t=>list.appendChild(buildTodoEl(t)));
 }
 
 /* ── TOPBAR NOTIF STATE ── */

@@ -138,7 +138,10 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .cp-note-input{width:100%;margin-top:3px;background:var(--bg4);border:1px solid transparent;border-radius:4px;color:var(--text2);font-family:var(--mono);font-size:10px;padding:3px 7px;outline:none;transition:border-color .15s}
 .cp-note-input::placeholder{color:transparent}
 .expenses-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.exp-col-head{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text);font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.exp-col-head{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text);font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.etbl-ded-btn{font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;padding:2px 6px;border-radius:4px;border:1px solid var(--border2);background:none;color:var(--text3);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.etbl-ded-btn.active{color:var(--red);border-color:rgba(248,113,113,.5);background:rgba(248,113,113,.08)}
+.exp-table tr.deducted .ename,.exp-table tr.deducted .eamt{color:var(--red)!important;opacity:.8}
 .exp-col-sum{color:var(--text);font-size:11px;margin-left:auto}
 .exp-table{width:100%;border-collapse:collapse;margin-bottom:4px}
 .exp-table tr{border-bottom:1px solid var(--border)}
@@ -583,7 +586,7 @@ function initExpLocal(showId){
     const rows=allExps
       .filter(e=>e.showId===showId&&e.category===cat)
       .sort((a,b)=>(a._ord!=null?a._ord:(a.createdAt?.seconds??0))-(b._ord!=null?b._ord:(b.createdAt?.seconds??0)))
-      .map(e=>({rowId:_expRowId(),fsId:e.id,name:e.name||'',amount:e.amount||''}));
+      .map(e=>({rowId:_expRowId(),fsId:e.id,name:e.name||'',amount:e.amount||'',deduction:e.deduction||false}));
     const MIN=4;
     while(rows.length<MIN)rows.push({rowId:_expRowId(),fsId:'',name:'',amount:''});
     if(rows[rows.length-1].name||rows[rows.length-1].amount)
@@ -596,11 +599,12 @@ function buildExpTableHTML(cat){
   return '<table class="exp-table"><tbody>'
     +(_expLocal[cat]||[]).map(r=>{
       const hasData=r.name||r.amount;
-      return '<tr data-row-id="'+r.rowId+'" data-cat="'+cat+'">'
-        +'<td><input class="etbl-inp ename" data-row-id="'+r.rowId+'" data-cat="'+cat+'" value="'+esc(r.name||'')+'" placeholder="Nazwa wydatku"></td>'
-        +'<td style="width:80px"><input class="etbl-inp eamt etbl-amt" data-row-id="'+r.rowId+'" data-cat="'+cat+'" type="number" value="'+(r.amount||'')+'" placeholder="PLN"></td>'
-        +'<td style="width:24px"><button class="etbl-del" data-row-id="'+r.rowId+'" data-cat="'+cat+'" style="'+(hasData?'':'visibility:hidden')+'">×</button></td>'
-        +'</tr>';
+      return '<tr data-row-id="'+r.rowId+'" data-cat="'+cat+'"'+(r.deduction?' class="deducted"':'')+'>'+
+        '<td><input class="etbl-inp ename" data-row-id="'+r.rowId+'" data-cat="'+cat+'" value="'+esc(r.name||'')+'" placeholder="Nazwa wydatku"></td>'+
+        '<td style="width:80px"><input class="etbl-inp eamt etbl-amt" data-row-id="'+r.rowId+'" data-cat="'+cat+'" type="number" value="'+(r.amount||'')+'" placeholder="PLN"></td>'+
+        '<td style="width:76px;padding:0 4px"><button class="etbl-ded-btn'+(r.deduction?' active':'')+'" data-row-id="'+r.rowId+'" data-cat="'+cat+'">Deduction</button></td>'+
+        '<td style="width:24px"><button class="etbl-del" data-row-id="'+r.rowId+'" data-cat="'+cat+'" style="'+(hasData?'':'visibility:hidden')+'">×</button></td>'+
+        '</tr>';
     }).join('')
     +'</tbody></table>';
 }
@@ -633,8 +637,9 @@ async function flushExpToFirestore(showId){
         continue;
       }
       const ord=(_expLocal[cat]||[]).filter(r=>r.name||r.amount).indexOf(row);
-      if(row.fsId){await updExp(row.fsId,{name,amount,_ord:ord});}
-      else{const ref=await addExp({showId,category:cat,name,amount,_ord:ord,addedBy:currentUser||'?'});row.fsId=ref.id;}
+      const deduction=row.deduction||false;
+      if(row.fsId){await updExp(row.fsId,{name,amount,_ord:ord,deduction});}
+      else{const ref=await addExp({showId,category:cat,name,amount,_ord:ord,deduction,addedBy:currentUser||'?'});row.fsId=ref.id;}
     }
   }
 }
@@ -646,6 +651,7 @@ function _addNewExpRow(tbody,cat,isName,showId){
   newTr.dataset.rowId=newId; newTr.dataset.cat=cat;
   newTr.innerHTML='<td><input class="etbl-inp ename" data-row-id="'+newId+'" data-cat="'+cat+'" value="" placeholder="Nazwa wydatku"></td>'
     +'<td style="width:80px"><input class="etbl-inp eamt etbl-amt" data-row-id="'+newId+'" data-cat="'+cat+'" type="number" value="" placeholder="PLN"></td>'
+    +'<td style="width:76px;padding:0 4px"><button class="etbl-ded-btn" data-row-id="'+newId+'" data-cat="'+cat+'">Deduction</button></td>'
     +'<td style="width:24px"><button class="etbl-del" data-row-id="'+newId+'" data-cat="'+cat+'" style="visibility:hidden">×</button></td>';
   tbody.appendChild(newTr);
   _bindExpRow(newTr,showId);
@@ -711,6 +717,17 @@ function _bindExpRow(tr,showId){
         _expDirty=true; _expShowId=showId;
       }
     });
+  });
+  const dedBtn=tr.querySelector('.etbl-ded-btn');
+  if(dedBtn)dedBtn.addEventListener('click',()=>{
+    const rowId=dedBtn.dataset.rowId,cat=dedBtn.dataset.cat;
+    const row=(_expLocal[cat]||[]).find(r=>r.rowId===rowId);
+    if(!row)return;
+    row.deduction=!row.deduction;
+    dedBtn.classList.toggle('active',row.deduction);
+    tr.classList.toggle('deducted',row.deduction);
+    _expDirty=true;_expShowId=showId;
+    if(!_expAutoSave)_expAutoSave=setInterval(()=>flushExpToFirestore(showId),30000);
   });
   const del=tr.querySelector('.etbl-del');
   if(del)del.addEventListener('click',async()=>{
@@ -812,7 +829,7 @@ function renderDetail(show){
     +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Wydatki</span><div style="display:flex;align-items:center;gap:8px"><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">Razem: <strong id="exp-total" style="color:var(--text)">'+fmtPLN(prodSum+hospSum)+' PLN</strong></span></div></div>'
     +'<div class="sec-body"><div class="expenses-grid">'
     +'<div><div class="exp-col-head">Production <span class="exp-col-sum" id="exp-sum-production">'+fmtPLN(prodSum)+' PLN</span><button class="btn btn-sm" id="copy-prod-btn" style="padding:2px 7px;font-size:10px">⎘ Kopiuj</button></div><div id="exp-col-prod">'+buildExpTableHTML('production')+'</div></div>'
-    +'<div><div class="exp-col-head">Hospitality <span class="exp-col-sum" id="exp-sum-hospitality">'+fmtPLN(hospSum)+' PLN</span><button class="btn btn-sm" id="copy-hosp-btn" style="padding:2px 7px;font-size:10px">⎘ Kopiuj</button></div><div id="exp-col-hosp">'+buildExpTableHTML('hospitality')+'</div></div>'
+    +'<div><div class="exp-col-head">Catering <span class="exp-col-sum" id="exp-sum-hospitality">'+fmtPLN(hospSum)+' PLN</span><button class="btn btn-sm" id="copy-hosp-btn" style="padding:2px 7px;font-size:10px">⎘ Kopiuj</button></div><div id="exp-col-hosp">'+buildExpTableHTML('hospitality')+'</div></div>'
     +'</div></div></div>'
     +'<div class="sec-card"><div class="sec-head"><span class="sec-title">Timetable & Notatki</span></div><div class="sec-body"><div class="tt-notes-row">'
     +'<div><div class="fl" style="margin-bottom:5px">Timetable / Schedule</div><textarea class="notes-textarea" rows="15" id="tt-area" placeholder="">'+esc(show.timetableText||'')+'</textarea><div class="notes-save-row"><span class="notes-meta" id="tt-meta"></span></div></div>'
