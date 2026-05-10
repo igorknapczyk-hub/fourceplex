@@ -8,5 +8,5 @@
 [functions."claude"]
   timeout = 26
 
-[functions."count-scheduled"]
+[functions."count-scheduled-background"]
   schedule = "30 7 * * *"

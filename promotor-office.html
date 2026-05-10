@@ -170,6 +170,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .step-note-in{flex:1;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text2);font-family:var(--sans);font-size:11px;padding:2px 4px;outline:none;transition:border-color .15s;min-width:0}
 .step-note-in:focus{border-bottom-color:rgba(96,165,250,.5)}
 .step-note-in::placeholder{color:var(--text3)}
+.step-cb.overdue.done{border-color:rgba(248,113,113,.7)!important;background:rgba(248,113,113,.12)!important}
+.step-cb.overdue.done::after{border-color:var(--red)!important}
+.step-lbl.overdue{color:var(--red)!important}
 /* list dots */
 .step-dots{display:flex;gap:3px;align-items:center;margin-left:2px}
 .sdot{width:7px;height:7px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);flex-shrink:0;transition:all .15s}
@@ -547,8 +550,10 @@ function renderList(){
     const isSelected=a.id===selectedId;
     const steps=getSteps(a);
     const stepBadges=STEPS.map(s=>{
-      const done=!!(steps[s.key]||{}).done;
-      return`<span class="badge${done?' badge-blue':''}" style="${done?'':'opacity:.4'}">${s.label}</span>`;
+      const sd=steps[s.key]||{};
+      const done=!!sd.done;
+      const overdue=isStepOverdue(s.key,sd);
+      return`<span class="badge${overdue?' badge-red':done?' badge-blue':''}" style="${done?'':'opacity:.4'}">${s.label}</span>`;
     }).join('');
     const div=document.createElement('div');
     div.className='artist-item'+(isSelected?' selected':'');
@@ -735,6 +740,14 @@ const STEPS=[
   {key:'period',  label:'Period'},
   {key:'venue',   label:'Venue'},
 ];
+const REMINDER_KEY='followup';
+const REMINDER_OVERDUE_MS=7*24*60*60*1000;
+function isStepOverdue(key,sd){
+  if(key!==REMINDER_KEY||!sd.done)return false;
+  if(sd.doneAt)return(Date.now()-new Date(sd.doneAt).getTime())>REMINDER_OVERDUE_MS;
+  if(sd.date){const[d,m,y]=(sd.date).split('.');if(d&&m&&y)return(Date.now()-new Date(+y,+m-1,+d).getTime())>REMINDER_OVERDUE_MS;}
+  return false;
+}
 function getSteps(a){return a.steps||{};}
 function renderStepDots(a){
   const steps=getSteps(a);
@@ -745,9 +758,10 @@ function renderPipeline(a){
   const rows=STEPS.map(s=>{
     const sd=steps[s.key]||{};
     const done=!!sd.done;
+    const overdue=isStepOverdue(s.key,sd);
     return`<div class="steps-row">
-      <div class="step-cb${done?' done':''}" onclick="toggleStep(${a.id},'${s.key}',this)"></div>
-      <span class="step-lbl${done?' done':''}">${s.label}</span>
+      <div class="step-cb${done?' done':''}${overdue?' overdue':''}" onclick="toggleStep(${a.id},'${s.key}',this)"></div>
+      <span class="step-lbl${done?' done':''}${overdue?' overdue':''}">${s.label}</span>
       <span class="step-date">${done&&sd.date?sd.date:''}</span>
       <input class="step-note-in" value="${esc(sd.note||'')}" placeholder="notatka…" onchange="saveStepNote(${a.id},'${s.key}',this.value)">
     </div>`;
@@ -765,12 +779,15 @@ async function toggleStep(id,key,el){
   const cur=steps[key]||{};
   const newDone=!cur.done;
   const now=new Date().toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});
-  steps[key]={...cur,done:newDone,date:newDone?now:(cur.date||''),note:cur.note||''};
+  const doneAt=newDone?new Date().toISOString():null;
+  steps[key]={...cur,done:newDone,date:newDone?now:(cur.date||''),note:cur.note||'',...( (key===REMINDER_KEY)?{doneAt}:{} )};
   /* optimistic UI */
   el.classList.toggle('done',newDone);
+  if(!newDone)el.classList.remove('overdue');
   const row=el.closest('.steps-row');
   if(row){
-    const lbl=row.querySelector('.step-lbl');if(lbl)lbl.classList.toggle('done',newDone);
+    const lbl=row.querySelector('.step-lbl');
+    if(lbl){lbl.classList.toggle('done',newDone);if(!newDone)lbl.classList.remove('overdue');}
     const dateEl=row.querySelector('.step-date');if(dateEl)dateEl.textContent=newDone?now:'';
   }
   /* update local cache */

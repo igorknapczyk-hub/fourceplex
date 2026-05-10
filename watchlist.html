@@ -403,6 +403,9 @@ select.form-input{cursor:pointer}
         <option value="sent">Napisano do agenta</option>
         <option value="reminder">Reminder</option>
       </select>
+      <select class="filter" id="filterAddedBy" onchange="renderTable()">
+        <option value="">Wszyscy użytkownicy</option>
+      </select>
 
 
       <button class="btn btn-teal" id="cmpBtn" disabled onclick="togglePanel('comparePanel')">Porównaj (0/4)</button>
@@ -929,13 +932,23 @@ function updateSortHeaders(){
   });
 }
 
+function populateByFilter(){
+  const sel=document.getElementById('filterAddedBy');
+  if(!sel)return;
+  const current=sel.value;
+  const names=[...new Set(artists.map(a=>a.addedBy||'').filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  sel.innerHTML='<option value="">Wszyscy użytkownicy</option>'+names.map(n=>`<option value="${n}"${n===current?' selected':''}>${n}</option>`).join('');
+}
+
 function getFiltered(){
   const q=document.getElementById('searchInput').value.toLowerCase();
   const fs=document.getElementById('filterStatus').value;
+  const fb=document.getElementById('filterAddedBy').value;
 
   return artists.filter(a=>{
     if(q&&![a.name,a.genre,a.notes,a.addedBy,a.plShow].some(v=>(v||'').toLowerCase().includes(q)))return false;
     if(fs&&a.status!==fs)return false;
+    if(fb&&(a.addedBy||'')!==fb)return false;
     return true;
   }).sort((a,b)=>{
     if(sortCol==='predict')return sortDir*((b.predMax||0)-(a.predMax||0));
@@ -1004,6 +1017,7 @@ function addedByCell(a){
 function formatDate(iso){if(!iso)return'—';const d=new Date(iso);return d.toLocaleDateString('pl',{day:'2-digit',month:'2-digit',year:'numeric'});}
 
 function renderTable(){
+  populateByFilter();
   updateSortHeaders();
   const rows=getFiltered(),tbody=document.getElementById('tbody');
   if(!rows.length){tbody.innerHTML=`<tr><td colspan="12"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;color:var(--text3)"><div style="font-size:32px;opacity:.12;margin-bottom:10px">◎</div><div>Brak artystów</div></div></td></tr>`;return;}
