@@ -227,7 +227,15 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .exec-notes-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:0}
 .exec-note-item{background:var(--bg3);border-radius:5px;padding:8px 10px;flex-shrink:0}
 .exec-note-text{font-size:12px;color:var(--text);line-height:1.4;word-break:break-word}
-.exec-note-meta{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:3px}
+.exec-note-meta{font-family:var(--mono);font-size:9px;color:var(--text3)}
+.exec-note-footer{display:flex;align-items:center;justify-content:space-between;margin-top:4px;gap:8px}
+.exec-note-thumb-btn{background:none;border:1px solid var(--border);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:10px;color:var(--text3);display:flex;align-items:center;gap:3px;transition:all .15s;flex-shrink:0;line-height:1.7;font-family:var(--mono)}
+.exec-note-thumb-btn:hover{border-color:rgba(251,191,36,.4);color:var(--amber)}
+.exec-note-thumb-btn.thumbed{border-color:rgba(251,191,36,.5);background:rgba(251,191,36,.1);color:var(--amber)}
+.exec-note-thumb-btn .thumb-emoji{transition:filter .15s}
+.exec-note-thumb-btn:not(.has-thumbs) .thumb-emoji{filter:grayscale(1) opacity(.35)}
+.exec-note-thumb-btn:not(.has-thumbs):hover .thumb-emoji{filter:grayscale(1) opacity(.6)}
+.exec-note-thumb-who{font-family:var(--mono);font-size:9px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .exec-note-add-row{display:flex;gap:7px;flex-shrink:0;align-items:flex-end;padding-top:4px}
 .exec-note-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:12px;padding:7px 11px;outline:none;resize:none;transition:border-color .15s;min-height:48px}
 .exec-note-input:focus{border-color:rgba(200,240,96,.4)}
@@ -1058,6 +1066,7 @@ function renderTaskDetail(t){
 
   /* exec notes */
   const execNotes=Array.isArray(t.execNotes)?t.execNotes:[];
+  const thumbsMap=t.noteThumbsMap||{};
   const execListHtml=execNotes.length
     ?[...execNotes].reverse().map(n=>{
         const c=getUserColor(n.addedBy||'');
@@ -1065,9 +1074,19 @@ function renderTaskDetail(t){
         if(n.addedAt){
           try{const d=new Date(n.addedAt);ts=d.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});}catch(e){}
         }
+        const nk=noteKey(n.addedAt);
+        const thumbWho=Array.isArray(thumbsMap[nk])?thumbsMap[nk]:[];
+        const isThumbed=thumbWho.includes(currentUser);
+        const whoHtml=thumbWho.length?thumbWho.map(u=>`<span style="color:${getUserColor(u)}">${escHtml(u)}</span>`).join('<span style="color:var(--text3)"> · </span>'):'';
         return`<div class="exec-note-item">
           <div class="exec-note-text">${escHtml(n.text)}</div>
-          <div class="exec-note-meta"><span style="color:${c}">${escHtml(n.addedBy||'?')}</span>${ts?' · '+ts:''}</div>
+          <div class="exec-note-footer">
+            <div class="exec-note-meta"><span style="color:${c}">${escHtml(n.addedBy||'?')}</span>${ts?' · '+ts:''}</div>
+            <div style="display:flex;align-items:center;gap:6px;min-width:0">
+              ${whoHtml?`<span class="exec-note-thumb-who">${whoHtml}</span>`:''}
+              <button class="exec-note-thumb-btn${isThumbed?' thumbed':''}${thumbWho.length?' has-thumbs':''}" onclick="toggleThumb('${t.id}','${nk}')"><span class="thumb-emoji">👍</span>${thumbWho.length?' '+thumbWho.length:''}</button>
+            </div>
+          </div>
         </div>`;
       }).join('')
     :'<div class="empty-state" style="padding:8px 0;font-size:11px">Brak notatek wykonania</div>';
@@ -1097,6 +1116,23 @@ function renderTaskDetail(t){
   /* Enter w textarea exec-note */
   const inp=document.getElementById('exec-note-input');
   if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();addExecNote(t.id);}});
+}
+
+function noteKey(addedAt){return(addedAt||'x').replace(/[^a-zA-Z0-9]/g,'_');}
+
+async function toggleThumb(todoId,nk){
+  if(!db||!currentUser)return;
+  const t=_latestTodos.find(x=>x.id===todoId);
+  if(!t)return;
+  const thumbs=Array.isArray((t.noteThumbsMap||{})[nk])?(t.noteThumbsMap||{})[nk]:[];
+  const has=thumbs.includes(currentUser);
+  try{
+    await db.collection('todos').doc(todoId).update({
+      [`noteThumbsMap.${nk}`]:has
+        ?firebase.firestore.FieldValue.arrayRemove(currentUser)
+        :firebase.firestore.FieldValue.arrayUnion(currentUser)
+    });
+  }catch(e){console.error('Thumb:',e);}
 }
 
 async function addExecNote(id){
