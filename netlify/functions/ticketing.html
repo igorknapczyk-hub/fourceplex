@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/png" href="plex.favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fource.Plex — Ticketing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0e11;--bg2:#16161a;--bg3:#1e1e24;--bg4:#26262e;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0eff4;--text2:#9998a8;--text3:#5c5b6e;
+  --accent:#c8f060;--accent2:#9de84a;
+  --purple:#a78bfa;--teal:#34d399;--amber:#fbbf24;--red:#f87171;--blue:#60a5fa;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+/* ── LIGHT MODE ── */
+body.light{--bg:#f0f0f5;--bg2:#ffffff;--bg3:#e6e6ec;--bg4:#d8d8e2;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);--text:#16161e;--text2:#56566a;--text3:#8f8fa0;--accent:#7ab000;--accent2:#5d8a00;}
+body.light img[alt="Fource.Plex"]{filter:invert(1);mix-blend-mode:normal;opacity:.85}
+.theme-toggle{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .15s,border-color .15s,background .15s;line-height:0}
+.theme-toggle:hover{color:var(--text);border-color:rgba(128,128,128,.25)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:54px 1fr;height:100vh;overflow:hidden}
+
+/* TOPBAR */
+.topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:200}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.fource-brand{font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:.2em;color:var(--text3);text-transform:uppercase;border-right:1px solid var(--border2);padding-right:16px}
+.fource-brand span{color:var(--accent)}
+.brand-logo{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--text);letter-spacing:.06em}
+.brand-tag{font-size:10px;color:var(--text3);font-family:var(--mono);border:1px solid var(--border2);padding:2px 7px;border-radius:4px;margin-left:8px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+/* ── TOPBAR NOTIFICATION PILLS ── */
+.topbar-notif{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:var(--bg3);transition:border-color .2s,background .2s;user-select:none;white-space:nowrap}
+.notif-count{font-size:13px;font-weight:500;line-height:1}
+.notif-lbl{font-size:10px;color:var(--text3)}
+.notif-sep{width:1px;height:14px;background:var(--border2);margin:0 2px}
+.notif-todo .notif-count{color:var(--accent)}
+.notif-todo.active{border-color:rgba(200,240,96,.3);background:rgba(200,240,96,.07)}
+.notif-todo.flash{animation:notifFlash 2.8s ease forwards}
+@keyframes notifFlash{0%{box-shadow:0 0 0 0 rgba(200,240,96,.55)}35%{box-shadow:0 0 0 7px rgba(200,240,96,.08)}100%{box-shadow:0 0 0 0 rgba(200,240,96,0)}}
+.notif-zlecone .notif-count{color:var(--purple)}
+.notif-zlecone.active{border-color:rgba(167,139,250,.28);background:rgba(167,139,250,.07)}
+.notif-wtoku .notif-count{color:var(--blue)}
+.notif-wtoku.active{border-color:rgba(96,165,250,.28);background:rgba(96,165,250,.07)}
+.notif-notes{border-color:rgba(251,191,36,.35)!important;background:rgba(251,191,36,.08)!important;cursor:pointer}
+.notif-notes:hover{background:rgba(251,191,36,.15)!important}
+.notif-notes .notif-count{color:var(--amber)}
+.notif-notes .notif-lbl{color:rgba(251,191,36,.55)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar-stat{font-family:var(--mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
+.topbar-stat strong{color:var(--accent)}
+.user-badge{background:var(--bg3);border:1px solid var(--border2);padding:4px 10px;border-radius:6px;font-size:12px;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px}
+.user-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* SIDEBAR */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:18px 0;display:flex;flex-direction:column;gap:1px;overflow:hidden}
+.nav-label{font-family:var(--mono);font-size:9px;font-weight:500;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;padding:12px 18px 5px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 18px;font-size:13px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all .15s;text-decoration:none}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--accent);background:rgba(200,240,96,.06);border-left-color:var(--accent)}
+.nav-item.disabled{opacity:.28;cursor:not-allowed;pointer-events:none}
+.nav-icon{width:14px;height:14px;flex-shrink:0;opacity:.6}
+.nav-item.active .nav-icon,.nav-item:hover .nav-icon{opacity:1}
+.sidebar-footer{margin-top:auto;padding:14px 18px;border-top:1px solid var(--border)}
+.sidebar-footer-logo{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.18em;color:var(--text3);text-transform:uppercase;margin-bottom:3px}
+.sidebar-footer-logo span{color:var(--accent)}
+.sidebar-footer-text{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.main-fixed{flex-shrink:0}
+
+/* STATS */
+.stats-bar{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)}
+.stat-block{padding:11px 16px;border-right:1px solid var(--border)}
+.stat-block:last-child{border-right:none}
+.stat-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.09em;text-transform:uppercase;margin-bottom:3px}
+.stat-value{font-family:var(--mono);font-size:21px;font-weight:300;color:var(--text)}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.stat-sub.up{color:var(--teal)}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:140px}
+.search-wrap svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:12px;height:12px;color:var(--text3)}
+.search-wrap input{width:100%;padding:5px 9px 5px 26px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:12px;outline:none;transition:border-color .15s}
+.search-wrap input::placeholder{color:var(--text3)}
+.search-wrap input:focus{border-color:var(--accent)}
+select.filter{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-family:var(--sans);font-size:12px;padding:5px 9px;border-radius:6px;cursor:pointer;outline:none}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:5px 12px;border-radius:6px;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--bg4);color:var(--text)}
+.btn-accent{background:var(--accent);border-color:var(--accent);color:#0e0e11;font-weight:500}
+.btn-accent:hover{background:var(--accent2);border-color:var(--accent2);color:#0e0e11}
+.btn-purple{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.3);color:var(--purple)}
+.btn-purple:hover{background:rgba(167,139,250,.22)}
+.btn-teal{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--teal)}
+.btn-teal:hover{background:rgba(52,211,153,.18)}
+.btn-red{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.3);color:var(--red)}
+.btn-sm{padding:3px 8px;font-size:11px}
+
+/* SCROLL AREA */
+.scroll-area{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative}
+
+/* OVERLAY PANELS */
+.overlay-panel{display:none;position:absolute;top:0;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border2);z-index:50;overflow-y:auto;max-height:100%;animation:sd .18s ease}
+.overlay-panel.open{display:block}
+@keyframes sd{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.panel-inner{padding:18px 20px}
+.panel-title{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.panel-title-left{display:flex;align-items:center;gap:8px}
+.panel-title-left::before{content:'';display:block;width:3px;height:13px;background:var(--accent);border-radius:2px}
+.panel-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:0 4px}
+.panel-close:hover{color:var(--text)}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ff{grid-column:1/-1}
+.form-label{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:13px;padding:6px 10px;border-radius:6px;outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--text3)}
+select.form-input{cursor:pointer}
+textarea.form-input{resize:vertical;min-height:52px}
+.fsec{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:10px 0 5px;border-top:1px solid var(--border);margin-top:2px}
+.fsec:first-of-type{border-top:none;padding-top:0}
+.form-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end}
+
+/* ═══════════════════════════════════════════════════
+   THREE-PANEL FROZEN TABLE ARCHITECTURE
+
+   [LEFT FROZEN]  |  [MIDDLE SCROLLABLE]  |  [RIGHT FROZEN]
+   Artysta + Data |  Wtorki (scrolluje →)  |  LIVE + Edytuj
+
+   All three panels sync vertical scroll via JS.
+   Middle panel has overflow-x: auto.
+   Left/Right panels have overflow: hidden (no scrollbar).
+═══════════════════════════════════════════════════ */
+.tri-wrap{
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* LEFT frozen panel — Name + Date */
+.pan-left{
+  flex-shrink: 0;
+  width: 234px; /* 34 + 120 + 80 */
+  border-right: 2px solid var(--border2);
+  background: var(--bg);
+  z-index: 20;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+.pan-left::-webkit-scrollbar{display:none}
+.pan-left table{border-collapse:collapse;table-layout:fixed;width:234px}
+
+/* MIDDLE scrollable panel — Tuesday history blocks */
+.pan-mid{
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  background: var(--bg);
+  min-width: 0;
+}
+.pan-mid table{border-collapse:collapse;table-layout:fixed}
+
+/* RIGHT frozen panel — LIVE block + actions (sits between left and middle) */
+.pan-right{
+  flex-shrink: 0;
+  border-right: 2px solid rgba(200,240,96,.22);
+  background: var(--bg);
+  z-index: 20;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  /* width set dynamically */
+}
+.pan-right::-webkit-scrollbar{display:none}
+.pan-right table{border-collapse:collapse;table-layout:fixed}
+
+/* Shared thead styles — thead itself is the sticky unit (prevents r1/r2 sub-pixel sliding) */
+.pan-left thead,
+.pan-mid  thead,
+.pan-right thead{
+  position: sticky;
+  top: 0;
+  z-index: 16;
+}
+.pan-left table thead th,
+.pan-mid  table thead th,
+.pan-right table thead th{
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text3);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 0 8px;
+  background: var(--bg2);
+  text-align: left;
+  white-space: nowrap;
+  position: relative;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border);
+}
+.pan-left  table thead th.r1,
+.pan-mid   table thead th.r1,
+.pan-right table thead th.r1{ height:18px; border-bottom:none; }
+.pan-left  table thead th.r2,
+.pan-mid   table thead th.r2,
+.pan-right table thead th.r2{ height:18px; }
+
+/* Date-group header */
+.dg{text-align:center!important;color:var(--text3);border-left:1px solid rgba(255,255,255,.06)}
+.dg.live-hdr{color:var(--accent);border-left:1px solid rgba(200,240,96,.25);background:var(--bg2)!important}
+
+/* TD base */
+.pan-left  table td,
+.pan-mid   table td,
+.pan-right table td{
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border);
+  height: 34px;
+}
+
+/* Row state indicators — left border on first cell of left panel */
+.pan-left table tr.row-urgent td:first-child{border-left:3px solid var(--red)}
+.pan-left table tr.row-warn   td:first-child{border-left:3px solid var(--amber)}
+.pan-left table tr.row-ok     td:first-child{border-left:3px solid var(--teal)}
+.pan-left table tr.row-past{opacity:.42}
+
+/* Hover sync */
+.pan-left  table tr.h td,
+.pan-mid   table tr.h td,
+.pan-right table tr.h td{background:rgba(255,255,255,.022)}
+
+/* Cell flavours */
+td.name-c{color:var(--text);font-size:11px;font-weight:500}
+td.date-c{font-family:var(--mono);font-size:11px;color:var(--text3)}
+td.num{font-family:var(--mono);font-size:11px;text-align:right;padding-right:9px}
+td.num-b{font-family:var(--mono);font-size:12px;font-weight:500;text-align:right;padding-right:9px;color:var(--text)}
+td.live-bg{background:rgba(200,240,96,.028)}
+td.num.live-bg{background:rgba(200,240,96,.035)}
+td.num-b.live-bg{background:rgba(200,240,96,.035)}
+
+/* PCT bar */
+.pct-w{display:flex;align-items:center;gap:5px;justify-content:flex-end}
+.pct-bar{width:28px;height:3px;background:var(--bg4);border-radius:2px;flex-shrink:0;overflow:hidden}
+.pct-fill{height:3px;border-radius:2px}
+.pct-n{font-family:var(--mono);font-size:10px;min-width:30px;text-align:right}
+
+/* Days badge */
+.db{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;white-space:nowrap;display:inline-block}
+.dp{color:var(--text3);border:1px solid var(--border)}
+.du{color:var(--red);background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2)}
+.ds{color:var(--amber);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.18)}
+.do{color:var(--teal);background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.18)}
+
+/* Venue tag */
+.vt{font-family:var(--mono);font-size:9px;color:var(--blue);background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);padding:2px 6px;border-radius:3px;display:inline-block;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Calc button */
+.calc-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:3px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);cursor:pointer;transition:all .15s;font-size:10px;flex-shrink:0}
+.calc-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(200,240,96,.06)}
+
+/* Break-even */
+.be-v{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.be-hit{color:var(--teal)!important;font-weight:500}
+
+/* Inline edit */
+.ec{cursor:pointer}.ec:hover{background:var(--bg4)!important}
+.ie{width:52px;background:var(--bg3);border:1px solid var(--accent);color:var(--text);font-family:var(--mono);font-size:11px;padding:2px 5px;border-radius:3px;outline:none;text-align:right}
+
+/* Block separator */
+.bl-sep{border-left:1px solid rgba(255,255,255,.05)!important}
+
+/* Enforce identical row heights across all three panels */
+.pan-left table tr,.pan-mid table tr,.pan-right table tr{height:34px}
+.pan-left table td,.pan-mid table td,.pan-right table td{height:34px;max-height:34px}
+
+/* TABS */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;padding:0 2px}
+.tab-btn{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:9px 18px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none;transition:all .15s}
+.tab-btn:hover{color:var(--text2)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-count{font-size:9px;margin-left:5px;opacity:.7}
+
+/* ICON BUTTONS */
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:var(--bg3);cursor:pointer;transition:all .15s;flex-shrink:0;color:var(--text2)}
+.icon-btn:hover{background:var(--bg4);color:var(--text)}
+.icon-btn.del:hover{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.1);color:var(--red)}
+.icon-btn.edit:hover{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.1);color:var(--purple)}
+
+
+/* VIP BADGE */
+.vip-btn{display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:7px;font-weight:700;letter-spacing:.04em;padding:1px 4px;border-radius:3px;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35);color:var(--purple);cursor:default;flex-shrink:0}
+#_vip_tip{position:fixed;z-index:9999;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:10px;font-family:var(--sans);padding:5px 9px;box-shadow:0 4px 12px rgba(0,0,0,.4);white-space:nowrap;pointer-events:none;display:none}
+
+/* MODAL (index.html style) */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+#modal-overlay.open{display:flex}
+#modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:340px;max-width:95vw;animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+#modal .modal-title{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:14px}
+#modal .user-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+#modal .user-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s}
+#modal .user-option:hover{border-color:rgba(255,255,255,.18)}
+#modal .user-option.selected{border-color:var(--accent);background:rgba(200,240,96,.06)}
+.uav{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#0e0e11;flex-shrink:0}
+#modal .user-option-name{font-size:14px;font-weight:500}
+#modal .modal-divider{height:1px;background:var(--border);margin:12px 0}
+#modal .add-user-row{display:flex;gap:7px}
+.modal-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;outline:none;transition:border-color .15s}
+.modal-input:focus{border-color:rgba(200,240,96,.4)}
+.modal-input::placeholder{color:var(--text3)}
+
+/* MODAL */
+/* modal CSS moved to #modal-overlay above */
+.ai-box{background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:14px;margin-top:10px}
+.ai-box-h{font-family:var(--mono);font-size:10px;color:var(--purple);display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.ai-box-t{font-size:13px;color:var(--text2);line-height:1.7}
+.ai-box-t strong{color:var(--text)}
+.notif{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:12px;padding:9px 16px;border-radius:8px;animation:ni .2s ease;z-index:999;max-width:320px}
+.notif.err{border-color:var(--red);color:var(--red)}
+.notif.info{border-color:var(--blue);color:var(--blue)}
+@keyframes ni{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sp-sm{width:11px;height:11px;border:1.5px solid rgba(167,139,250,.3);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite}
+</style>
+<link rel="stylesheet" href="fourceplex-theme.css">
+</head>
+<body>
+
+<div id="modal-overlay">
+  <div id="modal">
+    <div class="modal-title">Wybierz użytkownika</div>
+    <div class="user-list" id="user-list"></div>
+    <div id="pin-section" style="display:none">
+      <div class="modal-divider"></div>
+      <div class="add-user-row">
+        <input class="modal-input" id="pin-input" type="password" placeholder="PIN…" maxlength="4" inputmode="numeric">
+        <button class="btn btn-accent" onclick="confirmPin()" style="background:var(--accent);color:#0e0e11;border:none;border-radius:6px;padding:6px 13px;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer">OK</button>
+      </div>
+      <div id="pin-error" style="display:none;color:#f87171;font-size:11px;margin-top:6px;font-family:var(--mono);letter-spacing:.05em">Nieprawidłowy PIN</div>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="layout">
+
+<div class="topbar">
+  <div class="topbar-left">
+    <img src="logo-dark.png"  class="fp-logo fp-logo-dark"  alt="Fource.Plex" style="height:30px;margin-right:10px"><img src="logo-light.png" class="fp-logo fp-logo-light" alt="Fource.Plex" style="height:30px;margin-right:10px">
+    <div><span class="brand-logo">TICKETING</span><span class="brand-tag">Fource.Plex</span></div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-notif notif-todo" id="notif-todo" title="Zadania Do zrobienia i Zablokowane">
+      <strong class="notif-count" id="notif-todo-count">0</strong>
+      <span class="notif-lbl">do zrobienia</span>
+    </div>
+    <div class="topbar-notif notif-zlecone" id="notif-zlecone" title="Zadania zlecone przez Ciebie">
+      <strong class="notif-count" id="notif-zlecone-count">0</strong>
+      <span class="notif-lbl">zlecone</span>
+    </div>
+    <div class="topbar-notif notif-wtoku" id="notif-wtoku" title="Zadania W toku">
+      <strong class="notif-count" id="notif-wtoku-count">0</strong>
+      <span class="notif-lbl">w toku</span>
+    </div>
+    <div class="topbar-notif notif-notes" id="notif-notes" style="display:none" onclick="window.location.href='index.html'" title="Nowe notatki wykonania — kliknij aby przejść">
+      <svg viewBox="0 0 14 14" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" style="flex-shrink:0;color:var(--amber)"><path d="M2 2h10v8H8l-3 2v-2H2z"/></svg>
+      <strong class="notif-count" id="notif-notes-count">0</strong>
+      <span class="notif-lbl">nowych notatek</span>
+    </div>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Tryb jasny / ciemny">
+      <svg id="theme-icon" viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+    </button>
+    <div class="user-badge" onclick="openModal()">
+      <div class="user-dot" id="badge-dot"></div>
+      <span id="badge-name">Wybierz użytkownika</span>
+    </div>
+  </div>
+</div>
+
+<div class="sidebar">
+  <div class="nav-label">Moduły</div>
+  <div class="nav-item" onclick="location.href='index.html'">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M1 6h14M5 6v8"/></svg>
+    Terrarium
+  </div>
+  <div class="nav-item" onclick="location.href='watchlist.html'">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="5" r="2.5"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+    Watchlist
+  </div>
+  <div class="nav-item active">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="4" width="14" height="10" rx="1.5"/><path d="M5 4V2M11 4V2"/><path d="M1 8h14"/></svg>
+    Ticketing
+  </div>
+  <div class="nav-item" onclick="location.href='marketing.html'">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 6h2v4H2zM4 7l7-4v10L4 9"/><path d="M11 6.5c1 .5 1 2.5 0 3"/></svg>
+    Marketing
+  </div>
+  <div class="nav-item" id="nav-produkcja" onclick="location.href='produkcja.html'">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="3" width="14" height="10" rx="1.5"/><circle cx="8" cy="8" r="2.5"/><circle cx="8" cy="8" r="1"/></svg>
+    Produkcja
+  </div>
+  <div class="nav-item" onclick="location.href='listy-gosci.html'">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 4h8M4 7h8M4 10h5"/><rect x="1" y="1" width="14" height="14" rx="1.5"/></svg>
+    Listy Gości
+  </div>
+  <div class="nav-item" onclick="location.href='projekty.html'">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+    Projekty
+  </div>
+  <a class="nav-item" href="promotor-office.html" id="promotor-nav" style="display:none;color:var(--blue)">
+    <svg class="nav-icon" style="opacity:1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
+    Promotor Office
+  </a>
+
+  <div class="nav-label" style="margin-top:6px">Szybkie Linki</div>
+  <a class="nav-item" href="https://fource.pl" target="_blank" rel="noopener">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 2c-2 2-3 4-3 6s1 4 3 6"/><path d="M8 2c2 2 3 4 3 6s-1 4-3 6"/><path d="M2 8h12"/></svg>
+    Fource.pl
+    <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
+  </a>
+  <a class="nav-item" href="https://home.mycloud.com/" target="_blank" rel="noopener">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 10a3 3 0 000-6 3.5 3.5 0 00-6.9.8A2.5 2.5 0 104 10"/><path d="M8 10v5M6 13l2 2 2-2"/></svg>
+    WD My Cloud
+    <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
+  </a>
+  <a class="nav-item" href="https://opos.ebilet.pl/" target="_blank" rel="noopener">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="4" width="14" height="8" rx="1.5"/><path d="M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1"/><circle cx="8" cy="8" r="1.5"/></svg>
+    Opos eBilet
+    <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
+  </a>
+  <a class="nav-item" href="https://one.ticketmaster.com/" target="_blank" rel="noopener">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 8h3M11 8h3M5 5.5A2.5 2.5 0 005 10.5"/><path d="M11 5.5a2.5 2.5 0 010 5"/><rect x="5" y="4" width="6" height="8" rx="1"/></svg>
+    TM1 Ticketmaster
+    <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
+  </a>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-footer-logo"><span>F</span>OURCE</div>
+    <div class="sidebar-footer-text">Agency Hub © 2026</div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="main-fixed">
+    <div class="stats-bar">
+      <div class="stat-block"><div class="stat-label">Aktywne show</div><div class="stat-value" id="st-active">—</div><div class="stat-sub" id="st-active-sub">ładowanie</div></div>
+      <div class="stat-block"><div class="stat-label">Łączna sprzedaż</div><div class="stat-value" id="st-total">—</div><div class="stat-sub up">wszystkie kanały</div></div>
+      <div class="stat-block"><div class="stat-label">Avg. wypełnienia</div><div class="stat-value" id="st-avg">—</div><div class="stat-sub">% aktywnych</div></div>
+      <div class="stat-block"><div class="stat-label">Sold Outy</div><div class="stat-value" id="st-soldout">—</div><div class="stat-sub">aktywne ≥100%</div></div>
+      <div class="stat-block"><div class="stat-label">Ostatnie bilety</div><div class="stat-value" id="st-alerts">—</div><div class="stat-sub" id="st-alerts-sub">alertów 5%/10%</div></div>
+    </div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="6.5" cy="6.5" r="4"/><path d="M10 10l3 3" stroke-linecap="round"/></svg>
+        <input type="text" id="searchInput" placeholder="Szukaj artysty, venue..." oninput="renderTable()">
+      </div>
+      <select class="filter" id="filterVenue" onchange="renderTable()">
+        <option value="">Wszystkie venue</option>
+      </select>
+      <button class="btn btn-teal btn-sm" onclick="doCountAll()">⊞ Policz wszystko</button>
+      <button class="btn btn-accent" onclick="togglePanel('addPanel')">+ Dodaj event</button>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabActive" onclick="switchTab('active')">Aktywne<span class="tab-count" id="cntActive"></span></button>
+      <button class="tab-btn" id="tabPast" onclick="switchTab('past')">Przeszłe<span class="tab-count" id="cntPast"></span></button>
+    </div>
+  </div>
+
+  <div class="scroll-area">
+    <!-- ADD/EDIT PANEL -->
+    <div class="overlay-panel" id="addPanel">
+      <div class="panel-inner">
+        <div class="panel-title">
+          <div class="panel-title-left" id="formTitle">Dodaj event</div>
+          <button class="panel-close" onclick="closePanel('addPanel')">×</button>
+        </div>
+        <div class="fsec">Podstawowe dane</div>
+        <div class="fg3">
+          <div><div class="form-label">Artysta *</div><input class="form-input" type="text" id="fName" placeholder="np. Schur"></div>
+          <div>
+            <div class="form-label">Alternatywna nazwa</div>
+            <input class="form-input" type="text" id="fAltName" placeholder="np. Eivør">
+          </div>
+          <div><div class="form-label">Data eventu *</div><input class="form-input" type="date" id="fDate"></div>
+          <div><div class="form-label">Venue</div><input class="form-input" type="text" id="fVenue" placeholder="np. Hydrozagadka" list="vList">
+            <datalist id="vList"><option value="Hydrozagadka"><option value="BARdzo Bardzo"><option value="Drizzly Grizzly"><option value="Schron"><option value="Niebo"><option value="Piekło nad Niebem"><option value="Progresja"><option value="COS Torwar"><option value="Proxima"><option value="Palladium"><option value="Chmury"></datalist>
+          </div>
+          <div><div class="form-label">Capacity (CAP)</div><input class="form-input" type="number" id="fCap" placeholder="370"></div>
+          <div><div class="form-label">Cena biletu</div><input class="form-input" type="text" id="fPrice" placeholder="99 lub 219-279"></div>
+          <div><div class="form-label">Public On-Sale</div><input class="form-input" type="date" id="fOnSale"></div>
+        </div>
+        <div class="fsec">Aktualny odczyt sprzedaży</div>
+        <div class="fg3">
+          <div><div class="form-label">TicketMaster (TM)</div><input class="form-input" type="number" id="fTM" placeholder="0" min="0"></div>
+          <div><div class="form-label">eBilet (eB)</div><input class="form-input" type="number" id="fEB" placeholder="0" min="0"></div>
+          <div><div class="form-label">Inne</div><input class="form-input" type="number" id="fOther" placeholder="0" min="0"></div>
+          <div><div class="form-label">Comps</div><input class="form-input" type="number" id="fComps" placeholder="np. 10" min="0"></div>
+          <div><div class="form-label">Wraps</div><input class="form-input" type="number" id="fWraps" placeholder="0" min="0"></div>
+          <div><div class="form-label">VIP / notatka</div><input class="form-input" type="text" id="fVip" placeholder="np. notatka"></div>
+        </div>
+        <div class="fsec">Dodatkowe</div>
+        <div class="fg2">
+          <div><div class="form-label">Break Even (puste = 50% CAP)</div><input class="form-input" type="number" id="fBreakEven" placeholder="auto" min="0"></div>
+          <div class="ff"><div class="form-label">Notatki</div><textarea class="form-input" id="fNotes" placeholder="Obserwacje..."></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn" onclick="closePanel('addPanel')">Anuluj</button>
+          <button class="btn btn-red btn-sm" id="fDeleteBtn" style="display:none" onclick="deleteCurrentEvent()">Usuń</button>
+          <button class="btn btn-accent" onclick="saveEvent()">Zapisz event</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- THREE-PANEL TABLE WRAPPER -->
+    <div class="tri-wrap" id="triWrap">
+      <!-- LEFT: frozen Name + Date -->
+      <div class="pan-left" id="panLeft">
+        <table>
+          <thead>
+            <tr>
+              <th class="r1" style="width:34px"></th>
+              <th class="r1" style="width:120px"></th>
+              <th class="r1" style="width:80px"></th>
+            </tr>
+            <tr>
+              <th class="r2" style="width:34px"></th>
+              <th class="r2" style="width:120px;cursor:pointer" onclick="sortBy('name')">Artysta</th>
+              <th class="r2" style="width:80px;cursor:pointer" onclick="sortBy('date')">Data</th>
+            </tr>
+          </thead>
+          <tbody id="tbLeft"></tbody>
+        </table>
+      </div>
+
+      <!-- RIGHT: frozen LIVE block + actions (between left and middle) -->
+      <div class="pan-right" id="panRight">
+        <table id="tblRight">
+          <thead id="thdRight"></thead>
+          <tbody id="tbRight"></tbody>
+        </table>
+      </div>
+
+      <!-- MIDDLE: scrollable Tuesday history -->
+      <div class="pan-mid" id="panMid">
+        <table id="tblMid">
+          <thead id="thdMid"></thead>
+          <tbody id="tbMid"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getFirestore,collection,doc,onSnapshot,setDoc,deleteDoc,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+const cfg={apiKey:"AIzaSyCUsvjkzYG3AVROysZh9BtN2_vagSSyMww",authDomain:"fourceplex-market.firebaseapp.com",projectId:"fourceplex-market",storageBucket:"fourceplex-market.firebasestorage.app",messagingSenderId:"300062366060",appId:"1:300062366060:web:0cf7bd4128bea35cc63b49"};
+const app=initializeApp(cfg),db=getFirestore(app);
+const evCol=collection(db,'ticketing_events'),snapCol=collection(db,'ticketing_snapshots');
+window._db=db;window._evCol=evCol;window._snapCol=snapCol;
+window._setDoc=setDoc;window._deleteDoc=deleteDoc;window._doc=doc;window._getDocs=getDocs;
+onSnapshot(evCol,s=>{window._events=[];s.forEach(d=>window._events.push({id:d.id,...d.data()}));renderTable();updateStats();});
+onSnapshot(snapCol,s=>{window._snaps={};s.forEach(d=>{const x=d.data();if(!window._snaps[x.eventId])window._snaps[x.eventId]=[];window._snaps[x.eventId].push({id:d.id,...x});});renderTable();});
+window.dispatchEvent(new Event('fb-ready'));
+
+/* ── TOPBAR NOTIFS (Jaszczurze Sprawy) ── */
+(function(){
+  const PROMOTOR=['Radek','Igor'];
+  const SK='fourceplex_current_user';
+  let _prev=null;
+  function getA(t){return Array.isArray(t.assignees)?t.assignees:t.assignee?[t.assignee]:[];}
+  function getS(t){return t.status||(t.done?'zrobione':'todo');}
+  function skip(t){if(getS(t)!=='zrobione')return false;const d=t.doneAt;if(!d)return false;const ms=d.toMillis?d.toMillis():d;return Date.now()-ms>172800000;}
+  function seenTs(){const k=`fp_notes_seen_${localStorage.getItem(SK)||'anon'}`;const v=localStorage.getItem(k);if(v)return+v;const n=Date.now();localStorage.setItem(k,n);return n;}
+  onSnapshot(collection(db,'todos'),snap=>{
+    const cu=localStorage.getItem(SK)||'';
+    const todos=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>!skip(t));
+    const isP=PROMOTOR.includes(cu);
+    const mine=isP?todos:todos.filter(t=>{const a=getA(t);return!a.length||a.includes(cu)||t.addedBy===cu;});
+    const recv=mine.filter(t=>{const a=getA(t);return!a.length||a.includes(cu);});
+    const sent=mine.filter(t=>{const a=getA(t);return t.addedBy===cu&&a.length&&!a.includes(cu);});
+    const tc=recv.filter(t=>['todo','zablokowane'].includes(getS(t))).length;
+    const wc=recv.filter(t=>getS(t)==='wtoku').length;
+    const zc=sent.filter(t=>getS(t)!=='zrobione').length;
+    const ts=seenTs();let nc=0;
+    mine.forEach(t=>{const ns=Array.isArray(t.execNotes)?t.execNotes:[];if(ns.some(n=>n.addedBy!==cu&&n.addedAt&&new Date(n.addedAt).getTime()>ts))nc++;});
+    const nT=document.getElementById('notif-todo'),nTc=document.getElementById('notif-todo-count');
+    const nZ=document.getElementById('notif-zlecone'),nZc=document.getElementById('notif-zlecone-count');
+    const nW=document.getElementById('notif-wtoku'),nWc=document.getElementById('notif-wtoku-count');
+    const nN=document.getElementById('notif-notes'),nNc=document.getElementById('notif-notes-count');
+    if(nTc)nTc.textContent=tc;
+    if(nT){nT.classList.toggle('active',tc>0);if(_prev!==null&&tc>_prev){nT.classList.remove('flash');void nT.offsetWidth;nT.classList.add('flash');setTimeout(()=>nT.classList.remove('flash'),3000);}}
+    _prev=tc;
+    if(nZc)nZc.textContent=zc;if(nZ)nZ.classList.toggle('active',zc>0);
+    if(nWc)nWc.textContent=wc;if(nW)nW.classList.toggle('active',wc>0);
+    if(nN)nN.style.display=nc>0?'':'none';if(nNc)nNc.textContent=nc;
+  },()=>{});
+})();
+</script>
+
+<script>
+let curUser='',editId=null,_sCol='date',_sDir=1;
+window._events=window._events||[];
+window._snaps=window._snaps||{};
+
+/* ── SEED EVENTS ── */
+const SEED=[
+  // PRZESZŁE
+  {name:'Schur',         date:'2026-03-26',venue:'Hydrozagadka',     price:'99',     cap:370,  onSale:'2025-11-07',tm:105, eb:178, other:0,  remains:87,  wraps:23,vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Killowen',      date:'2026-03-26',venue:'BARdzo Bardzo',    price:'99',     cap:200,  onSale:'2025-10-31',tm:23,  eb:45,  other:0,  remains:132, wraps:10,vip:'',       notes:'',addedBy:'Monika'},
+  {name:'vgtbl.pl',      date:'2026-03-26',venue:'Drizzly Grizzly',  price:'89',     cap:370,  onSale:'2025-09-22',tm:23,  eb:65,  other:0,  remains:282, wraps:12,vip:'',       notes:'',addedBy:'Monika'},
+  {name:'vgtbl.pl',      date:'2026-03-27',venue:'Schron',           price:'89',     cap:150,  onSale:'2025-09-22',tm:30,  eb:105, other:0,  remains:15,  wraps:11,vip:'',       notes:'',addedBy:'Monika'},
+  {name:'vgtbl.pl',      date:'2026-03-28',venue:'Niebo',            price:'89',     cap:700,  onSale:'2025-09-22',tm:21,  eb:180, other:0,  remains:499, wraps:28,vip:'',       notes:'',addedBy:'Monika'},
+  {name:'INJI',          date:'2026-04-11',venue:'Piekło nad Niebem',price:'109',    cap:250,  onSale:'2025-11-21',tm:125, eb:124, other:0,  remains:1,   wraps:12,vip:'',       notes:'prawie sold out!',addedBy:'Igor'},
+  // AKTYWNE — istniejące
+  {name:'Pentatonix',    date:'2026-04-14',venue:'COS Torwar',       price:'219-279',cap:6651, onSale:'2025-10-10',tm:2020,eb:3003,other:0,  remains:1628,wraps:37,vip:'notatka',notes:'kilka kategorii cen',addedBy:'Mariusz'},
+  {name:'Dakhabrakha',   date:'2026-04-17',venue:'Progresja',        price:'149',    cap:1800, onSale:'2025-10-12',tm:153, eb:446, other:245,remains:956, wraps:77,vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Hannah Bahng',  date:'2026-04-20',venue:'Niebo',            price:'159-677',cap:800,  onSale:'2026-02-20',tm:112, eb:688, other:0,  remains:0,   wraps:0, vip:'notatka',notes:'sold out',addedBy:'Monika'},
+  {name:'Kiki Rockwell', date:'2026-04-21',venue:'Niebo',            price:'105',    cap:750,  onSale:'2025-04-28',tm:142, eb:581, other:0,  remains:27,  wraps:23,vip:'',       notes:'',addedBy:'Igor'},
+  // NOWE ze screena
+  {name:'Asgeir',        date:'2026-04-28',venue:'Proxima',          price:'99-119', cap:850,  onSale:'2025-12-01',tm:312, eb:198, other:0,  remains:340, wraps:18,vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Tinariwen',     date:'2026-04-28',venue:'Studio',           price:'169-189',cap:1622, onSale:'2025-11-15',tm:680, eb:490, other:32, remains:420, wraps:44,vip:'',       notes:'2 koncerty',addedBy:'Monika'},
+  {name:'Tinariwen',     date:'2026-04-29',venue:'Progresja',        price:'179',    cap:1750, onSale:'2025-11-15',tm:520, eb:743, other:0,  remains:487, wraps:51,vip:'',       notes:'dzień 2',addedBy:'Monika'},
+  {name:'Yellow Days',   date:'2026-04-29',venue:'Hydrozagadka',     price:'99',     cap:370,  onSale:'2026-01-10',tm:89,  eb:142, other:0,  remains:139, wraps:9, vip:'',       notes:'wschodzący hype',addedBy:'Mariusz'},
+  {name:'Anatole Muster',date:'2026-05-17',venue:'Jassmine',         price:'110',    cap:200,  onSale:'2026-02-01',tm:44,  eb:61,  other:0,  remains:95,  wraps:5, vip:'',       notes:'nowy artysta',addedBy:'Igor'},
+  {name:'Alok',          date:'2026-05-24',venue:'Niebo',            price:'119',    cap:250,  onSale:'2026-01-20',tm:98,  eb:82,  other:15, remains:55,  wraps:12,vip:'',       notes:'EDM, mocna kampania',addedBy:'Mariusz'},
+  {name:'Pacifica',      date:'2026-05-27',venue:'BARdzo Bardzo',    price:'99',     cap:200,  onSale:'2026-02-14',tm:31,  eb:28,  other:0,  remains:141, wraps:3, vip:'',       notes:'słaba sprzedaż',addedBy:'Monika'},
+  {name:'Saint Stacy',   date:'2026-05-28',venue:'Hydrozagadka',     price:'89',     cap:370,  onSale:'',          tm:0,   eb:0,   other:0,  remains:370, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Conan Gray',    date:'2026-05-29',venue:'Atlas Arena',       price:'179-1350',cap:14698,onSale:'',         tm:0,   eb:0,   other:0,  remains:14698,wraps:0,vip:'',       notes:'',addedBy:'Igor'},
+  {name:'ivri',          date:'2026-06-11',venue:'BARdzo Bardzo',     price:'99',     cap:200,  onSale:'',          tm:0,   eb:0,   other:0,  remains:200, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Joost Klein',   date:'2026-06-15',venue:'Progresja',         price:'179',    cap:1800, onSale:'',          tm:0,   eb:0,   other:0,  remains:1800,wraps:0, vip:'',       notes:'dzień 1',addedBy:'Igor'},
+  {name:'Joost Klein',   date:'2026-06-16',venue:'Progresja',         price:'179',    cap:1800, onSale:'',          tm:0,   eb:0,   other:0,  remains:1800,wraps:0, vip:'',       notes:'dzień 2',addedBy:'Igor'},
+  {name:'Dream, Ivory',  date:'2026-06-20',venue:'BARdzo Bardzo',     price:'119',    cap:200,  onSale:'',          tm:0,   eb:0,   other:0,  remains:200, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Men I Trust',   date:'2026-06-22',venue:'Progresja',         price:'169',    cap:1800, onSale:'',          tm:0,   eb:0,   other:0,  remains:1800,wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Thaiboy Digital',date:'2026-06-25',venue:'Niebo',            price:'119',    cap:620,  onSale:'',          tm:0,   eb:0,   other:0,  remains:620, wraps:0, vip:'',       notes:'dzień 1',addedBy:'Igor'},
+  {name:'Thaiboy Digital',date:'2026-06-26',venue:'Niebo',            price:'129',    cap:750,  onSale:'',          tm:0,   eb:0,   other:0,  remains:750, wraps:0, vip:'',       notes:'dzień 2',addedBy:'Igor'},
+  {name:'Charlie Puth',  date:'2026-07-30',venue:'Progresja',         price:'249-1389',cap:7800, onSale:'',         tm:0,   eb:0,   other:0,  remains:7800,wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Eivor',         date:'2026-08-02',venue:'Proxima',           price:'130',    cap:900,  onSale:'',          tm:0,   eb:0,   other:0,  remains:900, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'OMD',           date:'2026-08-24',venue:'Progresja',         price:'239',    cap:5000, onSale:'',          tm:0,   eb:0,   other:0,  remains:5000,wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'New Constellations',date:'2026-09-08',venue:'Hydrozagadka',  price:'99',     cap:370,  onSale:'',          tm:0,   eb:0,   other:0,  remains:370, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'WITCHZ',        date:'2026-09-19',venue:'Niebo',             price:'119-149',cap:610,  onSale:'',          tm:0,   eb:0,   other:0,  remains:610, wraps:0, vip:'',       notes:'dzień 1',addedBy:'Igor'},
+  {name:'WITCHZ',        date:'2026-09-20',venue:'Niebo',             price:'119-149',cap:700,  onSale:'',          tm:0,   eb:0,   other:0,  remains:700, wraps:0, vip:'',       notes:'dzień 2',addedBy:'Igor'},
+  {name:'Stu Larsen',    date:'2026-09-26',venue:'Chmury',            price:'89',     cap:120,  onSale:'',          tm:0,   eb:0,   other:0,  remains:120, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Tender',        date:'2026-10-07',venue:'Hydrozagadka',      price:'99',     cap:370,  onSale:'',          tm:0,   eb:0,   other:0,  remains:370, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Digitalism',    date:'2026-10-24',venue:'Niebo',             price:'119',    cap:700,  onSale:'',          tm:0,   eb:0,   other:0,  remains:700, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+  {name:'Temples',       date:'2026-10-27',venue:'Niebo',             price:'109',    cap:700,  onSale:'',          tm:0,   eb:0,   other:0,  remains:700, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
+];
+
+window.addEventListener('fb-ready',async()=>{
+  const s=await window._getDocs(window._evCol);
+  if(s.empty){
+    for(const ev of SEED){
+      const id='ev_'+Math.random().toString(36).slice(2,9);
+      await window._setDoc(window._doc(window._db,'ticketing_events',id),{...ev,breakEven:0,internalBuys:0,addedAt:Date.now()});
+    }
+    notify('Załadowano '+SEED.length+' eventów testowych');
+    // Historyczne snapshoty wtorkowe zostaną uzupełniane przez doCountOne/doCountAll
+    // wyłącznie na podstawie prawdziwych danych z API. Nie generujemy fikcyjnych liczb.
+  }
+});
+
+/* ── USERS ── */
+const SESSION_USER_KEY='fourceplex_current_user';
+const USERS=[
+  {name:'Igor',    pin:'1111',color:'#34d399'},
+  {name:'Mariusz', pin:'2222',color:'#fbbf24'},
+  {name:'Monika',  pin:'3333',color:'#a78bfa'},
+  {name:'Radek',   pin:'4444',color:'#60a5fa'},
+  {name:'Gość',    pin:'5555',color:'#fb923c'},
+];
+let _loginUser=null;
+function getUserColor(n){const u=USERS.find(u=>u.name===n);return u?u.color:'#888';}
+function uCol(n){return getUserColor(n);}
+function updateBadge(n){
+  const dot=document.getElementById('badge-dot');
+  const nm=document.getElementById('badge-name');
+  if(dot)dot.style.background=getUserColor(n);
+  if(nm)nm.textContent=n;
+}
+function openModal(){_loginUser=null;renderUserList();document.getElementById('pin-section').style.display='none';document.getElementById('modal-overlay').classList.add('open');}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');_loginUser=null;}
+function renderUserList(){
+  const el=document.getElementById('user-list');if(!el)return;
+  el.innerHTML='';
+  USERS.forEach(u=>{
+    const div=document.createElement('div');
+    div.className='user-option'+(u.name===_loginUser?' selected':'');
+    div.innerHTML=`<div class="uav" style="background:${u.color}">${u.name.charAt(0).toUpperCase()}</div><span class="user-option-name">${u.name}</span>`;
+    div.onclick=()=>selectForPin(u.name);
+    el.appendChild(div);
+  });
+}
+function selectForPin(name){_loginUser=name;renderUserList();document.getElementById('pin-section').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-error').style.display='none';document.getElementById('pin-input').focus();}
+function confirmPin(){const pin=document.getElementById('pin-input').value;const u=USERS.find(u=>u.name===_loginUser);if(u&&pin===u.pin){curUser=_loginUser;localStorage.setItem(SESSION_USER_KEY,curUser);updateBadge(curUser);closeModal();}else{document.getElementById('pin-error').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-input').focus();}}
+document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPin();});
+function loadUsers(){
+  const saved=localStorage.getItem(SESSION_USER_KEY);
+  const u=USERS.find(u=>u.name===saved);
+  if(saved&&u){curUser=saved;updateBadge(saved);}
+  else openModal();
+}
+function openUserModal(){openModal();}
+
+/* ── HELPERS ── */
+function daysLeft(ds){const d=new Date(ds),t=new Date();t.setHours(0,0,0,0);return Math.round((d-t)/86400000);}
+function fd(ds){if(!ds)return'—';const d=new Date(ds);return`${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;}
+function fs(ds){if(!ds)return'—';const d=new Date(ds);return`${d.getDate()}.${d.getMonth()+1}`;}
+function pctColor(p){if(p>=100)return'var(--teal)';if(p>=75)return'var(--accent)';if(p>=50)return'var(--amber)';return'var(--red)';}
+function nextTue(){const d=new Date(),dy=d.getDay(),df=(2-dy+7)%7||7;d.setDate(d.getDate()+df);return d;}
+function notify(msg,t=''){const n=document.createElement('div');n.className='notif'+(t?' '+t:'');n.textContent=msg;document.body.appendChild(n);setTimeout(()=>n.remove(),3500);}
+
+/* ── PANELS ── */
+function togglePanel(id){const p=document.getElementById(id),was=p.classList.contains('open');closeAllPanels();if(!was)p.classList.add('open');}
+function closePanel(id){document.getElementById(id).classList.remove('open');}
+function closeAllPanels(){document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('open'));editId=null;document.getElementById('fDeleteBtn').style.display='none';document.getElementById('formTitle').textContent='Dodaj event';clearForm();}
+function clearForm(){['fName','fAltName','fDate','fVenue','fPrice','fCap','fOnSale','fBreakEven','fVip','fTM','fEB','fOther','fComps','fWraps','fNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
+function sortBy(col){if(_sCol===col)_sDir*=-1;else{_sCol=col;_sDir=1;}renderTable();}
+
+/* ── TAB STATE ── */
+let _activeTab='active';
+function switchTab(t){
+  _activeTab=t;
+  document.getElementById('tabActive').classList.toggle('active',t==='active');
+  document.getElementById('tabPast').classList.toggle('active',t==='past');
+  const pm=document.getElementById('panMid');if(pm)pm._firstRender=undefined;
+  renderTable();
+}
+
+/* ── DELETE ── */
+async function confirmDelete(evId){
+  const ev=window._events?.find(e=>e.id===evId);if(!ev)return;
+  if(!await fpConfirm(`Event „${ev.name}" oraz wszystkie snapshoty zostaną trwale usunięte.`,'Usunąć event?'))return;
+  const snaps=window._snaps?.[evId]||[];
+  for(const s of snaps){try{await window._deleteDoc(window._doc(window._db,'ticketing_snapshots',s.id));}catch(e){}}
+  await window._deleteDoc(window._doc(window._db,'ticketing_events',evId));
+  notify('Usunięto: '+ev.name);
+}
+
+/* ── COLUMN WIDTHS ── */
+// Middle panel: static info + Tuesday blocks
+// Static: Dni(54) Venue(120) Cena(64) CAP(50) Onsale(62) BE(62)
+const SW={dni:54,venue:120,cena:64,cap:50,onsale:62,be:62};
+// Each Tuesday block: TM(48) eB(48) Inne(42) T(52) W(38) %(72) R(46) = 346
+const BW={tm:48,eb:48,oth:42,t:52,w:38,pct:72,r:46};
+const BLOCK_W=Object.values(BW).reduce((s,v)=>s+v,0); // 346
+// Right panel: TM(48) eB(48) Inne(42) T(52) W(38) %(72) R(46) act(72) = 418
+const RW={tm:48,eb:48,oth:42,t:52,w:38,pct:72,r:46,act:72};
+const RIGHT_W=Object.values(RW).reduce((s,v)=>s+v,0); // 418
+const BCOLS=['TM','eB','Inne','T','W','%','R'];
+const RCOLS=['TM','eB','Inne','T','W','%','R',''];
+
+/* ── PCT — number only ── */
+function mkPct(pct,cap){
+  if(!cap)return'—';
+  return`<span style="color:${pctColor(pct)};font-family:var(--mono);font-size:11px">${pct}%</span>`;
+}
+
+/* ── RENDER TABLE ── */
+function renderTable(){
+  const evs=window._events||[];
+  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  const fV=document.getElementById('filterVenue')?.value||'';
+
+  const venues=[...new Set(evs.map(e=>e.venue).filter(Boolean))].sort();
+  const vSel=document.getElementById('filterVenue');
+  if(vSel){const cur=vSel.value;vSel.innerHTML='<option value="">Wszystkie venue</option>'+venues.map(v=>`<option ${v===cur?'selected':''} value="${v}">${v}</option>`).join('');}
+
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
+  const activeEvs=evs.filter(ev=>new Date(ev.date)>=cutoff);
+  const pastEvs  =evs.filter(ev=>new Date(ev.date)<cutoff);
+  const ca=document.getElementById('cntActive'),cp=document.getElementById('cntPast');
+  if(ca)ca.textContent=activeEvs.length;
+  if(cp)cp.textContent=pastEvs.length;
+
+  const pool=_activeTab==='active'?activeEvs:pastEvs;
+  let rows=pool.filter(ev=>{
+    if(q&&!ev.name?.toLowerCase().includes(q)&&!ev.venue?.toLowerCase().includes(q))return false;
+    if(fV&&ev.venue!==fV)return false;
+    return true;
+  });
+  if(_activeTab==='active'){
+    rows.sort((a,b)=>{
+      if(_sCol==='date')return _sDir*(a.date||'').localeCompare(b.date||'');
+      if(_sCol==='name')return _sDir*(a.name||'').localeCompare(b.name||'');
+      return _sDir*((a[_sCol]||0)>(b[_sCol]||0)?1:(a[_sCol]||0)<(b[_sCol]||0)?-1:0);
+    });
+  } else {
+    rows.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  }
+  const _tc=document.getElementById('topCount');if(_tc)_tc.textContent=rows.length;
+
+  const allSnaps=window._snaps||{};
+  const dateSet=new Set();
+  rows.forEach(ev=>{(allSnaps[ev.id]||[]).forEach(s=>dateSet.add(s.date));});
+  const parseSnapDate=s=>{const p=s.split('.');return new Date(+p[2],+p[1]-1,+p[0]);};
+  const snapDates=[...dateSet].sort((a,b)=>parseSnapDate(b)-parseSnapDate(a)).filter(d=>parseSnapDate(d).getDay()===2);
+
+  // Column widths — calc wider to fit timestamp+button side by side
+  const LW={calc:58,name:179,date:93,vip:16};
+  const LEFT_W=Object.values(LW).reduce((s,v)=>s+v,0);
+  const SW={dni:52,venue:118,cena:62,cap:52,onsale:60,be:60};
+  const BW={tm:58,eb:58,oth:52,t:62,w:46,pct:46,c:46};
+  const BLOCK_W=Object.values(BW).reduce((s,v)=>s+v,0);
+  const BCOLS=['TM','eB','Inne','T','W','%','C'];
+
+  // LEFT PANEL THEAD
+  const lpW=LW.calc+LW.name+LW.date+LW.vip;
+  const lpThead=`
+  <colgroup>
+    <col style="width:${LW.calc}px"><col style="width:${LW.name}px"><col style="width:${LW.date}px"><col style="width:${LW.vip}px">
+  </colgroup>
+  <tr>
+    <th class="r1"></th><th class="r1"></th><th class="r1"></th><th class="r1"></th>
+  </tr>
+  <tr>
+    <th class="r2"></th>
+    <th class="r2" style="cursor:pointer" onclick="sortBy('name')">Artysta</th>
+    <th class="r2" style="cursor:pointer" onclick="sortBy('date')">Data</th>
+    <th class="r2"></th>
+  </tr>`;
+  const lpTable=document.querySelector('#panLeft table');
+  if(lpTable){lpTable.querySelector('thead').innerHTML=lpThead;lpTable.style.width=lpW+'px';}
+  document.getElementById('panLeft').style.width=lpW+'px';
+
+  // MIDDLE PANEL THEAD
+  let cg='<colgroup>';
+  Object.values(SW).forEach(w=>cg+=`<col style="width:${w}px">`);
+  snapDates.forEach(()=>Object.values(BW).forEach(w=>cg+=`<col style="width:${w}px">`));
+  cg+='</colgroup>';
+  let r1='<tr>';
+  Object.values(SW).forEach(w=>r1+=`<th class="r1" style="width:${w}px"></th>`);
+  snapDates.forEach(d=>r1+=`<th class="r1 dg" colspan="${BCOLS.length}" style="width:${BLOCK_W}px">${d}</th>`);
+  r1+='</tr>';
+  let r2='<tr>';
+  const SHDRS=['Dni','Venue','Cena','CAP','Onsale','BE'];
+  Object.values(SW).forEach((w,i)=>r2+=`<th class="r2" style="width:${w}px">${SHDRS[i]}</th>`);
+  snapDates.forEach(()=>{
+    Object.values(BW).forEach((w,ci)=>{
+      const bord=ci===0?'border-left:1px solid rgba(255,255,255,.05)':'';
+      r2+=`<th class="r2" style="width:${w}px;text-align:right;padding-right:8px;${bord}">${BCOLS[ci]}</th>`;
+    });
+  });
+  r2+='</tr>';
+  const midW=Object.values(SW).reduce((s,v)=>s+v,0)+snapDates.length*BLOCK_W;
+  document.getElementById('thdMid').innerHTML=cg+r1+r2;
+  document.getElementById('tblMid').style.width=midW+'px';
+  document.getElementById('tblMid').style.minWidth=midW+'px';
+
+  // RIGHT PANEL — LIVE cols
+  const RL={t:58,w:38,tm:58,eb:100,oth:46,pct:46,c:46,act:52};
+  const RL_W=Object.values(RL).reduce((s,v)=>s+v,0);
+  document.getElementById('panRight').style.width=RL_W+'px';
+  document.getElementById('panRight').style.display='';
+  document.getElementById('panRight').style.borderRight='2px solid rgba(200,240,96,.22)';
+  document.getElementById('tblRight').style.width=RL_W+'px';
+  const rcg=`<colgroup><col style="width:${RL.t}px"><col style="width:${RL.w}px"><col style="width:${RL.tm}px"><col style="width:${RL.eb}px"><col style="width:${RL.oth}px"><col style="width:${RL.pct}px"><col style="width:${RL.c}px"><col style="width:${RL.act}px"></colgroup>`;
+  const rr1=`<tr><th class="r1 dg live-hdr" colspan="8" style="width:${RL_W}px"><span style="color:var(--accent)">LIVE ●</span></th></tr>`;
+  const rr2=`<tr>
+    <th class="r2 live-bg" style="width:${RL.t}px;text-align:right;padding-right:8px;border-left:1px solid rgba(200,240,96,.15)">T</th>
+    <th class="r2 live-bg" style="width:${RL.w}px;text-align:right;padding-right:8px">W</th>
+    <th class="r2 live-bg" style="width:${RL.tm}px;text-align:right;padding-right:8px">TM</th>
+    <th class="r2 live-bg" style="width:${RL.eb}px;text-align:right;padding-right:8px">eB</th>
+    <th class="r2 live-bg" style="width:${RL.oth}px;text-align:right;padding-right:8px">Inne</th>
+    <th class="r2 live-bg" style="width:${RL.pct}px;text-align:right;padding-right:8px">%</th>
+    <th class="r2 live-bg" style="width:${RL.c}px;text-align:right;padding-right:8px">C</th>
+    <th class="r2" style="width:${RL.act}px"></th>
+  </tr>`;
+  document.getElementById('thdRight').innerHTML=rcg+rr1+rr2;
+
+  // BUILD ROWS
+  let lH='', mH='';
+  rows.forEach(ev=>{
+    const days=daysLeft(ev.date);
+    const tot=(ev.tm||0)+(ev.eb||0)+(ev.other||0);
+    const pct=ev.cap?Math.round(tot/ev.cap*100):0;
+    const be=ev.breakEven||(ev.cap?Math.round(ev.cap*.5):0);
+    const beHit=be>0&&tot>=be;
+
+    let rc;
+    if(days<-2)rc='row-past';
+    else if(days<=7)rc='row-urgent';
+    else if(days<=21)rc='row-warn';
+    else rc='row-ok';
+    if(pct>=100)rc='row-ok';
+
+    let dbadge;
+    if(days<0)dbadge=`<span class="db dp">${days}d</span>`;
+    else if(days<=7)dbadge=`<span class="db du">${days}d</span>`;
+    else if(days<=21)dbadge=`<span class="db ds">${days}d</span>`;
+    else dbadge=`<span class="db do">${days}d</span>`;
+
+    const pctCol=pctColor(pct);
+
+    // LEFT ROW — [timestamp | ⊞ | alert] | name | date  (all in one line → fixed 34px height)
+    let lastCtBlock='';
+    if(ev.lastCountedAt){
+      const _d=new Date(ev.lastCountedAt);
+      const _dd=_d.getDate(),_mm=_d.getMonth()+1;
+      const _hh=String(_d.getHours()).padStart(2,'0'),_mn=String(_d.getMinutes()).padStart(2,'0');
+      lastCtBlock=`<div style="font-family:var(--mono);font-size:8px;color:var(--text3);line-height:1.25;white-space:nowrap;text-align:right;flex-shrink:0">${_dd}.${_mm}<br>${_hh}:${_mn}</div>`;
+    }
+    lH+=`<tr class="${rc}" data-id="${ev.id}">
+      <td style="width:${LW.calc}px;text-align:center;padding:0 2px;height:34px">
+        <div style="display:flex;align-items:center;justify-content:center;gap:3px;height:100%">
+          ${lastCtBlock}
+          <span class="calc-btn" onclick="doCountOne('${ev.id}')" title="Zlicz (wymaga API)">⊞</span>
+        </div>
+      </td>
+      <td class="name-c" style="width:${LW.name}px">${ev.name}</td>
+      <td class="date-c" style="width:${LW.date}px">${fd(ev.date)}</td>
+      <td style="width:${LW.vip}px;text-align:center;padding:0 2px">${ev.vip?`<span class="vip-btn" data-tip="${ev.vip.replace(/"/g,'&quot;')}">VIP</span>`:''}</td>
+    </tr>`;
+
+    // MIDDLE ROW
+    let mr=`<tr class="${rc}" data-id="${ev.id}">`;
+    mr+=`<td style="width:${SW.dni}px">${dbadge}</td>`;
+    mr+=`<td style="width:${SW.venue}px"><span class="vt" title="${ev.venue||''}">${ev.venue||'—'}</span></td>`;
+    mr+=`<td style="width:${SW.cena}px;font-family:var(--mono);font-size:10px;color:var(--text3)">${ev.price||'—'}</td>`;
+    mr+=`<td class="num" style="width:${SW.cap}px;color:var(--text3)">${ev.cap||'—'}</td>`;
+    mr+=`<td style="width:${SW.onsale}px;font-family:var(--mono);font-size:10px;color:var(--text3)">${ev.onSale?fs(ev.onSale):'—'}</td>`;
+    const beHtml=be?(beHit?`<span class="be-v be-hit">${be}</span>`:`<span class="be-v">${be}</span>`):'—';
+    mr+=`<td style="width:${SW.be}px;text-align:right;padding-right:8px">${beHtml}</td>`;
+
+    snapDates.forEach((dt,di)=>{
+      const s=(allSnaps[ev.id]||[]).find(x=>x.date===dt);
+      const isReal=s&&s.createdBy!=='seed';
+      if(isReal){
+        const sp=s.pct||0;
+        // Wraps = diff vs previous Tuesday snapshot (only if previous is also real)
+        const prevDt=di+1<snapDates.length?snapDates[di+1]:null;
+        const sPrev=prevDt?(allSnaps[ev.id]||[]).find(x=>x.date===prevDt):null;
+        const isPrevReal=sPrev&&sPrev.createdBy!=='seed';
+        const wDiff=isPrevReal?(s.total||0)-(sPrev.total||0):null;
+        const wHtml=wDiff!=null?`<span style="color:${wDiff>0?'var(--teal)':wDiff<0?'var(--red)':'var(--text2)'}">${wDiff>0?'+':''}${wDiff}</span>`:'—';
+        mr+=`<td class="num bl-sep" style="width:${BW.tm}px">${s.tm||0}</td>`;
+        mr+=`<td class="num" style="width:${BW.eb}px">${s.eb||0}</td>`;
+        mr+=`<td class="num ec" style="width:${BW.oth}px;color:var(--text2)" data-snapid="${s.id}" data-evid="${ev.id}" data-val="${s.other||0}" data-field="other" onclick="iEditSnap(this)" title="Edytuj Inne">${s.other||''}</td>`;
+        mr+=`<td class="num-b" style="width:${BW.t}px">${s.total||0}</td>`;
+        mr+=`<td class="num" style="width:${BW.w}px">${wHtml}</td>`;
+        mr+=`<td class="num" style="width:${BW.pct}px;color:${pctColor(sp)}">${ev.cap?sp+'%':'—'}</td>`;
+        mr+=`<td class="num ec" style="width:${BW.c}px;color:var(--text3)" data-snapid="${s.id}" data-evid="${ev.id}" data-val="${s.comps||0}" data-field="comps" onclick="iEditSnap(this)" title="Comps">${s.comps||''}</td>`;
+      }else{
+        // No real data — show XX (nie wymyślamy liczb)
+        const xxStyle='color:var(--text3);letter-spacing:.04em';
+        mr+=`<td class="num bl-sep" style="width:${BW.tm}px;${xxStyle}">XX</td>`;
+        ['eb','oth','t','w'].forEach(k=>mr+=`<td class="num" style="width:${BW[k]}px;${xxStyle}">XX</td>`);
+        mr+=`<td style="width:${BW.pct}px"></td>`;
+        mr+=`<td class="num" style="width:${BW.c}px;color:var(--text3)">—</td>`;
+      }
+    });
+    mr+='</tr>';
+    mH+=mr;
+  });
+
+  document.getElementById('tbLeft').innerHTML=lH;
+  document.getElementById('tbMid').innerHTML=mH;
+  // RIGHT PANEL ROWS
+  let rH='';
+  rows.forEach(ev=>{
+    const days=daysLeft(ev.date);
+    const tot2=Math.max(0,(ev.tm||0)+(ev.eb||0)+(ev.other||0)-(ev.comps||0));
+    const pct2=ev.cap?Math.round(tot2/ev.cap*100):0;
+    let rc2;
+    if(days<-2)rc2='row-past';
+    else if(days<=7)rc2='row-urgent';
+    else if(days<=21)rc2='row-warn';
+    else rc2='row-ok';
+    if(pct2>=100)rc2='row-ok';
+    const pctCol2=pctColor(pct2);
+    // LIVE Wraps = diff vs last real Tuesday snapshot
+    const evRealTue=(allSnaps[ev.id]||[])
+      .filter(s=>s.createdBy!=='seed'&&parseSnapDate(s.date).getDay()===2)
+      .sort((a,b)=>parseSnapDate(b.date)-parseSnapDate(a.date));
+    const lastRS=evRealTue[0];
+    const liveWDiff=lastRS!=null?tot2-(lastRS.total||0):null;
+    const liveWHtml=liveWDiff!=null
+      ?`<span style="color:${liveWDiff>0?'var(--teal)':liveWDiff<0?'var(--red)':'var(--text2)'}">${liveWDiff>0?'+':''}${liveWDiff}</span>`
+      :'—';
+    rH+=`<tr class="${rc2}" data-id="${ev.id}">
+      <td class="num-b live-bg" style="width:${RL.t}px;font-weight:700;border-left:1px solid rgba(200,240,96,.12)">${tot2}</td>
+      <td class="num live-bg" style="width:${RL.w}px">${liveWHtml}</td>
+      <td class="num live-bg" style="width:${RL.tm}px">${ev.tm||0}</td>
+      <td class="num live-bg" style="width:${RL.eb}px">${ev.eb||0}</td>
+      <td class="num live-bg ec" style="width:${RL.oth}px;color:var(--text3)" data-val="${ev.other||0}" onclick="iEdit(this,'${ev.id}','other')" title="Inne — kliknij żeby edytować">${ev.other||''}</td>
+      <td class="num live-bg" style="width:${RL.pct}px;color:${pctCol2}">${ev.cap?pct2+'%':'—'}</td>
+      <td class="num live-bg ec" style="width:${RL.c}px;color:var(--text3)" data-val="${ev.comps||0}" onclick="iEdit(this,'${ev.id}','comps')" title="Comps — kliknij żeby edytować">${ev.comps||''}</td>
+      <td style="width:${RL.act}px;padding:0 5px">
+        <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">
+          <span class="icon-btn edit" onclick="openEdit('${ev.id}')" title="Edytuj">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>
+          </span>
+          <span class="icon-btn del" onclick="confirmDelete('${ev.id}')" title="Usuń">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9"/></svg>
+          </span>
+        </div>
+      </td>
+    </tr>`;
+  });
+  document.getElementById('tbRight').innerHTML=rH;
+
+  initScrollSync();
+  bindHover();
+
+  const pm=document.getElementById('panMid');
+  if(pm&&pm._firstRender!==false){
+    pm._firstRender=false;
+    setTimeout(()=>{pm.scrollLeft=pm.scrollWidth;},50);
+  }
+}
+
+/* ── SCROLL SYNC — left + mid + right ── */
+let _sl=false;
+function initScrollSync(){
+  const L=document.getElementById('panLeft');
+  const M=document.getElementById('panMid');
+  const R=document.getElementById('panRight');
+  if(!L||!M||L._ss)return;
+  L._ss=M._ss=true;
+  const panels=[L,M,R].filter(Boolean);
+  panels.forEach(src=>{
+    src.addEventListener('scroll',()=>{
+      if(_sl)return;_sl=true;
+      panels.forEach(p=>{if(p!==src)p.scrollTop=src.scrollTop;});
+      _sl=false;
+    });
+  });
+}
+
+/* ── HOVER SYNC ── */
+function bindHover(){
+  document.querySelectorAll('#tbLeft tr,#tbMid tr,#tbRight tr').forEach(row=>{
+    const id=row.getAttribute('data-id');
+    row.addEventListener('mouseenter',()=>document.querySelectorAll(`tr[data-id="${id}"]`).forEach(r=>r.classList.add('h')));
+    row.addEventListener('mouseleave',()=>document.querySelectorAll(`tr[data-id="${id}"]`).forEach(r=>r.classList.remove('h')));
+  });
+}
+
+/* ── iEditSnap — 'Inne' / 'Comps' in snapshot ── */
+async function iEditSnap(td){
+  const snapId=td.getAttribute('data-snapid');
+  const evId=td.getAttribute('data-evid');
+  const field=td.getAttribute('data-field')||'other';
+  const inp=document.createElement('input');
+  inp.type='text';inp.inputMode='numeric';inp.className='ie';inp.value=td.getAttribute('data-val')||'0';
+  td.innerHTML='';td.appendChild(inp);inp.focus();inp.select();
+  const done=async()=>{
+    const val=Math.max(0,parseInt(inp.value)||0);
+    const snap=(window._snaps?.[evId]||[]).find(s=>s.id===snapId);if(!snap)return;
+    const ev=window._events.find(e=>e.id===evId);
+    const other=field==='other'?val:(snap.other||0);
+    const comps=field==='comps'?val:(snap.comps||0);
+    const newTot=Math.max(0,(snap.tm||0)+(snap.eb||0)+other-comps);
+    const newRem=ev?.cap?Math.max(0,ev.cap-newTot):(snap.remains||0);
+    const newPct=ev?.cap?Math.round(newTot/ev.cap*100):0;
+    const u={...snap,other,comps,total:newTot,remains:newRem,pct:newPct,updatedBy:curUser,updatedAt:Date.now()};
+    delete u.id;
+    await window._setDoc(window._doc(window._db,'ticketing_snapshots',snapId),u);
+    notify((field==='comps'?'Comps':'Inne')+' ('+snap.date+') → '+val,'info');
+  };
+  inp.addEventListener('blur',done);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderTable();});
+}
+
+/* ── INLINE EDIT ── */
+async function iEdit(td,evId,field){
+  const cur=td.getAttribute('data-val')||'0';
+  const inp=document.createElement('input');
+  inp.type='number';inp.className='ie';inp.value=cur;inp.min=0;
+  td.innerHTML='';td.appendChild(inp);inp.focus();inp.select();
+  const done=async()=>{
+    const val=parseInt(inp.value)||0;
+    const ev=window._events.find(e=>e.id===evId);if(!ev)return;
+    const u={...ev,[field]:val,updatedBy:curUser,updatedAt:Date.now()};delete u.id;
+    await window._setDoc(window._doc(window._db,'ticketing_events',evId),u);
+    notify(`${field.toUpperCase()} → ${val}`,'info');
+  };
+  inp.addEventListener('blur',done);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderTable();});
+}
+
+/* ── COUNT ALL — saves today's snapshot for all active events ── */
+async function doCountAll(){
+  if(!curUser){notify('Wybierz użytkownika','err');return;}
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
+  const evs=(window._events||[]).filter(e=>new Date(e.date)>=cutoff);
+  if(!evs.length){notify('Brak aktywnych eventów','err');return;}
+  const total=evs.length;
+  // Pokaż trwały komunikat z licznikiem
+  let countingNotif=document.createElement('div');
+  countingNotif.id='counting-notif';
+  countingNotif.className='notif info';
+  countingNotif.style.cssText='position:fixed;bottom:20px;right:20px;z-index:999;min-width:260px';
+  countingNotif.innerHTML='⏳ Liczę 0 / '+total+' eventów...';
+  document.body.appendChild(countingNotif);
+  // Odpal background function
+  fetch('/.netlify/functions/count-background',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({events:evs.map(ev=>({
+      id:ev.id,name:ev.name,altName:ev.altName||'',date:ev.date,
+      onSale:ev.onSale,other:ev.other||0,comps:ev.comps||0,
+      wraps:ev.wraps||0,cap:ev.cap||0,
+    }))}),
+  }).catch(()=>{});
+  // Śledź postęp przez Firebase — zliczaj ile eventów ma nowszy updatedAt
+  const startTime=Date.now();
+  const prevUpdatedAts={};
+  evs.forEach(ev=>{prevUpdatedAts[ev.id]=ev.updatedAt||0;});
+  const poll=setInterval(()=>{
+    const done=evs.filter(ev=>{
+      const current=window._events?.find(e=>e.id===ev.id);
+      return current&&(current.updatedAt||0)>prevUpdatedAts[ev.id];
+    }).length;
+    const elapsed=Math.round((Date.now()-startTime)/1000);
+    if(countingNotif){
+      countingNotif.innerHTML='⏳ Liczę '+done+' / '+total+' eventów... ('+elapsed+'s)';
+    }
+    if(done>=total){
+      clearInterval(poll);
+      if(countingNotif){countingNotif.remove();countingNotif=null;}
+      notify('✅ Policzono wszystkie '+total+' eventy');
+    }
+    // Timeout po 5 minutach
+    if(elapsed>300){
+      clearInterval(poll);
+      if(countingNotif){countingNotif.remove();countingNotif=null;}
+      notify('⚠ Liczenie zakończone (timeout). Sprawdź wyniki w tabeli','info');
+    }
+  },2000);
+}
+
+async function doCountOne(evId){
+  const ev=window._events?.find(e=>e.id===evId);
+  if(!ev){notify('Nie znaleziono eventu','err');return;}
+  if(!curUser){notify('Wybierz użytkownika','err');return;}
+  notify('Liczę...','info');
+  const prevUpdatedAt=ev.updatedAt||0;
+  fetch('/.netlify/functions/count-background',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({events:[{
+      id:evId,name:ev.name,altName:ev.altName||'',date:ev.date,
+      onSale:ev.onSale,other:ev.other||0,comps:ev.comps||0,
+      wraps:ev.wraps||0,cap:ev.cap||0,
+    }]}),
+  }).catch(()=>{});
+  let attempts=0;
+  const poll=setInterval(()=>{
+    attempts++;
+    const updated=window._events?.find(e=>e.id===evId);
+    if(!updated)return;
+    const done=(updated.updatedAt||0)>prevUpdatedAt;
+    if(done||attempts>=30){
+      clearInterval(poll);
+      const tot=(updated.tm||0)+(updated.eb||0)+(updated.other||0);
+      notify('✅ TM: '+(updated.tm||0)+' / eBilet: '+(updated.eb||0)+' / Total: '+tot);
+    }
+  },2000);
+}
+
+/* ── STATS ── */
+function updateStats(){
+  const evs=window._events||[];
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
+  const act=evs.filter(e=>new Date(e.date)>=cutoff);
+  const tot=act.reduce((s,e)=>s+(e.tm||0)+(e.eb||0)+(e.other||0),0);
+  const pctsArr=act.filter(e=>e.cap>0).map(e=>((e.tm||0)+(e.eb||0)+(e.other||0))/e.cap*100);
+  const avg=pctsArr.length?Math.round(pctsArr.reduce((a,b)=>a+b,0)/pctsArr.length):0;
+  const soldOut=act.filter(e=>e.cap>0&&((e.tm||0)+(e.eb||0)+(e.other||0))>=e.cap).length;
+  const alertCount=act.filter(e=>{if(!e.cap)return false;const p=((e.tm||0)+(e.eb||0)+(e.other||0))/e.cap*100;return p>=89&&p<100;}).length;
+  const nt=nextTue(),ntd=Math.round((nt-new Date())/86400000);
+  document.getElementById('st-active').textContent=act.length;
+  document.getElementById('st-active-sub').textContent='z '+evs.length+' total';
+  document.getElementById('st-total').textContent=tot.toLocaleString('pl-PL');
+  document.getElementById('st-avg').textContent=avg+'%';
+  document.getElementById('st-soldout').textContent=soldOut;
+  document.getElementById('st-alerts').textContent=alertCount;
+  document.getElementById('st-alerts-sub').textContent=alertCount===1?'alert sprzedaży':'alertów sprzedaży';
+}
+
+/* ── SAVE / EDIT / DELETE ── */
+async function saveEvent(){
+  const name=document.getElementById('fName').value.trim();
+  const date=document.getElementById('fDate').value;
+  if(!name||!date){notify('Wypełnij nazwę i datę','err');return;}
+  const g=id=>parseInt(document.getElementById(id).value)||0;
+  const gv=id=>document.getElementById(id).value.trim();
+  const data={name,date,altName:gv('fAltName'),venue:gv('fVenue'),price:gv('fPrice'),cap:g('fCap'),onSale:gv('fOnSale'),
+    breakEven:g('fBreakEven'),vip:gv('fVip'),
+    tm:g('fTM'),eb:g('fEB'),other:g('fOther'),comps:g('fComps'),wraps:g('fWraps'),notes:gv('fNotes')};
+  if(editId){
+    const old=window._events.find(e=>e.id===editId)||{};
+    data.addedBy=old.addedBy||curUser;data.addedAt=old.addedAt||Date.now();
+    data.updatedBy=curUser;data.updatedAt=Date.now();
+    if(old.lastCountedAt)data.lastCountedAt=old.lastCountedAt;
+    if(old.ebCap!=null)data.ebCap=old.ebCap;
+    await window._setDoc(window._doc(window._db,'ticketing_events',editId),data);
+    notify('Event zaktualizowany');
+  }else{
+    const id='ev_'+Math.random().toString(36).slice(2,9);
+    data.addedBy=curUser;data.addedAt=Date.now();
+    await window._setDoc(window._doc(window._db,'ticketing_events',id),data);
+    notify('Event dodany');
+  }
+  closeAllPanels();
+}
+function openEdit(id){
+  const ev=window._events.find(e=>e.id===id);if(!ev)return;
+  editId=id;
+  document.getElementById('formTitle').textContent='Edytuj event';
+  document.getElementById('fDeleteBtn').style.display='';
+  const F=(fid,v)=>{const el=document.getElementById(fid);if(el)el.value=v||'';};
+  F('fName',ev.name);F('fAltName',ev.altName);F('fDate',ev.date);F('fVenue',ev.venue);F('fPrice',ev.price);
+  F('fCap',ev.cap);F('fOnSale',ev.onSale);F('fBreakEven',ev.breakEven);
+  F('fVip',ev.vip);
+  F('fTM',ev.tm);F('fEB',ev.eb);F('fOther',ev.other);
+  F('fComps',ev.comps||0);F('fWraps',ev.wraps);F('fNotes',ev.notes);
+  document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('open'));
+  document.getElementById('addPanel').classList.add('open');
+}
+async function deleteCurrentEvent(){
+  if(!editId)return;
+  const ev=window._events?.find(e=>e.id===editId);
+  if(!await fpConfirm(`Event „${ev?ev.name:'?'}" zostanie trwale usunięty.`,'Usunąć event?'))return;
+  await window._deleteDoc(window._doc(window._db,'ticketing_events',editId));
+  notify('Usunięto');closeAllPanels();
+}
+
+
+
+/* ── INIT ── */
+window.addEventListener('DOMContentLoaded',()=>{
+  loadUsers();updateStats();renderTable();
+  setInterval(updateStats,60000);
+  // Click outside modal to close
+  const mo=document.getElementById('modal-overlay');
+  if(mo)mo.addEventListener('click',e=>{if(e.target===mo)closeModal();});
+  // modal click-outside (only when already logged in)
+  if(mo)mo.addEventListener('click',e=>{if(e.target===mo&&curUser)closeModal();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAllPanels();if(mo)mo.classList.remove('open');}});
+});
+
+Object.assign(window,{openModal,closeModal,openUserModal,selectForPin,confirmPin,togglePanel,closePanel,closeAllPanels,sortBy,switchTab,confirmDelete,renderTable,saveEvent,openEdit,deleteCurrentEvent,iEdit,iEditSnap,doCountAll,doCountOne,notify});
+
+/* ── VIP FLOATING TOOLTIP ── */
+(function(){
+  let tip=null;
+  function getTip(){
+    if(!tip){tip=document.createElement('div');tip.id='_vip_tip';document.body.appendChild(tip);}
+    return tip;
+  }
+  document.addEventListener('mouseover',e=>{
+    const btn=e.target.closest('.vip-btn');
+    if(!btn)return;
+    const text=btn.getAttribute('data-tip');
+    if(!text)return;
+    const t=getTip();
+    t.textContent=text;
+    t.style.display='block';
+    const r=btn.getBoundingClientRect();
+    t.style.left=Math.round(r.left+r.width/2-t.offsetWidth/2)+'px';
+    t.style.top=Math.round(r.top-t.offsetHeight-6)+'px';
+  });
+  document.addEventListener('mouseout',e=>{
+    if(e.target.closest('.vip-btn')&&tip)tip.style.display='none';
+  });
+})();
+</script>
+<script>
+/* ── THEME ── */
+(function(){
+  const TK='fourceplex_theme';
+  const MOON='<path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>';
+  const SUN='<path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>';
+  function applyTheme(t){document.body.classList.toggle('light',t==='light');const ic=document.getElementById('theme-icon');if(ic)ic.innerHTML=t==='light'?SUN:MOON;}
+  window.toggleTheme=function(){const n=document.body.classList.contains('light')?'dark':'light';localStorage.setItem(TK,n);applyTheme(n);};
+  applyTheme(localStorage.getItem(TK)||'dark');
+  const _pn=document.getElementById('promotor-nav');
+  if(_pn&&['Radek','Igor'].includes(localStorage.getItem('fourceplex_current_user')||''))_pn.style.display='flex';
+  const _np=document.getElementById('nav-produkcja');
+  if(_np&&!['Radek','Igor'].includes(localStorage.getItem('fourceplex_current_user')||'')){_np.classList.add('disabled');_np.title='Dostępne tylko dla Promotora';}
+})();
+</script>
+<script src="fourceplex-confirm.js"></script>
+
+<!-- UPDATE INDEX.HTML SIDEBAR NOTE: Add Ticketing link to Market module sidebar -->
+<!-- In index.html, under "Dashboard" nav-label, change the Bilety nav-item from disabled to:
+<div class="nav-item" onclick="location.href='ticketing.html'">
+  <svg class="nav-icon" ...ticket icon...></svg>
+  Ticketing
+</div>
+-->
+</body>
+</html>
