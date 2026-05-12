@@ -371,17 +371,28 @@ const MIN_ROWS=5;
 let _guestLocal={},_guestDirty=false,_guestShowId=null,_guestAutoSave=null;
 function _gRowId(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 const TYPE_CFG={
-  guests:{color:'var(--teal)',hasFrom:true,hasMedia:true},
+  guests:{color:'var(--teal)',hasFrom:true,hasMedia:false},
   foto:{color:'var(--purple)',hasFrom:true,hasMedia:false},
-  rozdane:{color:'var(--amber)',hasFrom:false,hasMedia:false},
+  media:{color:'var(--blue)',hasFrom:true,hasMedia:false},
+  comps:{color:'var(--amber)',hasFrom:true,hasMedia:false},
 };
 function _isEmptyRow(r){return !r.name&&!r.email&&!r.from&&(!r.tickets||r.tickets===''||r.tickets==='0'||parseInt(r.tickets)===0);}
 function initGuestLocal(show){
   _guestDirty=false;clearTimeout(_guestAutoSave);_guestAutoSave=null;
   _guestShowId=show.id;_guestLocal={};
-  ['guests','foto','rozdane'].forEach(type=>{
-    const items=show[type]||[];
-    _guestLocal[type]=items.map(r=>({rowId:_gRowId(),name:r.name||'',email:r.email||'',from:r.from||'',tickets:r.tickets!=null?String(r.tickets):'',isMedia:!!r.isMedia}));
+  // Migrate isMedia:true rows from guests → media if media not yet stored
+  const rawGuests=show.guests||[];
+  const rawMedia=show.media;
+  let srcGuests=rawGuests,srcMedia=rawMedia||[];
+  if(!rawMedia&&rawGuests.some(r=>r.isMedia)){
+    srcGuests=rawGuests.filter(r=>!r.isMedia);
+    srcMedia=rawGuests.filter(r=>r.isMedia).map(r=>({name:r.name||'',email:r.email||'',from:r.from||'',tickets:r.tickets}));
+    _guestDirty=true;
+  }
+  const srcMap={guests:srcGuests,foto:show.foto||[],media:srcMedia,comps:show.comps||show.rozdane||[]};
+  ['guests','foto','media','comps'].forEach(type=>{
+    const items=srcMap[type];
+    _guestLocal[type]=items.map(r=>({rowId:_gRowId(),name:r.name||'',email:r.email||'',from:r.from||'',tickets:r.tickets!=null?String(r.tickets):'',isMedia:false}));
     while(_guestLocal[type].length<MIN_ROWS)_guestLocal[type].push({rowId:_gRowId(),name:'',email:'',from:'',tickets:'',isMedia:false});
     const last=_guestLocal[type][_guestLocal[type].length-1];
     if(!_isEmptyRow(last))_guestLocal[type].push({rowId:_gRowId(),name:'',email:'',from:'',tickets:'',isMedia:false});
@@ -391,16 +402,10 @@ async function flushGuestToFirestore(showId){
   if(!_guestDirty)return;
   clearTimeout(_guestAutoSave);_guestAutoSave=null;_guestDirty=false;
   const patch={};
-  ['guests','foto','rozdane'].forEach(type=>{
+  ['guests','foto','media','comps'].forEach(type=>{
     const rows=_guestLocal[type]||[];
     let end=rows.length;while(end>0&&_isEmptyRow(rows[end-1]))end--;
-    const cfg=TYPE_CFG[type];
-    patch[type]=rows.slice(0,end).map(r=>{
-      const obj={name:r.name||'',email:r.email||'',tickets:parseInt(r.tickets)||0};
-      if(cfg.hasFrom)obj.from=r.from||'';
-      if(cfg.hasMedia)obj.isMedia=!!r.isMedia;
-      return obj;
-    });
+    patch[type]=rows.slice(0,end).map(r=>({name:r.name||'',email:r.email||'',from:r.from||'',tickets:parseInt(r.tickets)||0}));
   });
   try{await updShow(showId,patch);}catch(e){console.error('flush guest:',e);_guestDirty=true;}
 }
@@ -557,7 +562,7 @@ function renderList(){
   }
   listEl.innerHTML='';
   filtered.forEach(show=>{
-    const gT=sumTix(show.guests),fT=sumTix(show.foto),rT=sumTix(show.rozdane);
+    const gT=sumTix(show.guests),fT=sumTix(show.foto),mT=sumTix(show.media),cT=sumTix(show.comps||show.rozdane);
     const di=daysInfo(show.date);
     const el=document.createElement('div');
     el.className='show-item'+(show.id===selectedShowId?' selected':'');
@@ -571,10 +576,11 @@ function renderList(){
         <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${fmtDate(show.date)}</span>
         ${di.text?`<span style="font-family:var(--mono);font-size:9px;${di.cls}">${di.text}</span>`:''}
       </div>
-      <div style="display:flex;gap:10px;align-items:center">
-        <span style="font-family:var(--mono);font-size:10px;color:var(--teal)">Goście i Media&thinsp;<strong>${gT}</strong></span>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--teal)">Goście&thinsp;<strong>${gT}</strong></span>
         <span style="font-family:var(--mono);font-size:10px;color:var(--purple)">Foto&thinsp;<strong>${fT}</strong></span>
-        <span style="font-family:var(--mono);font-size:10px;color:var(--amber)">Rozdane&thinsp;<strong>${rT}</strong></span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--blue)">Media&thinsp;<strong>${mT}</strong></span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--amber)">Comps&thinsp;<strong>${cT}</strong></span>
       </div>`;
     el.querySelector('.trash-btn').addEventListener('click',e=>{e.stopPropagation();doDelete(show.id);});
     el.addEventListener('click',()=>selectShow(show.id));
@@ -608,7 +614,7 @@ async function doSave(){
   const btn=document.getElementById('save-btn');
   btn.disabled=true;btn.textContent='Zapisuję...';
   try{
-    const ref=await addShow({artistName:artist,date,venue,foto:[],guests:[],rozdane:[],fotoPolicy:'',createdBy:currentUser||'?'});
+    const ref=await addShow({artistName:artist,date,venue,guests:[],foto:[],media:[],comps:[],fotoPolicy:'',createdBy:currentUser||'?'});
     selectedShowId=ref.id;
     closePanel();
     currentTab='active';
@@ -649,7 +655,7 @@ function buildSection(type,label,accCls){
   const rows=_guestLocal[type]||[];
   const totalTix=rows.reduce((a,r)=>a+(parseInt(r.tickets)||0),0);
   const filledCount=rows.filter(r=>!_isEmptyRow(r)).length;
-  const nameLabel=type==='rozdane'?'Dla kogo':'Imię i nazwisko';
+  const nameLabel='Imię i nazwisko';
   const fromTh=cfg.hasFrom?`<th class="col-from">Od kogo?</th>`:'';
   const mediaTh=cfg.hasMedia?`<th class="col-media" style="text-align:center;font-size:9px">Media</th>`:'';
   return `<div class="sec-card ${accCls}">
@@ -695,9 +701,10 @@ function renderDetail(show){
       </button>
     </div>
     <div class="detail-body">
-      ${buildSection('guests','Goście i Media','acc-teal')}
+      ${buildSection('guests','Goście','acc-teal')}
       ${buildSection('foto','Foto','acc-purple')}
-      ${buildSection('rozdane','Rozdane bilety','acc-amber')}
+      ${buildSection('media','Media','acc-blue')}
+      ${buildSection('comps','Comps','acc-amber')}
       <div class="sec-card">
         <div class="sec-head"><span class="sec-title">Polityka Foto / Uwagi</span><span class="notes-meta" id="policy-saved" style="font-family:var(--mono);font-size:9px;color:var(--teal)"></span></div>
         <div style="padding:10px 12px">
@@ -804,13 +811,7 @@ function copyList(show,type){
   const items=(_guestLocal[type]||[]).filter(r=>r.name||r.email);
   if(!items.length){showToast('Lista jest pusta');return;}
   let text;
-  if(type==='rozdane'){
-    text=items.map(r=>`${r.name||'–'}\t${r.tickets||0} bil.`).join('\n');
-  } else if(type==='guests'){
-    text=items.map(r=>`${r.name||'–'}\t${r.from||''}\t${r.tickets||0} bil.\t${r.isMedia?'Media':''}`).join('\n');
-  } else {
-    text=items.map(r=>`${r.name||'–'}\t${r.from||''}\t${r.tickets||0} bil.`).join('\n');
-  }
+  text=items.map(r=>`${r.name||'–'}\t${r.from||''}\t${r.tickets||0} bil.`).join('\n');
   navigator.clipboard.writeText(text).then(()=>showToast('✓ Skopiowano')).catch(()=>showToast('Błąd kopiowania'));
 }
 /* ══ GENERATE XLSX ══ */
@@ -819,36 +820,34 @@ function generateDoc(show){
 
   const guests=(_guestLocal['guests']||[]).filter(r=>r.name);
   const foto=(_guestLocal['foto']||[]).filter(r=>r.name);
+  const media=(_guestLocal['media']||[]).filter(r=>r.name);
+  const comps=(_guestLocal['comps']||[]).filter(r=>r.name);
 
-  // Shared column layout: A=Imię i nazwisko, B=Od kogo?, C=Bilety
-  // No borders, no Media column, no Rozdane section
   const rows=[];
 
-  // Concert header (rows 0–1)
+  // Concert header
   rows.push([`${show.artistName||'–'}  ·  ${fmtDate(show.date)}${show.venue?'  ·  '+show.venue:''}`,'','']);
   rows.push(['Fource Entertainment','','']);
-  rows.push([]); // spacer
+  rows.push([]);
 
-  // Shared column headers (used once, then referenced visually by section titles)
-  // Each section gets its own header row for clarity but same column positions
   function addSection(title, items){
-    rows.push([title,'','']);          // section title in col A
-    rows.push(['Imię i nazwisko','Od kogo?','Bilety']); // headers
+    rows.push([title,'','']);
+    rows.push(['Imię i nazwisko','Od kogo?','Bilety']);
     if(items.length){
-      items.forEach(r=>{
-        rows.push([r.name||'', r.from||'', parseInt(r.tickets)||1]);
-      });
+      items.forEach(r=>{rows.push([r.name||'',r.from||'',parseInt(r.tickets)||1]);});
     } else {
       rows.push(['(brak wpisów)','','']);
     }
-    rows.push([]); // blank spacer before RAZEM
+    rows.push([]);
     rows.push(['RAZEM','',sumTix(items)]);
-    rows.push([]); // spacer after section
-    rows.push([]); // extra spacer between sections
+    rows.push([]);
+    rows.push([]);
   }
 
-  addSection('Goście i Media', guests);
+  addSection('Goście', guests);
   addSection('Foto', foto);
+  addSection('Media', media);
+  addSection('Comps', comps);
 
   if(show.fotoPolicy){
     rows.push(['Polityka Foto / Uwagi','','']);
