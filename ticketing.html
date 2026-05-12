@@ -518,7 +518,7 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
           <div><div class="form-label">TicketMaster (TM)</div><input class="form-input" type="number" id="fTM" placeholder="0" min="0"></div>
           <div><div class="form-label">eBilet (eB)</div><input class="form-input" type="number" id="fEB" placeholder="0" min="0"></div>
           <div><div class="form-label">Inne</div><input class="form-input" type="number" id="fOther" placeholder="0" min="0"></div>
-          <div><div class="form-label">Comps</div><input class="form-input" type="number" id="fComps" placeholder="np. 10" min="0"></div>
+          <div><div class="form-label" style="display:flex;align-items:center;gap:5px">Comps<span style="font-size:9px;color:var(--text3);font-family:var(--mono);letter-spacing:.05em">· z Listy Gości</span></div><input class="form-input" type="number" id="fComps" placeholder="0" min="0" disabled style="opacity:.5;cursor:not-allowed"></div>
           <div><div class="form-label">Wraps</div><input class="form-input" type="number" id="fWraps" placeholder="0" min="0"></div>
           <div><div class="form-label">VIP / notatka</div><input class="form-input" type="text" id="fVip" placeholder="np. notatka"></div>
         </div>
@@ -583,10 +583,12 @@ import{getFirestore,collection,doc,onSnapshot,setDoc,deleteDoc,getDocs}from'http
 const cfg={apiKey:"AIzaSyCUsvjkzYG3AVROysZh9BtN2_vagSSyMww",authDomain:"fourceplex-market.firebaseapp.com",projectId:"fourceplex-market",storageBucket:"fourceplex-market.firebasestorage.app",messagingSenderId:"300062366060",appId:"1:300062366060:web:0cf7bd4128bea35cc63b49"};
 const app=initializeApp(cfg),db=getFirestore(app);
 const evCol=collection(db,'ticketing_events'),snapCol=collection(db,'ticketing_snapshots');
+const guestShowsCol=collection(db,'guest_shows');
 window._db=db;window._evCol=evCol;window._snapCol=snapCol;
 window._setDoc=setDoc;window._deleteDoc=deleteDoc;window._doc=doc;window._getDocs=getDocs;
 onSnapshot(evCol,s=>{window._events=[];s.forEach(d=>window._events.push({id:d.id,...d.data()}));renderTable();updateStats();});
 onSnapshot(snapCol,s=>{window._snaps={};s.forEach(d=>{const x=d.data();if(!window._snaps[x.eventId])window._snaps[x.eventId]=[];window._snaps[x.eventId].push({id:d.id,...x});});renderTable();});
+onSnapshot(guestShowsCol,s=>{window._guestShows=[];s.forEach(d=>window._guestShows.push({id:d.id,...d.data()}));renderTable();});
 window.dispatchEvent(new Event('fb-ready'));
 
 /* ── TOPBAR NOTIFS (Jaszczurze Sprawy) ── */
@@ -781,6 +783,18 @@ function mkPct(pct,cap){
   return`<span style="color:${pctColor(pct)};font-family:var(--mono);font-size:11px">${pct}%</span>`;
 }
 
+/* ── GUEST COMPS — live value from Listy Gości ── */
+function getGuestComps(evName, evDate){
+  const shows=window._guestShows||[];
+  const match=shows.find(s=>
+    (s.artistName||'').toLowerCase().trim()===(evName||'').toLowerCase().trim()&&
+    s.date===evDate
+  );
+  if(!match)return 0;
+  const rows=match.comps||match.rozdane||[];
+  return rows.reduce((a,r)=>a+(parseInt(r.tickets)||0),0);
+}
+
 /* ── RENDER TABLE ── */
 function renderTable(){
   const evs=window._events||[];
@@ -964,7 +978,7 @@ function renderTable(){
         mr+=`<td class="num-b" style="width:${BW.t}px">${s.total||0}</td>`;
         mr+=`<td class="num" style="width:${BW.w}px">${wHtml}</td>`;
         mr+=`<td class="num" style="width:${BW.pct}px;color:${pctColor(sp)}">${ev.cap?sp+'%':'—'}</td>`;
-        mr+=`<td class="num ec" style="width:${BW.c}px;color:var(--text3)" data-snapid="${s.id}" data-evid="${ev.id}" data-val="${s.comps||0}" data-field="comps" onclick="iEditSnap(this)" title="Comps">${s.comps||''}</td>`;
+        mr+=`<td class="num" style="width:${BW.c}px;color:var(--text3)" title="Comps — pobierane z Listy Gości">${s.comps||''}</td>`;
       }else{
         // No real data — show XX (nie wymyślamy liczb)
         const xxStyle='color:var(--text3);letter-spacing:.04em';
@@ -984,7 +998,8 @@ function renderTable(){
   let rH='';
   rows.forEach(ev=>{
     const days=daysLeft(ev.date);
-    const tot2=Math.max(0,(ev.tm||0)+(ev.eb||0)+(ev.other||0)-(ev.comps||0));
+    const _gc=getGuestComps(ev.name,ev.date);
+    const tot2=Math.max(0,(ev.tm||0)+(ev.eb||0)+(ev.other||0)-_gc);
     const pct2=ev.cap?Math.round(tot2/ev.cap*100):0;
     let rc2;
     if(days<-2)rc2='row-past';
@@ -1009,7 +1024,7 @@ function renderTable(){
       <td class="num live-bg" style="width:${RL.eb}px">${ev.eb||0}</td>
       <td class="num live-bg ec" style="width:${RL.oth}px;color:var(--text3)" data-val="${ev.other||0}" onclick="iEdit(this,'${ev.id}','other')" title="Inne — kliknij żeby edytować">${ev.other||''}</td>
       <td class="num live-bg" style="width:${RL.pct}px;color:${pctCol2}">${ev.cap?pct2+'%':'—'}</td>
-      <td class="num live-bg ec" style="width:${RL.c}px;color:var(--text3)" data-val="${ev.comps||0}" onclick="iEdit(this,'${ev.id}','comps')" title="Comps — kliknij żeby edytować">${ev.comps||''}</td>
+      <td class="num live-bg" style="width:${RL.c}px;color:var(--text3)" title="Comps — pobierane z Listy Gości">${_gc||''}</td>
       <td style="width:${RL.act}px;padding:0 5px">
         <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">
           <span class="icon-btn edit" onclick="openEdit('${ev.id}')" title="Edytuj">
@@ -1061,11 +1076,12 @@ function bindHover(){
   });
 }
 
-/* ── iEditSnap — 'Inne' / 'Comps' in snapshot ── */
+/* ── iEditSnap — 'Inne' in snapshot (Comps non-editable, comes from Listy Gości) ── */
 async function iEditSnap(td){
   const snapId=td.getAttribute('data-snapid');
   const evId=td.getAttribute('data-evid');
   const field=td.getAttribute('data-field')||'other';
+  if(field==='comps')return; // managed by Listy Gości
   const inp=document.createElement('input');
   inp.type='text';inp.inputMode='numeric';inp.className='ie';inp.value=td.getAttribute('data-val')||'0';
   td.innerHTML='';td.appendChild(inp);inp.focus();inp.select();
@@ -1124,7 +1140,7 @@ async function doCountAll(){
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({events:evs.map(ev=>({
       id:ev.id,name:ev.name,altName:ev.altName||'',date:ev.date,
-      onSale:ev.onSale,other:ev.other||0,comps:ev.comps||0,
+      onSale:ev.onSale,other:ev.other||0,comps:getGuestComps(ev.name,ev.date),
       wraps:ev.wraps||0,cap:ev.cap||0,
     }))}),
   }).catch(()=>{});
@@ -1166,7 +1182,7 @@ async function doCountOne(evId){
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({events:[{
       id:evId,name:ev.name,altName:ev.altName||'',date:ev.date,
-      onSale:ev.onSale,other:ev.other||0,comps:ev.comps||0,
+      onSale:ev.onSale,other:ev.other||0,comps:getGuestComps(ev.name,ev.date),
       wraps:ev.wraps||0,cap:ev.cap||0,
     }]}),
   }).catch(()=>{});
@@ -1213,7 +1229,7 @@ async function saveEvent(){
   const gv=id=>document.getElementById(id).value.trim();
   const data={name,date,altName:gv('fAltName'),venue:gv('fVenue'),price:gv('fPrice'),cap:g('fCap'),onSale:gv('fOnSale'),
     breakEven:g('fBreakEven'),vip:gv('fVip'),
-    tm:g('fTM'),eb:g('fEB'),other:g('fOther'),comps:g('fComps'),wraps:g('fWraps'),notes:gv('fNotes')};
+    tm:g('fTM'),eb:g('fEB'),other:g('fOther'),comps:getGuestComps(name,date),wraps:g('fWraps'),notes:gv('fNotes')};
   if(editId){
     const old=window._events.find(e=>e.id===editId)||{};
     data.addedBy=old.addedBy||curUser;data.addedAt=old.addedAt||Date.now();
@@ -1240,7 +1256,7 @@ function openEdit(id){
   F('fCap',ev.cap);F('fOnSale',ev.onSale);F('fBreakEven',ev.breakEven);
   F('fVip',ev.vip);
   F('fTM',ev.tm);F('fEB',ev.eb);F('fOther',ev.other);
-  F('fComps',ev.comps||0);F('fWraps',ev.wraps);F('fNotes',ev.notes);
+  F('fComps',getGuestComps(ev.name,ev.date));F('fWraps',ev.wraps);F('fNotes',ev.notes);
   document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('open'));
   document.getElementById('addPanel').classList.add('open');
 }
