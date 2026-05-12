@@ -812,8 +812,7 @@ function renderDetail(id){
       <div class="detail-sub">${show.isTour?`Trasa · ${(show.tourDates||[]).length} dat`:esc(show.venue||'–')} &nbsp;·&nbsp; ${fmtDate(show.date,show.dateTo,show.isRange)} &nbsp;·&nbsp; ${daysLeft>=0?daysLeft+' dni do koncertu':'Miniony'}</div>
     </div>
     <div class="detail-actions">
-      <button class="btn btn-sm btn-teal" onclick="generatePDF('${id}')">📄 Raport PDF</button>
-      <button class="btn btn-sm btn-purple" onclick="openAiModal('${id}')">✦ AI</button>
+      <button class="btn btn-sm btn-purple" onclick="openAiModal('${id}')">✦ Konsultuj z AI</button>
     </div>
   </div>
   <div class="detail-body">
