@@ -167,6 +167,34 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .cp-name{flex:1;font-size:12px;color:var(--text)}
 .cp-row.done .cp-name{color:var(--teal)}
 .cp-meta{font-family:var(--mono);font-size:9px;color:var(--text3);text-align:right}
+.cp-item{border-radius:6px;padding:2px;transition:background .12s}
+.cp-item:focus-within{background:rgba(200,240,96,.08)}
+.cp-item:focus-within .cp-row{border-color:rgba(200,240,96,.3)}
+.cp-note-input{width:100%;margin-top:3px;background:var(--bg4);border:1px solid transparent;border-radius:4px;color:var(--text2);font-family:var(--mono);font-size:10px;padding:3px 8px;outline:none;transition:border-color .15s}
+.cp-note-input::placeholder{color:transparent}
+.cp-note-input:focus{border-color:rgba(200,240,96,.35);color:var(--text)}
+.cp-note-input:focus::placeholder{color:var(--text3)}
+.cp-name-input{flex:1;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--text);font-size:12px;padding:2px 4px;outline:none;transition:border-color .15s;font-family:var(--sans);min-width:0}
+.cp-name-input:focus{border-bottom-color:var(--accent)}
+.cp-remove-btn{background:none;border:none;cursor:pointer;color:var(--text3);padding:2px 6px;border-radius:3px;transition:color .15s;font-size:15px;line-height:1;flex-shrink:0}
+.cp-remove-btn:hover{color:var(--red)}
+.cp-add-row{padding:7px 4px 2px;display:flex;gap:7px;align-items:center}
+.cp-add-input{flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:12px;padding:5px 9px;border-radius:5px;outline:none;transition:border-color .15s}
+.cp-add-input:focus{border-color:var(--accent)}
+.cp-add-input::placeholder{color:var(--text3)}
+
+/* ── TOUR DATES ── */
+.tour-date-row{display:grid;grid-template-columns:120px 1fr 90px 22px;gap:5px;align-items:center;margin-bottom:5px}
+.tour-date-row .form-input{padding:4px 8px;font-size:11px}
+.td-remove-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1;padding:0 2px;transition:color .15s;align-self:center}
+.td-remove-btn:hover{color:var(--red)}
+.tour-dates-list{margin-bottom:7px}
+.tour-budget-sum{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px}
+.tour-dates-detail{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.tour-date-item{display:flex;align-items:center;gap:8px;padding:5px 10px;background:var(--bg3);border-radius:5px;border:1px solid var(--border);font-size:12px}
+.tour-date-d{font-family:var(--mono);font-size:10px;color:var(--text3);flex-shrink:0;width:60px}
+.tour-date-v{flex:1;color:var(--text2)}
+.tour-date-b{font-family:var(--mono);font-size:10px;color:var(--text3);flex-shrink:0;text-align:right}
 
 /* ── COSTS ── */
 .cost-table{width:100%;border-collapse:collapse;font-size:12px}
@@ -447,7 +475,7 @@ select.form-input{cursor:pointer}
       <div class="form-label">Typ kampanii</div>
       <div style="display:flex;gap:0;border:1px solid var(--border2);border-radius:6px;overflow:hidden;margin-top:2px">
         <button id="dtype-single" onclick="setDateType('single')" style="flex:1;padding:6px;background:var(--accent);color:#0e0e11;font-family:var(--mono);font-size:10px;font-weight:600;border:none;cursor:pointer;letter-spacing:.06em">JEDEN DZIEŃ</button>
-        <button id="dtype-range" onclick="setDateType('range')" style="flex:1;padding:6px;background:var(--bg3);color:var(--text2);font-family:var(--mono);font-size:10px;border:none;cursor:pointer;letter-spacing:.06em">OKRES / TRASA</button>
+        <button id="dtype-range" onclick="setDateType('range')" style="flex:1;padding:6px;background:var(--bg3);color:var(--text2);font-family:var(--mono);font-size:10px;border:none;cursor:pointer;letter-spacing:.06em">TRASA</button>
       </div>
     </div>
     <div id="date-single-wrap" class="slide-field">
@@ -455,22 +483,18 @@ select.form-input{cursor:pointer}
       <input class="form-input" style="width:100%" type="date" id="f-date">
     </div>
     <div id="date-range-wrap" class="slide-field" style="display:none">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div>
-          <div class="form-label">Data od *</div>
-          <input class="form-input" style="width:100%" type="date" id="f-date-from">
-        </div>
-        <div>
-          <div class="form-label">Data do *</div>
-          <input class="form-input" style="width:100%" type="date" id="f-date-to">
-        </div>
+      <div class="form-label">Daty trasy *</div>
+      <div class="tour-dates-list" id="tour-dates-list"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <button class="btn btn-sm" onclick="addTourDate()" style="font-size:10px">＋ Dodaj datę</button>
+        <span class="tour-budget-sum" id="tour-budget-sum"></span>
       </div>
     </div>
-    <div class="slide-field">
+    <div id="f-venue-wrap" class="slide-field">
       <div class="form-label">Venue / Lokalizacja</div>
       <input class="form-input" style="width:100%" type="text" id="f-venue" placeholder="np. Progresja / Polska – 5 miast">
     </div>
-    <div class="slide-field">
+    <div id="f-budget-wrap" class="slide-field">
       <div class="form-label">Budżet (PLN)</div>
       <input class="form-input" style="width:100%" type="number" id="f-budget" placeholder="5000" min="0">
     </div>
@@ -648,18 +672,22 @@ document.getElementById('user-modal-overlay').addEventListener('click',e=>{if(e.
    SHOW LIST
    ──────────────────────────────────────────────── */
 const CP_NAMES={
-  adAccess:'Artist ad access',
-  campaignLaunch:'Kampania startowa',
-  retargeting:'Kampania retargetingowa',
-  contentRecorded:'Content od artysty',
-  influencers:'Aktywizacja mediów',
-  emailBlast:'Wysyłka mailingu'
+  marketingPlan:'Marketing plan',
+  admatAssets:'Admat & assets',
+  metaAdAccess:'Meta ad access',
+  pressRelease:'Press release',
+  newsletter:'Newsletter',
+  videoLiner:'Video liner',
+  darkAdApproval:'Dark ad approval'
 };
 const CP_KEYS=Object.keys(CP_NAMES);
+const DEFAULT_CP_LIST=CP_KEYS.map(k=>({key:k,name:CP_NAMES[k]}));
+let _cpEditShowId=null;
+function getShowCpList(show){return(show.cpList&&show.cpList.length)?show.cpList:DEFAULT_CP_LIST;}
 
 function showCosts(showId){return(window._costs||[]).filter(c=>c.showId===showId);}
 function sumCosts(showId){return showCosts(showId).reduce((s,c)=>s+(c.amount||0),0);}
-function countDone(show){return CP_KEYS.filter(k=>show.checkpoints&&show.checkpoints[k]).length;}
+function countDone(show){return getShowCpList(show).filter(cp=>show.checkpoints&&show.checkpoints[cp.key]).length;}
 
 let currentTab='active';
 
@@ -698,7 +726,7 @@ function renderList(){
   el.innerHTML='';
   shows.forEach(s=>{
     const done=countDone(s);
-    const total=CP_KEYS.length;
+    const total=getShowCpList(s).length;
     const pct=Math.round(done/total*100);
     const costs=sumCosts(s.id);
     const budget=s.budget||0;
@@ -712,7 +740,7 @@ function renderList(){
         <span class="show-artist">${esc(s.artistName||'–')}</span>
         <span class="show-date">${fmtDate(s.date,s.dateTo,s.isRange)}</span>
       </div>
-      <div class="show-venue">${esc(s.venue||'–')}</div>
+      <div class="show-venue">${s.isTour?`Trasa · ${(s.tourDates||[]).length} dat`:esc(s.venue||'–')}</div>
       <div class="show-progress-row">
         <div class="cp-bar-wrap"><div style="height:3px;border-radius:2px;transition:width .3s;width:${Math.min(bpct,100)}%;background:${bpct<80?'var(--teal)':bpct<=100?'var(--amber)':'var(--red)'}"></div></div>
         <span class="cp-text">${done}/${total}</span>
@@ -781,7 +809,7 @@ function renderDetail(id){
   <div class="detail-header">
     <div>
       <div class="detail-title">${esc(show.artistName||'–')}</div>
-      <div class="detail-sub">${esc(show.venue||'–')} &nbsp;·&nbsp; ${fmtDate(show.date,show.dateTo,show.isRange)} &nbsp;·&nbsp; ${daysLeft>=0?daysLeft+' dni do koncertu':'Miniony'}</div>
+      <div class="detail-sub">${show.isTour?`Trasa · ${(show.tourDates||[]).length} dat`:esc(show.venue||'–')} &nbsp;·&nbsp; ${fmtDate(show.date,show.dateTo,show.isRange)} &nbsp;·&nbsp; ${daysLeft>=0?daysLeft+' dni do koncertu':'Miniony'}</div>
     </div>
     <div class="detail-actions">
       <button class="btn btn-sm btn-teal" onclick="generatePDF('${id}')">📄 Raport PDF</button>
@@ -790,11 +818,32 @@ function renderDetail(id){
   </div>
   <div class="detail-body">
 
+    ${show.isTour&&show.tourDates?.length?`
+    <!-- TRASA — DATY -->
+    <div class="sec-card">
+      <div class="sec-head">
+        <span class="sec-title">Daty trasy</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${show.tourDates.length} dat · budżet: ${fmtPLN(show.budget)} PLN</span>
+      </div>
+      <div class="sec-body" style="padding:10px 14px">
+        <div class="tour-dates-detail">
+          ${show.tourDates.map(d=>{const spent=tourConcertSpent(show,costs,d.date);const base=d.budget||0;return`<div class="tour-date-item">
+            <span class="tour-date-d">${fmtDate(d.date)}</span>
+            <span class="tour-date-v">${esc(d.venue||'–')}</span>
+            <span class="tour-date-b" style="color:${spent>base?'var(--red)':spent>0?'var(--text2)':'var(--text3)'}">${spent>0?fmtPLN(spent)+' / ':''}<span style="color:var(--text3)">${fmtPLN(base)} PLN</span></span>
+          </div>`;}).join('')}
+        </div>
+      </div>
+    </div>`:''}
+
     <!-- CHECKPOINTY -->
     <div class="sec-card">
       <div class="sec-head">
         <span class="sec-title">Checkpointy</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${countDone(show)}/${CP_KEYS.length} ukończone</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${countDone(show)}/${getShowCpList(show).length} ukończone</span>
+          <button class="btn btn-sm" style="padding:2px 8px;font-size:10px" onclick="toggleCpEdit('${id}')">${_cpEditShowId===id?'✓ Gotowe':'✏️ Edytuj'}</button>
+        </div>
       </div>
       <div class="sec-body">
         <div class="cp-list" id="cp-list-${id}"></div>
@@ -810,11 +859,12 @@ function renderDetail(id){
       <div class="sec-body">
         ${costs.length?`
         <table class="cost-table">
-          <thead><tr><th>Kategoria</th><th>Opis</th><th>Data</th><th>Kwota</th><th>Dodał</th><th></th></tr></thead>
+          <thead><tr><th>Kategoria</th>${show.isTour?'<th>Koncert</th>':''}<th>Opis</th><th>Data</th><th>Kwota</th><th>Dodał</th><th></th></tr></thead>
           <tbody>
           ${costs.map(c=>`
             <tr>
               <td><span class="cost-cat">${esc(c.category||'–')}</span></td>
+              ${show.isTour?`<td style="font-family:var(--mono);font-size:9px;color:var(--text3);white-space:nowrap">${c.tourDate&&c.tourDate!=='all'?esc(show.tourDates?.find(d=>d.date===c.tourDate)?.venue||'–'):'Trasa'}</td>`:''}
               <td style="color:var(--text)">${esc(c.description||'–')}</td>
               <td style="font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap">${c.costDate||fmtCostDate(c.createdAt)}</td>
               <td class="cost-amount">${fmtPLN(c.amount)} zł</td>
@@ -834,20 +884,28 @@ function renderDetail(id){
           <div>
             <div class="form-label">Kategoria</div>
             <select class="form-input" id="cf-cat-${id}">
-              <option value="Meta Ads">Meta Ads</option>
-              <option value="Google Ads">Google Ads</option>
-              <option value="Influencerzy">Influencerzy</option>
-              <option value="Produkcja contentu">Produkcja contentu</option>
-              <option value="Druk/OOH">Druk/OOH</option>
+              <option value="Meta">Meta</option>
+              <option value="TikTok">TikTok</option>
+              <option value="Google">Google</option>
+              <option value="Buyouts">Buyouts</option>
+              <option value="Media">Media</option>
+              <option value="OOH">OOH</option>
               <option value="Inne">Inne</option>
             </select>
           </div>
+          ${show.isTour&&show.tourDates?.length?`<div style="min-width:130px">
+            <div class="form-label">Przypisz do</div>
+            <select class="form-input" id="cf-tour-date-${id}">
+              <option value="all">Cała trasa</option>
+              ${show.tourDates.map(d=>`<option value="${d.date}">${esc(d.venue||'–')}</option>`).join('')}
+            </select>
+          </div>`:''}
           <div style="flex:1;min-width:90px">
             <div class="form-label">Opis</div>
             <input class="form-input" style="width:100%" type="text" id="cf-desc-${id}" placeholder="Kampania główna...">
           </div>
           <div style="width:110px">
-            <div class="form-label">Data wydatku</div>
+            <div class="form-label">Start kampanii</div>
             <input class="form-input" style="width:100%" type="date" id="cf-date-${id}" value="${new Date().toISOString().slice(0,10)}">
           </div>
           <div style="width:80px">
@@ -861,22 +919,8 @@ function renderDetail(id){
       </div>
     </div>
 
-    <!-- WYKRES: Koszty & Sprzedaż biletów -->
-    <div class="sec-card">
-      <div class="sec-head">
-        <span class="sec-title">Koszty vs. Sprzedaż biletów (tygodniowo)</span>
-        <span id="chart-status-${id}" style="font-family:var(--mono);font-size:9px;color:var(--text3)">ładowanie…</span>
-      </div>
-      <div class="sec-body">
-        <div class="chart-wrap" id="chart-wrap-${id}">
-          <svg id="chart-svg-${id}" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
-        </div>
-        <div class="chart-legend">
-          <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--accent);height:8px;border-radius:2px"></div>Wydatki tygodniowe (zł, lewa oś)</div>
-          <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--purple)"></div>Sprzedaż biletów (szt., prawa oś)</div>
-        </div>
-      </div>
-    </div>
+    <!-- WYKRESY: Koszty & Sprzedaż biletów -->
+    <div id="chart-container-${id}"></div>
 
     <!-- NOTATKI -->
     <div class="sec-card">
@@ -926,19 +970,48 @@ function renderCheckpoints(show){
   const el=document.getElementById(`cp-list-${show.id}`);
   if(!el)return;
   el.innerHTML='';
-  CP_KEYS.forEach(k=>{
-    const done=show.checkpoints&&show.checkpoints[k];
-    const div=document.createElement('div');
-    div.className='cp-row'+(done?' done':'');
-    const checkedAt=show.checkpoints&&show.checkpoints[k+'_at']?new Date(show.checkpoints[k+'_at'].seconds*1000).toLocaleDateString('pl-PL'):'';
-    const checkedBy=show.checkpoints&&show.checkpoints[k+'_by']||'';
-    div.innerHTML=`
-      <div class="cp-icon${done?' done':''}"></div>
-      <span class="cp-name">${esc(CP_NAMES[k])}</span>
-      <span class="cp-meta">${done&&checkedAt?checkedAt+(checkedBy?' · '+checkedBy:''):'—'}</span>`;
-    div.addEventListener('click',()=>toggleCheckpoint(show.id,k,!done));
-    el.appendChild(div);
+  const isEdit=_cpEditShowId===show.id;
+  const cpList=getShowCpList(show);
+  const cpNotes=show.cpNotes||{};
+  cpList.forEach(({key,name})=>{
+    const done=!!(show.checkpoints&&show.checkpoints[key]);
+    const checkedAt=show.checkpoints&&show.checkpoints[key+'_at']?new Date(show.checkpoints[key+'_at'].seconds*1000).toLocaleDateString('pl-PL'):'';
+    const checkedBy=show.checkpoints&&show.checkpoints[key+'_by']||'';
+    const note=cpNotes[key]||'';
+    const item=document.createElement('div');
+    item.className='cp-item';
+    if(isEdit){
+      item.innerHTML=`
+        <div class="cp-row" style="cursor:default;pointer-events:none">
+          <div class="cp-icon${done?' done':''}"></div>
+          <input class="cp-name-input" data-key="${key}" value="${esc(name)}" placeholder="Nazwa checkpointu…">
+          <button class="cp-remove-btn" title="Usuń checkpoint" style="pointer-events:all" onclick="removeCp('${show.id}','${key}')">×</button>
+        </div>
+        <input class="cp-note-input" data-nk="${key}" placeholder="notatka…" value="${esc(note)}">`;
+      const nameInp=item.querySelector('.cp-name-input');
+      nameInp.style.pointerEvents='all';
+      nameInp.addEventListener('blur',()=>saveCpName(show.id,key,nameInp.value));
+    } else {
+      item.innerHTML=`
+        <div class="cp-row${done?' done':''}" data-key="${key}">
+          <div class="cp-icon${done?' done':''}"></div>
+          <span class="cp-name">${esc(name)}</span>
+          <span class="cp-meta">${done&&checkedAt?checkedAt+(checkedBy?' · '+checkedBy:''):'—'}</span>
+        </div>
+        <input class="cp-note-input" data-nk="${key}" placeholder="notatka…" value="${esc(note)}">`;
+      item.querySelector('.cp-row').addEventListener('click',()=>toggleCheckpoint(show.id,key,!done));
+    }
+    const noteInp=item.querySelector('.cp-note-input');
+    noteInp.addEventListener('blur',()=>saveCpNote(show.id,key,noteInp.value));
+    el.appendChild(item);
   });
+  if(isEdit){
+    const addRow=document.createElement('div');
+    addRow.className='cp-add-row';
+    addRow.innerHTML=`<input class="cp-add-input" id="cp-new-name-${show.id}" placeholder="Nazwa nowego checkpointu…"><button class="btn btn-sm" onclick="addCpFromInput('${show.id}')">＋ Dodaj</button>`;
+    addRow.querySelector('.cp-add-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addCpFromInput(show.id);}});
+    el.appendChild(addRow);
+  }
 }
 
 /* ────────────────────────────────────────────────
@@ -956,6 +1029,64 @@ async function toggleCheckpoint(showId,key,newVal){
   try{await updateDoc(d,upd);}catch(e){console.error(e);}
 }
 
+async function updateShowField(showId,update){
+  if(!window._db||!window._fs)return;
+  const {doc,updateDoc}=window._fs;
+  try{await updateDoc(doc(window._db,'marketing_shows',showId),update);}catch(e){console.error(e);}
+}
+
+function toggleCpEdit(showId){
+  _cpEditShowId=(_cpEditShowId===showId)?null:showId;
+  const show=(window._shows||[]).find(s=>s.id===showId);
+  if(show)renderCheckpoints(show);
+  const btn=document.querySelector(`button[onclick="toggleCpEdit('${showId}')"]`);
+  if(btn)btn.textContent=_cpEditShowId===showId?'✓ Gotowe':'✏️ Edytuj';
+}
+
+async function saveCpName(showId,key,newName){
+  if(!newName.trim())return;
+  const show=(window._shows||[]).find(s=>s.id===showId);
+  if(!show)return;
+  const list=getShowCpList(show).map(cp=>cp.key===key?{...cp,name:newName.trim()}:cp);
+  const si=(window._shows||[]).findIndex(s=>s.id===showId);
+  if(si>=0)window._shows[si]={...window._shows[si],cpList:list};
+  await updateShowField(showId,{cpList:list});
+}
+
+async function removeCp(showId,key){
+  const show=(window._shows||[]).find(s=>s.id===showId);
+  if(!show)return;
+  const list=getShowCpList(show).filter(cp=>cp.key!==key);
+  const si=(window._shows||[]).findIndex(s=>s.id===showId);
+  if(si>=0){window._shows[si]={...window._shows[si],cpList:list};renderCheckpoints(window._shows[si]);}
+  await updateShowField(showId,{cpList:list});
+}
+
+async function addCpFromInput(showId){
+  const inp=document.getElementById(`cp-new-name-${showId}`);
+  const name=inp?inp.value.trim():'';
+  if(!name)return;
+  const show=(window._shows||[]).find(s=>s.id===showId);
+  if(!show)return;
+  const key='cp_'+Date.now();
+  const list=[...getShowCpList(show),{key,name}];
+  const si=(window._shows||[]).findIndex(s=>s.id===showId);
+  if(si>=0){window._shows[si]={...window._shows[si],cpList:list};renderCheckpoints(window._shows[si]);}
+  await updateShowField(showId,{cpList:list});
+}
+
+async function saveCpNote(showId,key,val){
+  await updateShowField(showId,{[`cpNotes.${key}`]:val});
+}
+
+function tourConcertSpent(show,costs,concertDate){
+  const n=(show.tourDates||[]).length||1;
+  const tourWide=costs.filter(c=>!c.tourDate||c.tourDate==='all');
+  const specific=costs.filter(c=>c.tourDate===concertDate);
+  return tourWide.reduce((s,c)=>s+(c.amount||0),0)/n
+        +specific.reduce((s,c)=>s+(c.amount||0),0);
+}
+
 async function addCost(showId){
   if(!window._db||!window._fs)return;
   const cat=document.getElementById(`cf-cat-${showId}`)?.value;
@@ -964,12 +1095,12 @@ async function addCost(showId){
   const amt=parseFloat(document.getElementById(`cf-amt-${showId}`)?.value)||0;
   if(!cat||!desc||!amt)return;
   const show=(window._shows||[]).find(s=>s.id===showId);
+  const tourDate=show?.isTour?(document.getElementById(`cf-tour-date-${showId}`)?.value||'all'):null;
   const {collection,addDoc,serverTimestamp}=window._fs;
   try{
-    await addDoc(collection(window._db,'marketing_costs'),{
-      showId,artistName:show?.artistName||'',category:cat,description:desc,amount:amt,
-      costDate,addedBy:curUser||'–',createdAt:serverTimestamp()
-    });
+    const rec={showId,artistName:show?.artistName||'',category:cat,description:desc,amount:amt,costDate,addedBy:curUser||'–',createdAt:serverTimestamp()};
+    if(tourDate!==null)rec.tourDate=tourDate;
+    await addDoc(collection(window._db,'marketing_costs'),rec);
     document.getElementById(`cf-desc-${showId}`).value='';
     document.getElementById(`cf-amt-${showId}`).value='';
   }catch(e){console.error(e);}
@@ -994,7 +1125,7 @@ function closeAddPanel(){
 }
 
 let _dateType='single';
-function setDateType(t){
+function setDateType(t,skipInit){
   _dateType=t;
   document.getElementById('dtype-single').style.background=t==='single'?'var(--accent)':'var(--bg3)';
   document.getElementById('dtype-single').style.color=t==='single'?'#0e0e11':'var(--text2)';
@@ -1002,6 +1133,39 @@ function setDateType(t){
   document.getElementById('dtype-range').style.color=t==='range'?'#0e0e11':'var(--text2)';
   document.getElementById('date-single-wrap').style.display=t==='single'?'':'none';
   document.getElementById('date-range-wrap').style.display=t==='range'?'':'none';
+  document.getElementById('f-venue-wrap').style.display=t==='range'?'none':'';
+  document.getElementById('f-budget-wrap').style.display=t==='range'?'none':'';
+  if(t==='range'&&!skipInit){
+    const list=document.getElementById('tour-dates-list');
+    if(list&&!list.children.length)addTourDate();
+  }
+}
+
+function addTourDate(data){
+  const list=document.getElementById('tour-dates-list');
+  if(!list)return;
+  const row=document.createElement('div');
+  row.className='tour-date-row';
+  row.innerHTML=`
+    <input type="date" class="form-input td-date" value="${data?.date||''}">
+    <input type="text" class="form-input td-venue" placeholder="Venue, Miasto" value="${esc(data?.venue||'')}">
+    <input type="number" class="form-input td-budget" placeholder="PLN" min="0" value="${data?.budget||''}">
+    <button class="td-remove-btn" title="Usuń" onclick="removeTourDate(this)">×</button>`;
+  row.querySelector('.td-budget').addEventListener('input',updateTourBudgetSum);
+  list.appendChild(row);
+  updateTourBudgetSum();
+}
+
+function removeTourDate(btn){
+  btn.closest('.tour-date-row').remove();
+  updateTourBudgetSum();
+}
+
+function updateTourBudgetSum(){
+  const rows=[...document.querySelectorAll('#tour-dates-list .tour-date-row')];
+  const sum=rows.reduce((s,r)=>s+(parseFloat(r.querySelector('.td-budget').value)||0),0);
+  const el=document.getElementById('tour-budget-sum');
+  if(el)el.textContent=sum>0?'Razem: '+fmtPLN(sum)+' PLN':'';
 }
 
 let _editShowId = null;
@@ -1015,9 +1179,12 @@ function openEditPanel(id){
   document.getElementById('f-venue').value  = s.venue||'';
   document.getElementById('f-budget').value = s.budget||'';
   if(s.isRange){
-    setDateType('range');
-    document.getElementById('f-date-from').value = s.date||'';
-    document.getElementById('f-date-to').value   = s.dateTo||'';
+    const list=document.getElementById('tour-dates-list');
+    if(list)list.innerHTML='';
+    setDateType('range',true);
+    const dates=Array.isArray(s.tourDates)&&s.tourDates.length?s.tourDates:[{date:s.date||'',venue:s.venue||'',budget:s.budget||0}];
+    dates.forEach(d=>addTourDate(d));
+    updateTourBudgetSum();
   } else {
     setDateType('single');
     document.getElementById('f-date').value = s.date||'';
@@ -1030,34 +1197,34 @@ async function saveShow(){
   if(!window._db||!window._fs)return;
   const artist=document.getElementById('f-artist').value.trim();
   const venue=document.getElementById('f-venue').value.trim();
-  const budget=parseFloat(document.getElementById('f-budget').value)||0;
-  let date,dateTo=null,isRange=false;
+  let date,dateTo=null,isRange=false,isTour=false,tourDates=null,budget=0;
   if(_dateType==='range'){
-    date=document.getElementById('f-date-from').value;
-    dateTo=document.getElementById('f-date-to').value;
-    isRange=true;
-    if(!artist||!date||!dateTo){alert('Artysta i obie daty są wymagane.');return;}
-    if(dateTo<date){alert('Data końcowa musi być późniejsza niż początkowa.');return;}
+    const rows=[...document.querySelectorAll('#tour-dates-list .tour-date-row')];
+    tourDates=rows.map(r=>({date:r.querySelector('.td-date').value,venue:r.querySelector('.td-venue').value.trim(),budget:parseFloat(r.querySelector('.td-budget').value)||0})).filter(d=>d.date);
+    if(!artist||!tourDates.length){alert('Artysta i przynajmniej jedna data trasy są wymagane.');return;}
+    tourDates.sort((a,b)=>a.date.localeCompare(b.date));
+    date=tourDates[0].date;
+    dateTo=tourDates[tourDates.length-1].date;
+    budget=tourDates.reduce((s,d)=>s+d.budget,0);
+    isRange=true;isTour=true;
   } else {
+    budget=parseFloat(document.getElementById('f-budget').value)||0;
     date=document.getElementById('f-date').value;
     if(!artist||!date){alert('Artysta i data są wymagane.');return;}
   }
   const {collection,addDoc,doc,updateDoc,serverTimestamp}=window._fs;
   try{
     if(_editShowId){
-      await updateDoc(doc(window._db,'marketing_shows',_editShowId),{
-        artistName:artist,date,dateTo,isRange,venue,budget,
-        updatedBy:curUser||'–',updatedAt:serverTimestamp()
-      });
+      const upd={artistName:artist,date,dateTo,isRange,isTour:isTour||false,venue:isTour?'':venue,budget,updatedBy:curUser||'–',updatedAt:serverTimestamp()};
+      if(isTour)upd.tourDates=tourDates;
+      await updateDoc(doc(window._db,'marketing_shows',_editShowId),upd);
     } else {
-      const checkpoints={};
-      CP_KEYS.forEach(k=>{checkpoints[k]=false;});
-      await addDoc(collection(window._db,'marketing_shows'),{
-        artistName:artist,date,dateTo,isRange,venue,budget,checkpoints,
-        createdBy:curUser||'–',createdAt:serverTimestamp()
-      });
+      const doc2={artistName:artist,date,dateTo,isRange,isTour:isTour||false,venue:isTour?'':venue,budget,checkpoints:{},cpNotes:{},createdBy:curUser||'–',createdAt:serverTimestamp()};
+      if(isTour)doc2.tourDates=tourDates;
+      await addDoc(collection(window._db,'marketing_shows'),doc2);
     }
-    ['f-artist','f-date','f-date-from','f-date-to','f-venue','f-budget'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['f-artist','f-date','f-venue','f-budget'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    const tdList=document.getElementById('tour-dates-list');if(tdList)tdList.innerHTML='';
     setDateType('single');
     closeAddPanel();
   }catch(e){console.error(e);alert('Błąd zapisu: '+e.message);}
@@ -1085,109 +1252,95 @@ function fmtCostDate(ts){
   try{const d=new Date(ts.seconds*1000);return d.toLocaleDateString('pl-PL');}catch{return'–';}
 }
 
-async function renderChart(show){
-  const svgEl=document.getElementById(`chart-svg-${show.id}`);
-  const statusEl=document.getElementById(`chart-status-${show.id}`);
-  if(!svgEl)return;
+function buildChartShell(uid,title){
+  return`<div class="sec-card" style="margin-bottom:10px">
+    <div class="sec-head">
+      <span class="sec-title">${esc(title)}</span>
+      <span id="chart-status-${uid}" style="font-family:var(--mono);font-size:9px;color:var(--text3)">ładowanie…</span>
+    </div>
+    <div class="sec-body">
+      <div class="chart-wrap" id="chart-wrap-${uid}">
+        <svg id="chart-svg-${uid}" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="chart-legend">
+        <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--accent);height:8px;border-radius:2px"></div>Wydatki tygodniowe (zł, lewa oś)</div>
+        <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--purple)"></div>Sprzedaż biletów (szt., prawa oś)</div>
+      </div>
+    </div>
+  </div>`;
+}
 
-  // ── 1. Match ticketing event by name + date ──
+async function fetchTicketPoints(artistName,concertDate){
   const tkEvents=window._tkEvents||[];
   const matchedEvt=tkEvents.find(e=>
-    (e.name||'').toLowerCase().trim()===(show.artistName||'').toLowerCase().trim()&&
-    (e.date||'')===(show.date||'')
+    (e.name||'').toLowerCase().trim()===(artistName||'').toLowerCase().trim()&&
+    (e.date||'')===(concertDate||'')
   );
-
-  // ── 2. Pull snapshots for matched event ──
-  // Snapshots: {eventId, eventName, date (string "D.M.YYYY"), createdAt (ms number), tm, eb, other, total}
-  let ticketPoints=[]; // {ms, sold}
+  let ticketPoints=[];
   if(window._db&&window._fs&&matchedEvt){
     try{
-      const {collection,getDocs,query,where,orderBy}=window._fs;
-      const snapsCol=collection(window._db,'ticketing_snapshots');
-      const snap=await getDocs(query(snapsCol,where('eventId','==',matchedEvt.id)));
+      const {collection,getDocs,query,where}=window._fs;
+      const snap=await getDocs(query(collection(window._db,'ticketing_snapshots'),where('eventId','==',matchedEvt.id)));
       snap.forEach(d=>{
         const s=d.data();
-        // createdAt is stored as ms number (Date.now()), not Firestore Timestamp
         const ms=typeof s.createdAt==='number'?s.createdAt:(s.createdAt?.seconds?s.createdAt.seconds*1000:null);
         if(!ms)return;
-        const sold=(s.tm||0)+(s.eb||0)+(s.other||0);
-        ticketPoints.push({ms,sold});
+        ticketPoints.push({ms,sold:(s.tm||0)+(s.eb||0)+(s.other||0)});
       });
       ticketPoints.sort((a,b)=>a.ms-b.ms);
     }catch(e){console.warn('Snapshots error:',e);}
   }
+  return{matchedEvt,ticketPoints};
+}
 
-  // ── 3. Build weekly cost buckets ──
-  const costs=showCosts(show.id);
+async function drawChart(uid,costs,concertDate,artistName){
+  const svgEl=document.getElementById(`chart-svg-${uid}`);
+  const statusEl=document.getElementById(`chart-status-${uid}`);
+  if(!svgEl)return;
+
+  const {matchedEvt,ticketPoints}=await fetchTicketPoints(artistName,concertDate);
+
   const today=new Date();today.setHours(0,0,0,0);
-  const showDate=new Date(show.date);
+  const showDate=new Date(concertDate);
 
-  // Find time range: from earliest cost or snapshot, to today or show date
   let earliest=new Date(today);
   costs.forEach(c=>{
     const d=c.costDate?new Date(c.costDate):(c.createdAt?new Date(c.createdAt.seconds*1000):null);
     if(d&&d<earliest)earliest=new Date(d);
   });
-  ticketPoints.forEach(t=>{
-    const d=new Date(t.ms);
-    if(d<earliest)earliest=new Date(d);
-  });
+  ticketPoints.forEach(t=>{const d=new Date(t.ms);if(d<earliest)earliest=new Date(d);});
 
-  // Snap earliest to Monday of that week
   const mondayOf=d=>{const r=new Date(d);const dy=r.getDay();r.setDate(r.getDate()-(dy===0?6:dy-1));r.setHours(0,0,0,0);return r;};
   const startWeek=mondayOf(earliest);
   const endDate=showDate<today?new Date(showDate):new Date(today);
 
-  // Build week array (Mondays)
-  const weeks=[];
-  const cur=new Date(startWeek);
-  while(cur<=endDate||weeks.length<2){
-    weeks.push(new Date(cur));
-    cur.setDate(cur.getDate()+7);
-    if(weeks.length>20)break;
-  }
+  const weeks=[];const cur=new Date(startWeek);
+  while(cur<=endDate||weeks.length<2){weeks.push(new Date(cur));cur.setDate(cur.getDate()+7);if(weeks.length>20)break;}
 
-  // For each week: cumulative costs up to end of that week
   const cumCosts=weeks.map(w=>{
-    const weekEnd=new Date(w);weekEnd.setDate(weekEnd.getDate()+6);weekEnd.setHours(23,59,59);
-    return costs.reduce((s,c)=>{
-      const d=c.costDate?new Date(c.costDate):(c.createdAt?new Date(c.createdAt.seconds*1000):null);
-      if(d&&d<=weekEnd)return s+(c.amount||0);
-      return s;
-    },0);
+    const wE=new Date(w);wE.setDate(wE.getDate()+6);wE.setHours(23,59,59);
+    return costs.reduce((s,c)=>{const d=c.costDate?new Date(c.costDate):(c.createdAt?new Date(c.createdAt.seconds*1000):null);return(d&&d<=wE)?s+(c.amount||0):s;},0);
   });
 
-  // For each week: last ticket snapshot within that week (or forward-fill)
   const weekTickets=weeks.map(w=>{
-    const weekEnd=new Date(w);weekEnd.setDate(weekEnd.getDate()+6);weekEnd.setHours(23,59,59);
-    const inWeek=ticketPoints.filter(t=>t.ms>=w.getTime()&&t.ms<=weekEnd.getTime());
-    return inWeek.length?inWeek[inWeek.length-1].sold:null;
+    const wE=new Date(w);wE.setDate(wE.getDate()+6);wE.setHours(23,59,59);
+    const inW=ticketPoints.filter(t=>t.ms>=w.getTime()&&t.ms<=wE.getTime());
+    return inW.length?inW[inW.length-1].sold:null;
   });
-  // Forward-fill nulls
   let lastKnown=0;
   const filledTickets=weekTickets.map(v=>{if(v!==null){lastKnown=v;return v;}return lastKnown;});
 
-  // ── 4. Draw SVG: bars (costs) + line (tickets) ──
   const W=600,H=140,PL=46,PR=30,PT=12,PB=24;
-  const chartW=W-PL-PR,chartH=H-PT-PB;
-  const n=weeks.length;
-
-  // Cost bars — cumulative, so diff per week = spend that week
+  const chartW=W-PL-PR,chartH=H-PT-PB,n=weeks.length;
   const weeklySpend=cumCosts.map((v,i)=>i===0?v:v-cumCosts[i-1]);
-  const maxWeeklySpend=Math.max(...weeklySpend,1);
-  const costYMax=maxWeeklySpend/0.8; // najwyższy słupek = 80% wysokości wykresu
-
-  const maxCost=Math.max(...cumCosts,1);
+  const costYMax=Math.max(...weeklySpend,1)/0.8;
   const maxTickets=Math.max(...filledTickets,1);
-
   const xPos=i=>PL+(n<=1?chartW/2:i*(chartW/(n-1)));
   const barW=Math.max(4,Math.min(28,(chartW/(n||1))*0.55));
   const yT=v=>PT+chartH-(v/maxTickets)*chartH;
   const pathLine=pts=>`M${pts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join('L')}`;
-
   const tickPts=filledTickets.map((v,i)=>[xPos(i),yT(v)]);
 
-  // Grid lines (oś Y lewa = tygodniowe wydatki)
   const gridLines=[0.25,0.5,0.75,1].map(p=>{
     const y=(PT+chartH-(p*0.8*chartH)).toFixed(1);
     const val=costYMax*p*0.8;
@@ -1196,56 +1349,44 @@ async function renderChart(show){
 <text x="${(PL-4)}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="end" font-size="7" fill="#5c5b6e" font-family="monospace">${label}</text>`;
   }).join('');
 
-  // Right Y axis (tickets)
   const tickYLabels=[0.5,1].map(p=>{
     const y=(PT+chartH-(p*chartH)).toFixed(1);
     return`<text x="${(W-PR+4)}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="start" font-size="7" fill="#a78bfa" font-family="monospace" opacity="0.7">${Math.round(maxTickets*p)}</text>`;
   }).join('');
 
-  // X labels
   const labelStep=Math.max(1,Math.ceil(n/6));
   const xLabels=weeks.map((w,i)=>{
     if(i%labelStep!==0&&i!==n-1)return'';
     return`<text x="${xPos(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="7.5" fill="#5c5b6e" font-family="monospace">${w.getDate().toString().padStart(2,'0')}.${(w.getMonth()+1).toString().padStart(2,'0')}</text>`;
   }).join('');
 
-  // Map costs to their week bucket for tooltips
   const weekCostItems=weeks.map(w=>{
-    const wEnd=new Date(w);wEnd.setDate(wEnd.getDate()+6);wEnd.setHours(23,59,59);
-    return costs.filter(c=>{
-      const d=c.costDate?new Date(c.costDate):(c.createdAt?new Date(c.createdAt.seconds*1000):null);
-      return d&&d>=w&&d<=wEnd;
-    });
+    const wE=new Date(w);wE.setDate(wE.getDate()+6);wE.setHours(23,59,59);
+    return costs.filter(c=>{const d=c.costDate?new Date(c.costDate):(c.createdAt?new Date(c.createdAt.seconds*1000):null);return d&&d>=w&&d<=wE;});
   });
 
   const bars=weeklySpend.map((v,i)=>{
     if(v<=0)return'';
-    const bh=((v/costYMax)*chartH);
-    const x=(xPos(i)-barW/2).toFixed(1);
-    const y=(PT+chartH-bh).toFixed(1);
+    const bh=(v/costYMax)*chartH;
+    const x=(xPos(i)-barW/2).toFixed(1),y=(PT+chartH-bh).toFixed(1);
     const wLabel=`${weeks[i].getDate().toString().padStart(2,'0')}.${(weeks[i].getMonth()+1).toString().padStart(2,'0')}`;
     const itemList=weekCostItems[i].map(c=>`${c.description||c.category}: ${fmtPLN(c.amount)} zł`).join('\n');
     const tip=`Tydzień ${wLabel}: ${fmtPLN(v)} zł${itemList?'\n'+itemList:''}`;
     return`<rect x="${x}" y="${y}" width="${barW}" height="${bh.toFixed(1)}" rx="2" fill="#c8f060" opacity="0.75" data-tip="${tip.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" style="cursor:default"/>`;
   }).join('');
 
-  // Ticket line + area
   const tickArea=`M${xPos(0).toFixed(1)},${PT+chartH} L${tickPts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join('L')} L${xPos(n-1).toFixed(1)},${PT+chartH}Z`;
   const tickDots=tickPts.map(([x,y],i)=>filledTickets[i]>0&&weekTickets[i]!==null?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#a78bfa" stroke="#0e0e11" stroke-width="1"/>`:'').join('');
 
   svgEl.innerHTML=`
-<defs>
-  <linearGradient id="gT-${show.id}" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.18"/>
-    <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.02"/>
-  </linearGradient>
-</defs>
-${gridLines}
-${bars}
-<path d="${tickArea}" fill="url(#gT-${show.id})" pointer-events="none"/>
+<defs><linearGradient id="gT-${uid}" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.18"/>
+  <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.02"/>
+</linearGradient></defs>
+${gridLines}${bars}
+<path d="${tickArea}" fill="url(#gT-${uid})" pointer-events="none"/>
 <path d="${pathLine(tickPts)}" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>
-${tickDots}
-${xLabels}${tickYLabels}
+${tickDots}${xLabels}${tickYLabels}
 <line x1="${PL}" y1="${PT+chartH}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 <line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
 <line x1="${W-PR}" y1="${PT}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
@@ -1256,19 +1397,33 @@ ${xLabels}${tickYLabels}
     r.addEventListener('mouseleave',hideChartTip);
   });
 
-  const hasTickets=ticketPoints.length>0;
-  const hasCosts=cumCosts.some(v=>v>0);
   if(statusEl){
-    if(!matchedEvt){
-      statusEl.textContent='brak koncertu w Ticketingu';
-      statusEl.style.color='var(--text3)';
-    } else if(!hasTickets){
-      statusEl.textContent='brak snapshotów w Ticketingu';
-      statusEl.style.color='var(--amber)';
-    } else {
-      statusEl.textContent=`max ${maxTickets} sprzedanych · ${ticketPoints.length} raportów`;
-      statusEl.style.color='var(--teal)';
+    if(!matchedEvt){statusEl.textContent='brak koncertu w Ticketingu';statusEl.style.color='var(--text3)';}
+    else if(!ticketPoints.length){statusEl.textContent='brak snapshotów w Ticketingu';statusEl.style.color='var(--amber)';}
+    else{statusEl.textContent=`max ${maxTickets} sprzedanych · ${ticketPoints.length} raportów`;statusEl.style.color='var(--teal)';}
+  }
+}
+
+async function renderChart(show){
+  const container=document.getElementById(`chart-container-${show.id}`);
+  if(!container)return;
+  const allCosts=showCosts(show.id);
+
+  if(show.isTour&&show.tourDates?.length){
+    const n=show.tourDates.length;
+    const tourWideCosts=allCosts.filter(c=>!c.tourDate||c.tourDate==='all');
+    container.innerHTML='';
+    for(let i=0;i<n;i++){
+      const td=show.tourDates[i];
+      const uid=`${show.id}-t${i}`;
+      container.insertAdjacentHTML('beforeend',buildChartShell(uid,`Koszty vs. Sprzedaż – ${fmtDate(td.date)} · ${esc(td.venue||'–')}`));
+      const concertCosts=allCosts.filter(c=>c.tourDate===td.date);
+      const effectiveCosts=[...concertCosts,...tourWideCosts.map(c=>({...c,amount:(c.amount||0)/n}))];
+      await drawChart(uid,effectiveCosts,td.date,show.artistName);
     }
+  } else {
+    container.innerHTML=buildChartShell(show.id,'Koszty vs. Sprzedaż biletów (tygodniowo)');
+    await drawChart(show.id,allCosts,show.date,show.artistName);
   }
 }
 
@@ -1342,14 +1497,14 @@ async function generatePDF(showId){
   pdf.text('STATUS CHECKPOINTÓW',14,y);
   y+=7;
 
-  CP_KEYS.forEach(k=>{
-    const done=show.checkpoints&&show.checkpoints[k];
-    const at=show.checkpoints&&show.checkpoints[k+'_at']?new Date(show.checkpoints[k+'_at'].seconds*1000).toLocaleDateString('pl-PL'):'—';
-    const by=show.checkpoints&&show.checkpoints[k+'_by']||'';
+  getShowCpList(show).forEach(({key,name})=>{
+    const done=show.checkpoints&&show.checkpoints[key];
+    const at=show.checkpoints&&show.checkpoints[key+'_at']?new Date(show.checkpoints[key+'_at'].seconds*1000).toLocaleDateString('pl-PL'):'—';
+    const by=show.checkpoints&&show.checkpoints[key+'_by']||'';
     pdf.setFont('helvetica','normal');
     pdf.setFontSize(9);
     pdf.setTextColor(...(done?teal:dimgrey));
-    pdf.text((done?'✓':'○')+'  '+CP_NAMES[k],18,y);
+    pdf.text((done?'✓':'○')+'  '+name,18,y);
     pdf.setTextColor(...dimgrey);
     pdf.text(done?at+' · '+by:'—',150,y);
     y+=6;
@@ -1415,7 +1570,7 @@ function openAiModal(showId){
   if(!show)return;
   aiCurrentShow=show;
   aiHistory=[];
-  document.getElementById('ai-modal-artist').textContent=`${show.artistName||'–'} · ${show.venue||'–'} · ${fmtDate(show.date,show.dateTo,show.isRange)}`;
+  document.getElementById('ai-modal-artist').textContent=`${show.artistName||'–'} · ${show.isTour?`Trasa · ${(show.tourDates||[]).length} dat`:show.venue||'–'} · ${fmtDate(show.date,show.dateTo,show.isRange)}`;
   document.getElementById('ai-messages').innerHTML='';
   document.getElementById('ai-modal-overlay').classList.add('open');
   // auto first message
@@ -1434,10 +1589,11 @@ function buildShowContext(show){
   const costs=showCosts(show.id);
   const totalCost=costs.reduce((s,c)=>s+(c.amount||0),0);
   const budget=show.budget||0;
-  const cpStatus=CP_KEYS.map(k=>`${CP_NAMES[k]}: ${show.checkpoints&&show.checkpoints[k]?'✓ odhaczone':'✗ nie'}`).join(', ');
+  const cpStatus=getShowCpList(show).map(({key,name})=>`${name}: ${show.checkpoints&&show.checkpoints[key]?'✓ odhaczone':'✗ nie'}`).join(', ');
   const catBreakdown=costs.reduce((acc,c)=>{acc[c.category]=(acc[c.category]||0)+c.amount;return acc;},{});
   const catStr=Object.entries(catBreakdown).map(([k,v])=>`${k}: ${fmtPLN(v)} zł`).join(', ');
-  return `Artysta: ${show.artistName}. Venue: ${show.venue}. Data: ${show.date}. Dni do koncertu: ${daysLeft}. Budżet: ${fmtPLN(budget)} zł. Wydano: ${fmtPLN(totalCost)} zł (${Math.round(totalCost/budget*100||0)}% budżetu). Kategorie kosztów: ${catStr||'brak'}. Status checkpointów: ${cpStatus}.`;
+  const venueCtx=show.isTour&&show.tourDates?.length?`Trasa: ${show.tourDates.map(d=>`${fmtDate(d.date)} ${d.venue}`).join(', ')}`:(`Venue: ${show.venue}`);
+  return `Artysta: ${show.artistName}. ${venueCtx}. Data: ${show.date}. Dni do koncertu: ${daysLeft}. Budżet: ${fmtPLN(budget)} zł. Wydano: ${fmtPLN(totalCost)} zł (${Math.round(totalCost/budget*100||0)}% budżetu). Kategorie kosztów: ${catStr||'brak'}. Status checkpointów: ${cpStatus}.`;
 }
 
 async function sendAiAuto(show){
