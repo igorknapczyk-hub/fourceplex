@@ -189,6 +189,7 @@ td.col-del{text-align:center}
 .modal-input::placeholder{color:var(--text3)}
 </style>
 <link rel="stylesheet" href="fourceplex-theme.css">
+<script src="fourceplex-confirm.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -487,12 +488,16 @@ function _bindGuestRow(tr,showId){
   }
   const delBtn=tr.querySelector('.row-del-btn');
   if(delBtn){
-    delBtn.addEventListener('click',e=>{
+    delBtn.addEventListener('click',async e=>{
       e.stopPropagation();
       const type=delBtn.dataset.type,rowId=delBtn.dataset.rowId;
       const rows=_guestLocal[type];if(!rows)return;
       const idx=rows.findIndex(r=>r.rowId===rowId);
-      if(idx>=0)rows.splice(idx,1);tr.remove();_guestDirty=true;
+      if(idx<0)return;
+      const row=rows[idx];
+      const label=row.name||(row.email?row.email:'tę osobę');
+      if(!await fpConfirm(`Wpis „${label}" zostanie usunięty z listy.`,'Usunąć wpis?'))return;
+      rows.splice(idx,1);tr.remove();_guestDirty=true;
       _ensureTrailingEmpty(type);
       clearTimeout(_guestAutoSave);
       _guestAutoSave=setTimeout(()=>flushGuestToFirestore(showId),30000);
@@ -634,7 +639,7 @@ async function selectShow(id){
   renderList();
 }
 async function doDelete(id){
-  if(!confirm('Usunąć ten koncert wraz ze wszystkimi listami?'))return;
+  if(!await fpConfirm('Koncert wraz ze wszystkimi listami gości zostanie trwale usunięty.','Usunąć koncert?'))return;
   try{
     await delShow(id);
     if(selectedShowId===id){

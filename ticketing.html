@@ -345,6 +345,7 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
 .sp-sm{width:11px;height:11px;border:1.5px solid rgba(167,139,250,.3);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite}
 </style>
 <link rel="stylesheet" href="fourceplex-theme.css">
+<script src="fourceplex-confirm.js"></script>
 </head>
 <body>
 
@@ -754,7 +755,7 @@ function switchTab(t){
 /* ── DELETE ── */
 async function confirmDelete(evId){
   const ev=window._events?.find(e=>e.id===evId);if(!ev)return;
-  if(!confirm('Usunąć "'+ev.name+'" z systemu?'))return;
+  if(!await fpConfirm(`Event „${ev.name}" oraz wszystkie snapshoty zostaną trwale usunięte.`,'Usunąć event?'))return;
   const snaps=window._snaps?.[evId]||[];
   for(const s of snaps){try{await window._deleteDoc(window._doc(window._db,'ticketing_snapshots',s.id));}catch(e){}}
   await window._deleteDoc(window._doc(window._db,'ticketing_events',evId));
@@ -1243,7 +1244,13 @@ function openEdit(id){
   document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('open'));
   document.getElementById('addPanel').classList.add('open');
 }
-async function deleteCurrentEvent(){if(!editId||!confirm('Usunąć event?'))return;await window._deleteDoc(window._doc(window._db,'ticketing_events',editId));notify('Usunięto');closeAllPanels();}
+async function deleteCurrentEvent(){
+  if(!editId)return;
+  const ev=window._events?.find(e=>e.id===editId);
+  if(!await fpConfirm(`Event „${ev?ev.name:'?'}" zostanie trwale usunięty.`,'Usunąć event?'))return;
+  await window._deleteDoc(window._doc(window._db,'ticketing_events',editId));
+  notify('Usunięto');closeAllPanels();
+}
 
 
 

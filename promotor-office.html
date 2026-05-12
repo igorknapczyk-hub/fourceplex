@@ -209,6 +209,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .access-sub{font-size:12px;color:var(--text3);font-family:var(--mono)}
 </style>
 <link rel="stylesheet" href="fourceplex-theme.css">
+<script src="fourceplex-confirm.js"></script>
 </head>
 <body>
 
@@ -671,7 +672,7 @@ function renderDetail(id){
 
 /* ── ACTIONS ── */
 async function removeFromOffice(id){
-  if(!confirm('Usunąć artystę z Promotor Office?\nArtysta pozostanie w Watchlist.'))return;
+  if(!await fpConfirm('Artysta zostanie usunięty z Promotor Office (pozostanie w Watchlist).','Usunąć z Promotor Office?'))return;
   if(!window._poReady)return;
   const a=(window._poArtists||[]).find(x=>x.id===id);
   if(!a)return;

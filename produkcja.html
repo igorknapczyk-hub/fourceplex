@@ -207,6 +207,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 @keyframes dotP{0%,80%,100%{opacity:.3;transform:scale(.85)}40%{opacity:1;transform:scale(1)}}
 </style>
 <link rel="stylesheet" href="fourceplex-theme.css">
+<script src="fourceplex-confirm.js"></script>
 </head>
 <body>
 <div class="layout">
@@ -562,7 +563,7 @@ document.getElementById('save-btn').addEventListener('click',async()=>{
 });
 
 async function doDelete(id){
-  if(!confirm('Usunąć ten koncert?'))return;
+  if(!await fpConfirm('Koncert oraz wszystkie powiązane dane zostaną trwale usunięte.','Usunąć koncert?'))return;
   try{
     await delShow(id);
     if(selectedShowId===id){selectedShowId=null;document.getElementById('detail-empty').style.display='';document.getElementById('detail-content').style.display='none';}
@@ -736,7 +737,7 @@ function _bindExpRow(tr,showId){
     const ri=rows.findIndex(r=>r.rowId===rowId);
     if(ri<0)return;
     const row=rows[ri];
-    if(((row.name||'').trim()||(parseFloat(row.amount)||0))&&!confirm('Usunąć wiersz?'))return;
+    if(((row.name||'').trim()||(parseFloat(row.amount)||0))&&!await fpConfirm('Wiersz wydatku zostanie usunięty.','Usunąć wiersz?'))return;
     if(row.fsId)await delExp(row.fsId);
     rows.splice(ri,1);
     tr.remove();

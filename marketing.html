@@ -317,6 +317,7 @@ select.form-input{cursor:pointer}
 .modal-input::placeholder{color:var(--text3)}
 </style>
 <link rel="stylesheet" href="fourceplex-theme.css">
+<script src="fourceplex-confirm.js"></script>
 </head>
 <body>
 <div class="layout">
@@ -760,7 +761,7 @@ function renderList(){
 }
 
 async function deleteShow(showId, artistName){
-  if(!confirm(`Usunąć kampanię "${artistName}"?\nSpowoduje to też usunięcie wszystkich powiązanych kosztów.`))return;
+  if(!await fpConfirm(`Kampania "${artistName}" oraz wszystkie powiązane koszty zostaną trwale usunięte.`,'Usunąć kampanię?'))return;
   if(!window._db||!window._fs)return;
   const {doc,deleteDoc,collection,getDocs,query,where}=window._fs;
   try{
@@ -1055,6 +1056,8 @@ async function saveCpName(showId,key,newName){
 async function removeCp(showId,key){
   const show=(window._shows||[]).find(s=>s.id===showId);
   if(!show)return;
+  const cp=getShowCpList(show).find(c=>c.key===key);
+  if(!await fpConfirm(`Checkpoint „${cp?cp.name:key}" zostanie usunięty z kampanii.`,'Usunąć checkpoint?'))return;
   const list=getShowCpList(show).filter(cp=>cp.key!==key);
   const si=(window._shows||[]).findIndex(s=>s.id===showId);
   if(si>=0){window._shows[si]={...window._shows[si],cpList:list};renderCheckpoints(window._shows[si]);}
@@ -1106,7 +1109,7 @@ async function addCost(showId){
 }
 
 async function deleteCost(costId){
-  if(!confirm('Usunąć ten wydatek?'))return;
+  if(!await fpConfirm('Wydatek zostanie trwale usunięty.','Usunąć wydatek?'))return;
   if(!window._db||!window._fs)return;
   const {doc,deleteDoc}=window._fs;
   try{await deleteDoc(doc(window._db,'marketing_costs',costId));}catch(e){console.error(e);}
@@ -1155,8 +1158,13 @@ function addTourDate(data){
   updateTourBudgetSum();
 }
 
-function removeTourDate(btn){
-  btn.closest('.tour-date-row').remove();
+async function removeTourDate(btn){
+  const row=btn.closest('.tour-date-row');
+  const venue=row?row.querySelector('.td-venue')?.value:'';
+  const date=row?row.querySelector('.td-date')?.value:'';
+  const label=venue||(date?`data ${date}`:'tę datę');
+  if(!await fpConfirm(`Data trasy „${label}" zostanie usunięta.`,'Usunąć datę trasy?'))return;
+  row.remove();
   updateTourBudgetSum();
 }
 

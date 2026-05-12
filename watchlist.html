@@ -271,6 +271,7 @@ select.form-input{cursor:pointer}
 @keyframes ni{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 </style>
 <link rel="stylesheet" href="fourceplex-theme.css">
+<script src="fourceplex-confirm.js"></script>
 </head>
 <body>
 
@@ -1285,9 +1286,9 @@ predMin/predMax — realistyczny szacunek biletów solo headliner Warszawa, bez 
 
 function notify(msg,type=''){const n=document.createElement('div');n.className='notif'+(type?` ${type}`:'');n.textContent=msg;document.body.appendChild(n);setTimeout(()=>n.remove(),3200);}
 
-function deleteArtist(id){
+async function deleteArtist(id){
   const a=artists.find(x=>x.id===id);if(!a)return;
-  if(!confirm(`Usunąć "${a.name}" z listy? Tej operacji nie można cofnąć.`))return;
+  if(!await fpConfirm(`Artysta „${a.name}" zostanie trwale usunięty z Watchlist.`,'Usunąć artystę?'))return;
   selected=selected.filter(x=>x!==id);
   const btn=document.getElementById("cmpBtn");
   btn.textContent=`Porównaj (${selected.length}/4)`;btn.disabled=selected.length<2;

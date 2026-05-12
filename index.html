@@ -347,6 +347,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .modal-input::placeholder{color:var(--text3)}
 </style>
 <link rel="stylesheet" href="fourceplex-theme.css">
+<script src="fourceplex-confirm.js"></script>
 </head>
 <body>
 <div class="layout">
@@ -748,7 +749,10 @@ function setTodoStatus(id,currentStatus){
   db.collection('todos').doc(id).update(update).catch(console.error);
 }
 
-function deleteTodo(id){if(db)db.collection('todos').doc(id).delete().catch(console.error);}
+async function deleteTodo(id){
+  if(!await fpConfirm('Zadanie zostanie trwale usunięte.','Usunąć zadanie?'))return;
+  if(db)db.collection('todos').doc(id).delete().catch(console.error);
+}
 
 /* ── EDIT MODAL ── */
 let _editingTodoId=null,_editSelectedAssignees=new Set();
