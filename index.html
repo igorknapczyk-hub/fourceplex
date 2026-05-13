@@ -90,7 +90,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 /* ── WIDGET GRID ── */
 .widgets-grid{
   display:grid;
-  grid-template-columns:1fr 380px;
+  grid-template-columns:65fr 35fr;
   grid-template-rows:1fr;
   gap:12px;
   height:100%;
@@ -236,6 +236,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .exec-note-thumb-btn:not(.has-thumbs) .thumb-emoji{filter:grayscale(1) opacity(.35)}
 .exec-note-thumb-btn:not(.has-thumbs):hover .thumb-emoji{filter:grayscale(1) opacity(.6)}
 .exec-note-thumb-who{font-family:var(--mono);font-size:9px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exec-note-del-btn{background:none;border:none;color:transparent;cursor:pointer;font-size:10px;padding:1px 4px;border-radius:3px;transition:all .12s;line-height:1;flex-shrink:0}
+.exec-note-item:hover .exec-note-del-btn{color:var(--text3)}
+.exec-note-del-btn:hover{color:var(--red)!important;background:rgba(248,113,113,.1)}
 .exec-note-add-row{display:flex;gap:7px;flex-shrink:0;align-items:flex-end;padding-top:4px}
 .exec-note-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:12px;padding:7px 11px;outline:none;resize:none;transition:border-color .15s;min-height:48px}
 .exec-note-input:focus{border-color:rgba(200,240,96,.4)}
@@ -619,13 +622,13 @@ function switchTodoTab(tab){
   document.getElementById('tab-zlecone').classList.toggle('active',tab==='zlecone');
   renderTodos(_latestTodos);
 }
-/* auto-usuwanie tasków "zrobione" po 2 dniach */
+/* auto-usuwanie tasków "zrobione" po 24h */
 function shouldAutoDelete(t){
   if(getTodoStatus(t)!=='zrobione')return false;
   const doneAt=t.doneAt;
   if(!doneAt)return false;
   const ts=doneAt.toMillis?doneAt.toMillis():doneAt;
-  return Date.now()-ts > 2*24*60*60*1000;
+  return Date.now()-ts > 24*60*60*1000;
 }
 
 /* ── status helpers ── */
@@ -703,9 +706,12 @@ function renderFilterRow(){
 }
 
 /* ── SORT ── */
+/* IDs zadań oznaczonych jako Zrobione w tej sesji — nie przenoś ich na dół aż do odświeżenia */
+const _justMarkedDone=new Set();
+
 function sortTodoSection(list){
-  const active=list.filter(t=>getTodoStatus(t)!=='zrobione');
-  const done=list.filter(t=>getTodoStatus(t)==='zrobione');
+  const active=list.filter(t=>getTodoStatus(t)!=='zrobione'||_justMarkedDone.has(t.id));
+  const done=list.filter(t=>getTodoStatus(t)==='zrobione'&&!_justMarkedDone.has(t.id));
   active.sort((a,b)=>{
     // PILNE na górze
     const pa=isTodoPilne(a)?0:1, pb=isTodoPilne(b)?0:1;
@@ -743,6 +749,7 @@ function setTodoStatus(id,currentStatus){
   if(!db)return;
   const next=STATUSES[(STATUSES.indexOf(currentStatus)+1)%STATUSES.length];
   const isDone=next==='zrobione';
+  if(isDone)_justMarkedDone.add(id);else _justMarkedDone.delete(id);
   const update={status:next,done:isDone};
   if(isDone)update.doneAt=firebase.firestore.FieldValue.serverTimestamp();
   else update.doneAt=null;
@@ -1072,7 +1079,7 @@ function renderTaskDetail(t){
   const execNotes=Array.isArray(t.execNotes)?t.execNotes:[];
   const thumbsMap=t.noteThumbsMap||{};
   const execListHtml=execNotes.length
-    ?[...execNotes].reverse().map(n=>{
+    ?execNotes.map(n=>{
         const c=getUserColor(n.addedBy||'');
         let ts='';
         if(n.addedAt){
@@ -1082,6 +1089,7 @@ function renderTaskDetail(t){
         const thumbWho=Array.isArray(thumbsMap[nk])?thumbsMap[nk]:[];
         const isThumbed=thumbWho.includes(currentUser);
         const whoHtml=thumbWho.length?thumbWho.map(u=>`<span style="color:${getUserColor(u)}">${escHtml(u)}</span>`).join('<span style="color:var(--text3)"> · </span>'):'';
+        const isAuthor=n.addedBy===currentUser;
         return`<div class="exec-note-item">
           <div class="exec-note-text">${escHtml(n.text)}</div>
           <div class="exec-note-footer">
@@ -1089,6 +1097,7 @@ function renderTaskDetail(t){
             <div style="display:flex;align-items:center;gap:6px;min-width:0">
               ${whoHtml?`<span class="exec-note-thumb-who">${whoHtml}</span>`:''}
               <button class="exec-note-thumb-btn${isThumbed?' thumbed':''}${thumbWho.length?' has-thumbs':''}" onclick="toggleThumb('${t.id}','${nk}')"><span class="thumb-emoji">👍</span>${thumbWho.length?' '+thumbWho.length:''}</button>
+              ${isAuthor?`<button class="exec-note-del-btn" onclick="deleteExecNote('${t.id}','${nk}')" title="Usuń notatkę">✕</button>`:''}
             </div>
           </div>
         </div>`;
@@ -1150,7 +1159,22 @@ async function addExecNote(id){
       execNotes:firebase.firestore.FieldValue.arrayUnion(note)
     });
     if(inp)inp.value='';
+    setTimeout(()=>{const l=document.getElementById('exec-notes-list');if(l)l.scrollTop=l.scrollHeight;},150);
   }catch(e){console.error('ExecNote:',e);}
+}
+
+async function deleteExecNote(todoId,nk){
+  if(!db||!currentUser)return;
+  const t=_latestTodos.find(x=>x.id===todoId);if(!t)return;
+  const notes=Array.isArray(t.execNotes)?t.execNotes:[];
+  const note=notes.find(n=>noteKey(n.addedAt)===nk&&n.addedBy===currentUser);
+  if(!note)return;
+  if(!await fpConfirm('Notatka zostanie trwale usunięta.','Usunąć notatkę?'))return;
+  try{
+    const upd={execNotes:firebase.firestore.FieldValue.arrayRemove(note)};
+    upd[`noteThumbsMap.${nk}`]=firebase.firestore.FieldValue.delete();
+    await db.collection('todos').doc(todoId).update(upd);
+  }catch(e){console.error('DeleteExecNote:',e);}
 }
 
 /* ── HELPERS ── */

@@ -280,7 +280,7 @@ td.col-del{text-align:center}
 <div class="slide-overlay" id="slide-overlay"></div>
 <div class="slide-panel" id="slide-panel">
   <div class="slide-header">
-    <span class="slide-title">Nowy koncert</span>
+    <span class="slide-title" id="slide-panel-title">Nowy koncert</span>
     <button class="slide-close" id="slide-close-btn">×</button>
   </div>
   <div class="slide-body">
@@ -593,9 +593,26 @@ function renderList(){
   });
 }
 
-/* ══ ADD SHOW PANEL ══ */
+/* ══ ADD / EDIT SHOW PANEL ══ */
+let _editingShowId=null;
+
 function openPanel(){
+  _editingShowId=null;
   ['f-artist','f-date','f-venue'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('slide-panel-title').textContent='Nowy koncert';
+  document.getElementById('save-btn').textContent='Zapisz';
+  document.getElementById('slide-panel').classList.add('open');
+  document.getElementById('slide-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('f-artist').focus(),220);
+}
+function openEditPanel(showId){
+  const show=allShows.find(s=>s.id===showId);if(!show)return;
+  _editingShowId=showId;
+  document.getElementById('f-artist').value=show.artistName||'';
+  document.getElementById('f-date').value=show.date||'';
+  document.getElementById('f-venue').value=show.venue||'';
+  document.getElementById('slide-panel-title').textContent='Edytuj koncert';
+  document.getElementById('save-btn').textContent='Zapisz zmiany';
   document.getElementById('slide-panel').classList.add('open');
   document.getElementById('slide-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('f-artist').focus(),220);
@@ -619,13 +636,18 @@ async function doSave(){
   const btn=document.getElementById('save-btn');
   btn.disabled=true;btn.textContent='Zapisuję...';
   try{
-    const ref=await addShow({artistName:artist,date,venue,guests:[],foto:[],media:[],comps:[],fotoPolicy:'',createdBy:currentUser||'?'});
-    selectedShowId=ref.id;
-    closePanel();
-    currentTab='active';
-    switchTab('active');
+    if(_editingShowId){
+      await updShow(_editingShowId,{artistName:artist,date,venue});
+      closePanel();
+    }else{
+      const ref=await addShow({artistName:artist,date,venue,guests:[],foto:[],media:[],comps:[],fotoPolicy:'',createdBy:currentUser||'?'});
+      selectedShowId=ref.id;
+      closePanel();
+      currentTab='active';
+      switchTab('active');
+    }
   }catch(e){console.error(e);alert('Błąd: '+e.message);}
-  finally{btn.disabled=false;btn.textContent='Zapisz';}
+  finally{btn.disabled=false;btn.textContent=_editingShowId?'Zapisz zmiany':'Zapisz';}
 }
 
 /* ══ SELECT / DELETE ══ */
@@ -701,9 +723,14 @@ function renderDetail(show){
         <div class="detail-title">${esc(show.artistName||'–')}</div>
         <div class="detail-sub">${fmtDate(show.date)}${show.venue?' · '+esc(show.venue):''}</div>
       </div>
-      <button class="btn btn-sm" id="gen-doc-btn" style="flex-shrink:0;margin-top:2px;background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--teal)">
-        <svg style="width:10px;height:10px;vertical-align:middle;margin-right:3px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2h7l3 3v9H3V2z"/><path d="M10 2v3h3"/><path d="M5 9h6M5 11.5h4"/></svg>Generuj .xlsx
-      </button>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:2px">
+        <button class="btn btn-sm" id="edit-show-btn" title="Edytuj podstawowe informacje o koncercie" style="background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--purple)">
+          <svg style="width:10px;height:10px;vertical-align:middle;margin-right:3px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3-8 8H3v-3L11 2z"/></svg>Edytuj
+        </button>
+        <button class="btn btn-sm" id="gen-doc-btn" style="background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--teal)">
+          <svg style="width:10px;height:10px;vertical-align:middle;margin-right:3px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2h7l3 3v9H3V2z"/><path d="M10 2v3h3"/><path d="M5 9h6M5 11.5h4"/></svg>Generuj .xlsx
+        </button>
+      </div>
     </div>
     <div class="detail-body">
       ${buildSection('guests','Goście','acc-teal')}
@@ -774,6 +801,9 @@ function renderDetail(show){
       },800);
     });
   })();
+
+  /* ── edit basic info ── */
+  document.getElementById('edit-show-btn').addEventListener('click',()=>openEditPanel(show.id));
 
   /* ── generate xls ── */
   document.getElementById('gen-doc-btn').addEventListener('click',()=>generateDoc(show));
