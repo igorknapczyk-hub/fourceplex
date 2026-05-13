@@ -126,14 +126,15 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .cp-item:focus-within .cp-row.done .cp-name{color:var(--accent)}
 .cp-item:focus-within .cp-note-input{border-color:rgba(200,240,96,.35);color:var(--text)}
 .cp-item:focus-within .cp-note-input::placeholder{color:var(--text2)}
-.cp-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s;user-select:none}
-.cp-row:hover{border-color:var(--border2)}
+.cp-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.22);cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+.cp-row:hover{border-color:rgba(251,191,36,.42);background:rgba(251,191,36,.09)}
 .cp-row:focus{outline:none}
 .cp-row.done{border-color:rgba(52,211,153,.2);background:rgba(52,211,153,.04)}
-.cp-icon{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--text3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.cp-row.done:hover{border-color:rgba(52,211,153,.38);background:rgba(52,211,153,.08)}
+.cp-icon{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--amber);background:rgba(251,191,36,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .cp-icon.done{border-color:var(--teal);background:rgba(52,211,153,.15)}
 .cp-icon.done::after{content:'✓';font-size:7px;color:var(--teal);font-weight:700}
-.cp-name{flex:1;font-size:11px;color:var(--text);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-name{flex:1;font-size:11px;color:var(--amber);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cp-row.done .cp-name{color:var(--teal)}
 .cp-note-input{width:100%;margin-top:3px;background:var(--bg4);border:1px solid transparent;border-radius:4px;color:var(--text2);font-family:var(--mono);font-size:10px;padding:3px 7px;outline:none;transition:border-color .15s}
 .cp-note-input::placeholder{color:transparent}

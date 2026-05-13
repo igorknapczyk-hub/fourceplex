@@ -411,6 +411,7 @@ select.form-input{cursor:pointer}
 
       <button class="btn btn-teal" id="cmpBtn" disabled onclick="togglePanel('comparePanel')">Porównaj (0/4)</button>
       <button class="btn btn-accent" onclick="togglePanel('addPanel')">+ Dodaj</button>
+      <button class="btn" id="bulkAddBtn" onclick="togglePanel('bulkPanel')" title="Dodaj wielu artystów naraz">+ Dodaj wiele</button>
       <button class="btn" id="refreshBtn" onclick="refreshSelectedOrAll()" title="Odśwież trend zaznaczonych (lub wszystkich)" style="flex-shrink:0">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="vertical-align:middle;margin-right:4px"><path d="M13 8A5 5 0 112 8" stroke-linecap="round"/><path d="M13 4v4h-4"/></svg><span id="refreshBtnLabel">Odśwież trendy</span>
       </button>
@@ -450,6 +451,28 @@ select.form-input{cursor:pointer}
         <div class="form-actions">
           <button class="btn" onclick="closePanel('addPanel')">Anuluj</button>
           <button class="btn btn-accent" onclick="saveArtist()">Zapisz artystę</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BULK ADD PANEL -->
+    <div class="overlay-panel" id="bulkPanel">
+      <div class="panel-inner">
+        <div class="panel-title">
+          <div class="panel-title-left">Dodaj wielu artystów</div>
+          <button class="panel-close" onclick="closePanel('bulkPanel')">×</button>
+        </div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:14px;max-width:560px">Wpisz nazwy artystów — jeden wiersz = jeden artysta. Szczegóły (gatunek, linki, notatki) można uzupełnić później przez edycję każdego z osobna.</p>
+        <div style="max-width:560px">
+          <div class="form-label" style="margin-bottom:6px">Nazwy artystów (jeden pod drugim)</div>
+          <textarea id="bulkTextarea" class="form-input" rows="12" placeholder="Mk.gee&#10;Saya Gray&#10;Arooj Aftab&#10;Ethel Cain&#10;..." style="min-height:220px;font-family:var(--mono);font-size:12px;line-height:1.7;resize:vertical" oninput="updateBulkCount()"></textarea>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+            <span id="bulkCountLabel" style="font-family:var(--mono);font-size:11px;color:var(--text3)">Wpisz nazwy artystów…</span>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="closePanel('bulkPanel')">Anuluj</button>
+              <button class="btn btn-accent" id="bulkSaveBtn" onclick="saveBulkArtists()" disabled>Dodaj artystów</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1088,7 +1111,7 @@ function togglePromotorOffice(id){
 }
 
 /* ── PANELS ── */
-const PANELS=['addPanel','aiPanel','importPanel','comparePanel'];
+const PANELS=['addPanel','bulkPanel','aiPanel','importPanel','comparePanel'];
 function closeAllPanels(){PANELS.forEach(p=>closePanel(p));}
 function closePanel(id){document.getElementById(id).classList.remove('open');}
 function togglePanel(id){
@@ -1097,6 +1120,11 @@ function togglePanel(id){
   if(!isOpen){
     document.getElementById(id).classList.add('open');
     if(id==='comparePanel'&&selected.length>=2)runAiCompare();
+    if(id==='bulkPanel'){
+      document.getElementById('bulkTextarea').value='';
+      updateBulkCount();
+      setTimeout(()=>document.getElementById('bulkTextarea').focus(),80);
+    }
   }
 }
 
@@ -1124,6 +1152,71 @@ function editArtist(id){
   document.getElementById('addPanel').classList.add('open');
 }
 function closeForm(){closePanel('addPanel');editId=null;}
+
+/* ── BULK ADD ── */
+function parseBulkLines(){
+  const raw=document.getElementById('bulkTextarea').value||'';
+  return raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+}
+function updateBulkCount(){
+  const lines=parseBulkLines();
+  const lbl=document.getElementById('bulkCountLabel');
+  const btn=document.getElementById('bulkSaveBtn');
+  if(!lines.length){
+    lbl.textContent='Wpisz nazwy artystów…';lbl.style.color='var(--text3)';
+    btn.disabled=true;btn.textContent='Dodaj artystów';
+  }else{
+    const pl=lines.length===1?'artysta':lines.length<5?'artystów':'artystów';
+    lbl.textContent=`${lines.length} ${pl} zostanie dodanych`;
+    lbl.style.color='var(--accent)';
+    btn.disabled=false;
+    const btnPl=lines.length===1?'ę':lines.length<5?'ów':'ów';
+    btn.textContent=`Dodaj ${lines.length} artyst${btnPl}`;
+  }
+}
+async function saveBulkArtists(){
+  if(!currentUser){openUserModal();return;}
+  const lines=parseBulkLines();
+  if(!lines.length)return;
+  const btn=document.getElementById('bulkSaveBtn');
+  btn.disabled=true;btn.textContent='Dodaję…';
+
+  // Deduplicate against existing names (case-insensitive)
+  const existingNames=new Set(artists.map(a=>(a.name||'').toLowerCase()));
+  const toAdd=lines.filter(n=>!existingNames.has(n.toLowerCase()));
+  const skipped=lines.length-toAdd.length;
+
+  const now=new Date().toISOString();
+  let added=0;
+  for(const name of toAdd){
+    const artist={
+      id:Date.now()+added,
+      name,
+      genre:'',listeners:'',spotifyUrl:'',plShow:'NIE',plChecked:false,
+      notes:'',predMin:0,predMax:0,sourceTip:'',
+      status:'check',sentDate:null,
+      source:'manual',addedBy:currentUser,
+      dateAdded:now,ts:Date.now()+added,
+      trend:'flat',predHistory:[]
+    };
+    artists.push(artist);
+    await saveArtistToDb(artist);
+    added++;
+    // small delay to avoid id collision
+    await new Promise(r=>setTimeout(r,5));
+  }
+
+  closePanel('bulkPanel');
+  document.getElementById('bulkTextarea').value='';
+  updateBulkCount();
+  render();
+
+  if(skipped>0){
+    notify(`Dodano ${added} artystów. Pominięto ${skipped} duplikat${skipped===1?'':'ów'} (już na liście).`,'info');
+  }else{
+    notify(`Dodano ${added} artysta${added===1?'ę':added<5?'ów':'ów'} ✓`);
+  }
+}
 
 async function autoFill(){
   const name=document.getElementById('fName').value.trim();
