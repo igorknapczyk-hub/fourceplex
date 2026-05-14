@@ -94,27 +94,42 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
     return itemNorm.includes(normMain) || (normAlt && itemNorm.includes(normAlt));
   });
 
-  // Agreguj z poziomu TicketType — wykluczając typy z "upgrade" w nazwie
-  let eb = 0, remains = 0, cap = 0;
+  // cap i remains: z agregatu Sale — eBilet liczy to poprawnie na tym poziomie
+  const remains = matches.reduce((s, m) => s + (m.free_seats_without_reservations ?? 0), 0);
+  const cap     = matches.reduce((s, m) => s + (m.all_seats ?? 0), 0);
+  let eb = 0;
+
   for (const item of matches) {
     const pools = item.Pools?.items ?? [];
+
+    // Poziom 3 (fallback): brak Pools — użyj agregatu Sale
     if (pools.length === 0) {
-      // Fallback: brak danych o TicketTypes — użyj agregatu z Sale (stare zachowanie)
       if ((item.sales_gross ?? 0) > 0) eb += item.sales_ticket_count ?? 0;
-      remains += item.free_seats_without_reservations ?? 0;
-      cap     += item.all_seats ?? 0;
       continue;
     }
+
     for (const pool of pools) {
+      // Odrzuć całą pulę jeśli jej nazwa zawiera "upgrade"
+      if (normalize(pool.pool_name ?? '').includes('upgrade')) continue;
+
+      // Sprawdź czy mamy dane na poziomie TicketType
+      let hasTicketTypes = false;
+      let ttEb = 0;
       for (const pz of (pool.PriceZones?.items ?? [])) {
         for (const tt of (pz.TicketTypes?.items ?? [])) {
+          hasTicketTypes = true;
           const ttNorm = normalize(tt.ticket_type_name ?? '');
-          if (ttNorm.includes('upgrade')) continue;   // pomijaj typy "upgrade"
-          if ((tt.sales_gross ?? 0) > 0) eb += tt.sales_ticket_count ?? 0;
+          if (ttNorm.includes('upgrade')) continue;
+          if ((tt.sales_gross ?? 0) > 0) ttEb += tt.sales_ticket_count ?? 0;
         }
-        // remains i cap bierzemy z PriceZone (już bez upgrade — TicketTypes są podzbiorem)
-        remains += pz.free_seats_without_reservations ?? 0;
-        cap     += pz.all_seats ?? 0;
+      }
+
+      if (hasTicketTypes) {
+        // Poziom 1: mamy TicketTypes — użyj precyzyjnego liczenia z filtrem upgrade
+        eb += ttEb;
+      } else {
+        // Poziom 2 (fallback): brak TicketTypes — użyj agregatu Pool
+        if ((pool.sales_gross ?? 0) > 0) eb += pool.sales_ticket_count ?? 0;
       }
     }
   }
