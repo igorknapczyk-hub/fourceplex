@@ -53,76 +53,29 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
   const seenKeys = new Set();
   const allItems = [];
 
-  // Zapytanie 1: Sale-level — proste, zawsze niezawodne, tak jak działało pierwotnie
-  const SALE_QUERY = `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{
-    event_name event_time event_external_id
-    sales_ticket_count free_seats_without_reservations all_seats sales_gross sales_net
-  }}}`;
-
-  // Zapytanie 2: głębokie — tylko po to żeby wykryć upgrade'y do odjęcia
-  const UPGRADE_QUERY = `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{
-    event_name event_time event_external_id
-    Pools{items{
-      pool_name sales_ticket_count sales_gross
-      PriceZones{items{TicketTypes{items{
-        ticket_type_name sales_ticket_count sales_gross
-      }}}}
-    }}
-  }}}`;
-
-  // Krok 1: SALE_QUERY — niezawodna podstawa, uruchamiana sekwencyjnie per term
   for (const term of terms) {
-    try {
-      const res  = await fetch(process.env.EBILET_GRAPHQL_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ query: SALE_QUERY, variables: { n: term } }),
-      });
-      const data = await res.json();
-      for (const item of (data?.data?.sales?.items ?? [])) {
-        const key = item.event_external_id || `${item.event_name}|${item.event_time}`;
-        if (!seenKeys.has(key)) allItems.push(item);
-        seenKeys.add(key);
-      }
-    } catch { /* ignoruj błąd termu */ }
+    const res = await fetch(process.env.EBILET_GRAPHQL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({
+        query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time event_external_id sales_ticket_count free_seats_without_reservations all_seats sales_gross sales_net}}}`,
+        variables: { n: term },
+      }),
+    });
+    const data = await res.json();
+    // Dodaj wszystkie rekordy z tego termu których klucze nie wystąpiły w POPRZEDNICH termach
+    for (const item of (data?.data?.sales?.items ?? [])) {
+      const key = item.event_external_id || `${item.event_name}|${item.event_time}`;
+      if (!seenKeys.has(key)) allItems.push(item);
+    }
+    // Zarejestruj klucze z tego termu na potrzeby dedup kolejnych termów
+    for (const item of (data?.data?.sales?.items ?? [])) {
+      const key = item.event_external_id || `${item.event_name}|${item.event_time}`;
+      seenKeys.add(key);
+    }
   }
 
-  // Krok 2: UPGRADE_QUERY — best-effort z timeoutem, nie blokuje głównego wyniku
-  const upgradeMap = new Map(); // key → upgradeCount
-  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, r) => setTimeout(() => r(new Error('timeout')), ms))]);
-  for (const term of terms) {
-    try {
-      const res  = await withTimeout(
-        fetch(process.env.EBILET_GRAPHQL_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ query: UPGRADE_QUERY, variables: { n: term } }),
-        }),
-        8000  // 8 sekund — jeśli dłużej, odpuszczamy
-      );
-      const data = await res.json();
-      for (const item of (data?.data?.sales?.items ?? [])) {
-        const key = item.event_external_id || `${item.event_name}|${item.event_time}`;
-        let count = 0;
-        for (const pool of (item.Pools?.items ?? [])) {
-          if (normalize(pool.pool_name ?? '').includes('upgrade')) {
-            if ((pool.sales_gross ?? 0) > 0) count += pool.sales_ticket_count ?? 0;
-            continue;
-          }
-          for (const pz of (pool.PriceZones?.items ?? [])) {
-            for (const tt of (pz.TicketTypes?.items ?? [])) {
-              if (normalize(tt.ticket_type_name ?? '').includes('upgrade')) {
-                if ((tt.sales_gross ?? 0) > 0) count += tt.sales_ticket_count ?? 0;
-              }
-            }
-          }
-        }
-        upgradeMap.set(key, (upgradeMap.get(key) ?? 0) + count);
-      }
-    } catch { /* timeout lub błąd — upgrade'y nie zostaną odjęte, ale wynik nie będzie 0 */ }
-  }
-
-  // Filtruj po dacie i nazwie
+  // Filtruj po dacie i nazwie (OR: główna lub alternatywna) — client-side
   const matches = allItems.filter(item => {
     if (!item.event_time) return false;
     const d = new Date(item.event_time);
@@ -133,21 +86,12 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
     return itemNorm.includes(normMain) || (normAlt && itemNorm.includes(normAlt));
   });
 
-  // cap i remains zawsze z Sale-level — niezawodne
-  const remains = matches.reduce((s, m) => s + (m.free_seats_without_reservations ?? 0), 0);
-  const cap     = matches.reduce((s, m) => s + (m.all_seats ?? 0), 0);
-
-  // eb: Sale-level total minus upgrade'y z upgradeMap (0 jeśli zapytanie nie zdążyło)
-  let eb = 0;
-  for (const item of matches) {
-    if ((item.sales_gross ?? 0) <= 0) continue;
-    const key          = item.event_external_id || `${item.event_name}|${item.event_time}`;
-    const saleTotal    = item.sales_ticket_count ?? 0;
-    const upgradeCount = upgradeMap.get(key) ?? 0;
-    eb += Math.max(0, saleTotal - upgradeCount);
-  }
-
-  return { eb, remains, cap };
+  const paid = matches.filter(m => (m.sales_gross ?? 0) > 0);
+  return {
+    eb:      paid.reduce((s, m) => s + (m.sales_ticket_count ?? 0), 0),
+    remains: matches.reduce((s, m) => s + (m.free_seats_without_reservations ?? 0), 0),
+    cap:     matches.reduce((s, m) => s + (m.all_seats ?? 0), 0),
+  };
 }
 
 async function getTmSession() {
@@ -209,8 +153,6 @@ async function fetchTm(sessionId, eventName, eventDate, onSaleDate, altName) {
     const matchesMain = titleNorm.includes(normalize(eventName));
     const matchesAlt  = altName && titleNorm.includes(normalize(altName));
     if (!matchesMain && !matchesAlt) return false;
-    // Pule z "upgrade" w nazwie są wykluczone
-    if (titleNorm.includes('upgrade')) return false;
     if (!t.eventDate) return true;
     const p = t.eventDate.split('/');
     if (p.length !== 3) return true;
