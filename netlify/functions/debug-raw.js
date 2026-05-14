@@ -37,9 +37,20 @@ exports.handler = async function (event) {
     const res = await fetch(process.env.EBILET_GRAPHQL_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      // Oryginalne działające query — nie zmieniamy pól, żeby nie rozbić odpowiedzi
+      // Rozszerzone query — sales z zagnieżdżonymi Pools (żeby zobaczyć pool_name)
       body: JSON.stringify({
-        query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time event_external_id sales_ticket_count free_seats_without_reservations all_seats sales_gross sales_net taken_seats_without_reservations}}}`,
+        query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{
+          event_name event_time event_external_id
+          sales_ticket_count free_seats_without_reservations all_seats
+          sales_gross sales_net taken_seats_without_reservations
+          Pools { items {
+            pool_name
+            sales_ticket_count
+            sales_gross
+            all_seats
+            free_seats_without_reservations
+          }}
+        }}}`,
         variables: { n: eventName },
       }),
     });
