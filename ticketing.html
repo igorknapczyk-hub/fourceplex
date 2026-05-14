@@ -311,6 +311,7 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
 
 /* VIP BADGE */
 .vip-btn{display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:7px;font-weight:700;letter-spacing:.04em;padding:1px 4px;border-radius:3px;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35);color:var(--purple);cursor:default;flex-shrink:0}
+.info-btn{display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:7px;font-weight:700;letter-spacing:.04em;padding:1px 4px;border-radius:3px;background:rgba(251,191,36,.13);border:1px solid rgba(251,191,36,.4);color:var(--amber);cursor:default;flex-shrink:0}
 #_vip_tip{position:fixed;z-index:9999;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:10px;font-family:var(--sans);padding:5px 9px;box-shadow:0 4px 12px rgba(0,0,0,.4);white-space:nowrap;pointer-events:none;display:none}
 
 /* MODAL (index.html style) */
@@ -952,7 +953,12 @@ function renderTable(){
       </td>
       <td class="name-c" style="width:${LW.name}px">${ev.name}</td>
       <td class="date-c" style="width:${LW.date}px">${fd(ev.date)}</td>
-      <td style="width:${LW.vip}px;text-align:center;padding:0 2px">${ev.vip?`<span class="vip-btn" data-tip="${ev.vip.replace(/"/g,'&quot;')}">VIP</span>`:''}</td>
+      <td style="width:${LW.vip}px;text-align:center;padding:0 2px">
+        <div style="display:inline-flex;gap:2px;align-items:center">
+          ${ev.vip?`<span class="vip-btn" data-tip="${ev.vip.replace(/"/g,'&quot;')}">VIP</span>`:''}
+          ${ev.notes?`<span class="info-btn vip-btn" data-tip="${ev.notes.replace(/"/g,'&quot;')}">Info</span>`:''}
+        </div>
+      </td>
     </tr>`;
 
     // MIDDLE ROW
@@ -1003,7 +1009,8 @@ function renderTable(){
   rows.forEach(ev=>{
     const days=daysLeft(ev.date);
     const _gc=getGuestComps(ev.name,ev.date);
-    const tot2=Math.max(0,(ev.tm||0)+(ev.eb||0)+(ev.other||0)-_gc);
+    const eb2=Math.max(0,(ev.eb||0)-_gc);
+    const tot2=Math.max(0,(ev.tm||0)+eb2+(ev.other||0));
     const pct2=ev.cap?Math.round(tot2/ev.cap*100):0;
     let rc2;
     if(days<-2)rc2='row-past';
@@ -1025,7 +1032,7 @@ function renderTable(){
       <td class="num-b live-bg" style="width:${RL.t}px;font-weight:700;border-left:1px solid rgba(200,240,96,.12)">${tot2}</td>
       <td class="num live-bg" style="width:${RL.w}px">${liveWHtml}</td>
       <td class="num live-bg" style="width:${RL.tm}px">${ev.tm||0}</td>
-      <td class="num live-bg" style="width:${RL.eb}px">${ev.eb||0}</td>
+      <td class="num live-bg" style="width:${RL.eb}px">${eb2}</td>
       <td class="num live-bg ec" style="width:${RL.oth}px;color:var(--text3)" data-val="${ev.other||0}" onclick="iEdit(this,'${ev.id}','other')" title="Inne — kliknij żeby edytować">${ev.other||''}</td>
       <td class="num live-bg" style="width:${RL.pct}px;color:${pctCol2}">${ev.cap?pct2+'%':'—'}</td>
       <td class="num live-bg" style="width:${RL.c}px;color:var(--text3)" title="Comps — pobierane z Listy Gości">${_gc||''}</td>
@@ -1419,7 +1426,7 @@ Object.assign(window,{openModal,closeModal,openUserModal,selectForPin,confirmPin
     return tip;
   }
   document.addEventListener('mouseover',e=>{
-    const btn=e.target.closest('.vip-btn');
+    const btn=e.target.closest('.vip-btn,.info-btn');
     if(!btn)return;
     const text=btn.getAttribute('data-tip');
     if(!text)return;
@@ -1431,7 +1438,7 @@ Object.assign(window,{openModal,closeModal,openUserModal,selectForPin,confirmPin
     t.style.top=Math.round(r.top-t.offsetHeight-6)+'px';
   });
   document.addEventListener('mouseout',e=>{
-    if(e.target.closest('.vip-btn')&&tip)tip.style.display='none';
+    if(e.target.closest('.vip-btn,.info-btn')&&tip)tip.style.display='none';
   });
 })();
 </script>
