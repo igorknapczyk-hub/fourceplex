@@ -53,30 +53,37 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
   const seenKeys = new Set();
   const allItems = [];
 
+  // Query z rozwinięciem do poziomu TicketType — żeby móc wykluczyć typy "upgrade"
+  // Ścieżka: Sale → Pools → PriceZones → TicketTypes (ticket_type_name)
+  const QUERY = `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{
+    event_name event_time event_external_id
+    all_seats free_seats_without_reservations sales_gross sales_net
+    Pools{items{PriceZones{items{
+      all_seats free_seats_without_reservations
+      TicketTypes{items{
+        ticket_type_name sales_ticket_count sales_gross all_seats free_seats_without_reservations
+      }}
+    }}}}
+  }}}`;
+
   for (const term of terms) {
     const res = await fetch(process.env.EBILET_GRAPHQL_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({
-        query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time event_external_id sales_ticket_count free_seats_without_reservations all_seats sales_gross sales_net}}}`,
-        variables: { n: term },
-      }),
+      body: JSON.stringify({ query: QUERY, variables: { n: term } }),
     });
     const data = await res.json();
-    // Dodaj wszystkie rekordy z tego termu których klucze nie wystąpiły w POPRZEDNICH termach
     for (const item of (data?.data?.sales?.items ?? [])) {
       const key = item.event_external_id || `${item.event_name}|${item.event_time}`;
       if (!seenKeys.has(key)) allItems.push(item);
     }
-    // Zarejestruj klucze z tego termu na potrzeby dedup kolejnych termów
     for (const item of (data?.data?.sales?.items ?? [])) {
       const key = item.event_external_id || `${item.event_name}|${item.event_time}`;
       seenKeys.add(key);
     }
   }
 
-  // Filtruj po dacie i nazwie (OR: główna lub alternatywna) — client-side
-  // Pule z "upgrade" w nazwie są wykluczone (VIP upgrade to dodatek do biletu, nie osobny bilet)
+  // Filtruj po dacie i nazwie
   const matches = allItems.filter(item => {
     if (!item.event_time) return false;
     const d = new Date(item.event_time);
@@ -84,16 +91,35 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
      || d.getMonth()    !== target.getMonth()
      || d.getDate()     !== target.getDate()) return false;
     const itemNorm = normalize(item.event_name);
-    if (itemNorm.includes('upgrade')) return false;
     return itemNorm.includes(normMain) || (normAlt && itemNorm.includes(normAlt));
   });
 
-  const paid = matches.filter(m => (m.sales_gross ?? 0) > 0);
-  return {
-    eb:      paid.reduce((s, m) => s + (m.sales_ticket_count ?? 0), 0),
-    remains: matches.reduce((s, m) => s + (m.free_seats_without_reservations ?? 0), 0),
-    cap:     matches.reduce((s, m) => s + (m.all_seats ?? 0), 0),
-  };
+  // Agreguj z poziomu TicketType — wykluczając typy z "upgrade" w nazwie
+  let eb = 0, remains = 0, cap = 0;
+  for (const item of matches) {
+    const pools = item.Pools?.items ?? [];
+    if (pools.length === 0) {
+      // Fallback: brak danych o TicketTypes — użyj agregatu z Sale (stare zachowanie)
+      if ((item.sales_gross ?? 0) > 0) eb += item.sales_ticket_count ?? 0;
+      remains += item.free_seats_without_reservations ?? 0;
+      cap     += item.all_seats ?? 0;
+      continue;
+    }
+    for (const pool of pools) {
+      for (const pz of (pool.PriceZones?.items ?? [])) {
+        for (const tt of (pz.TicketTypes?.items ?? [])) {
+          const ttNorm = normalize(tt.ticket_type_name ?? '');
+          if (ttNorm.includes('upgrade')) continue;   // pomijaj typy "upgrade"
+          if ((tt.sales_gross ?? 0) > 0) eb += tt.sales_ticket_count ?? 0;
+        }
+        // remains i cap bierzemy z PriceZone (już bez upgrade — TicketTypes są podzbiorem)
+        remains += pz.free_seats_without_reservations ?? 0;
+        cap     += pz.all_seats ?? 0;
+      }
+    }
+  }
+
+  return { eb, remains, cap };
 }
 
 async function getTmSession() {
