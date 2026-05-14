@@ -37,18 +37,9 @@ exports.handler = async function (event) {
     const res = await fetch(process.env.EBILET_GRAPHQL_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      // Oryginalne działające query — nie zmieniamy pól, żeby nie rozbić odpowiedzi
       body: JSON.stringify({
-        // Próbujemy wyciągnąć jak najwięcej pól — w tym potencjalne kategorie/price levels
-        query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{
-          event_name event_time event_external_id
-          sales_ticket_count free_seats_without_reservations all_seats
-          sales_gross sales_net taken_seats_without_reservations
-          ticket_category category_name pool_name price_level price_level_name
-          ticket_type offer_name offer_type product_type seat_type
-          is_upgrade addon_type add_on upgrade_count regular_count
-          categories { name count sales_count }
-          price_levels { name count sold }
-        }}}`,
+        query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{event_name event_time event_external_id sales_ticket_count free_seats_without_reservations all_seats sales_gross sales_net taken_seats_without_reservations}}}`,
         variables: { n: eventName },
       }),
     });
@@ -65,34 +56,44 @@ exports.handler = async function (event) {
           && d.getDate()     === target.getDate();
     });
 
-    // Introspection — zapytaj GraphQL o dostępne pola dla typu 'sales items'
-    let introspection = null;
+    // Introspection krok 1 — lista wszystkich typów w schemacie
+    let allTypes = null;
     try {
       const introRes = await fetch(process.env.EBILET_GRAPHQL_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
-          query: `{ __type(name: "SalesItem") { fields { name type { name kind ofType { name kind } } } } }`,
+          query: `{ __schema { types { name kind } } }`,
         }),
       });
       const introData = await introRes.json();
-      introspection = introData?.data?.__type?.fields?.map(f => f.name) ?? null;
+      allTypes = (introData?.data?.__schema?.types ?? [])
+        .filter(t => !t.name.startsWith('__'))
+        .map(t => `${t.kind}: ${t.name}`);
+    } catch {}
+
+    // Introspection krok 2 — pola query "sales" (żeby zobaczyć strukturę items)
+    let salesItemFields = null;
+    try {
+      const introRes2 = await fetch(process.env.EBILET_GRAPHQL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          query: `{ __type(name: "Query") { fields { name type { name kind ofType { name fields { name } } } } } }`,
+        }),
+      });
+      const introData2 = await introRes2.json();
+      salesItemFields = introData2?.data?.__type?.fields ?? null;
     } catch {}
 
     result.ebilet = {
       totalItemsReturned: items.length,
       itemsMatchingDate:  dateMatched.length,
       uniqueEventNames:   [...new Set(items.map(i => i.event_name))],
-      // Pełne surowe rekordy — wszystkie pola jakie API zwróciło (łącznie z nowymi)
-      rawItems: dateMatched,
-      // Wszystkie pola dostępne w GraphQL schema (jeśli introspection zadziałał)
-      schemaFields: introspection,
-      // Klucze które faktycznie zwrócił API w tej odpowiedzi (nie-null)
-      returnedFieldsWithValues: dateMatched.length > 0
-        ? Object.entries(dateMatched[0])
-            .filter(([, v]) => v !== null && v !== undefined)
-            .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
-        : [],
+      rawItems:           dateMatched,
+      // Schemat — wszystkie typy i pola query
+      schema_allTypes:       allTypes,
+      schema_queryFields:    salesItemFields,
     };
   } catch (err) {
     result.ebilet = { error: err.message };
