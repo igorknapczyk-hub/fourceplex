@@ -37,18 +37,24 @@ exports.handler = async function (event) {
     const res = await fetch(process.env.EBILET_GRAPHQL_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      // Rozszerzone query — sales z zagnieżdżonymi Pools (żeby zobaczyć pool_name)
+      // sales → Pools → PriceZones (tylko skalary PriceZone — bez zagnieżdżeń)
       body: JSON.stringify({
         query: `query($n:String){sales(filter:{event_name:{contains:$n}}orderBy:null){items{
-          event_name event_time event_external_id
-          sales_ticket_count free_seats_without_reservations all_seats
-          sales_gross sales_net taken_seats_without_reservations
+          event_name event_time sales_ticket_count sales_gross
           Pools { items {
             pool_name
             sales_ticket_count
             sales_gross
             all_seats
-            free_seats_without_reservations
+            PriceZones { items {
+              sales_ticket_count
+              sales_gross
+              all_seats
+              free_seats_without_reservations
+              price_gross
+              printouts_ticket_count
+              taken_seats_without_reservations
+            }}
           }}
         }}}`,
         variables: { n: eventName },
@@ -67,23 +73,30 @@ exports.handler = async function (event) {
           && d.getDate()     === target.getDate();
     });
 
-    // Introspection — pola typów Pool, TicketType, Sale
+    // Introspection — pola typów Pool, TicketType, Sale, PriceZone + pola filtrów
     const introHelper = async (typeName) => {
       try {
         const r = await fetch(process.env.EBILET_GRAPHQL_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ query: `{ __type(name: "${typeName}") { fields { name type { name kind } } } }` }),
+          body: JSON.stringify({ query: `{ __type(name: "${typeName}") { fields { name type { name kind } } inputFields { name type { name kind } } } }` }),
         });
         const d = await r.json();
-        return (d?.data?.__type?.fields ?? []).map(f => f.name);
+        const t = d?.data?.__type;
+        if (!t) return null;
+        return {
+          fields:      (t.fields      ?? []).map(f => `${f.name}: ${f.type.kind}/${f.type.name}`),
+          inputFields: (t.inputFields ?? []).map(f => `${f.name}: ${f.type.kind}/${f.type.name}`),
+        };
       } catch { return null; }
     };
 
-    const [poolFields, ticketTypeFields, saleFields] = await Promise.all([
+    const [poolFields, ticketTypeFields, saleFields, priceZoneFields, poolFilterFields] = await Promise.all([
       introHelper('Pool'),
       introHelper('TicketType'),
       introHelper('Sale'),
+      introHelper('PriceZone'),
+      introHelper('PoolFilterInput'),
     ]);
 
     // Zapytaj endpoint pools dla tego eventu
@@ -128,11 +141,11 @@ exports.handler = async function (event) {
       totalItemsReturned: items.length,
       itemsMatchingDate:  dateMatched.length,
       rawItems:           dateMatched,
-      // Pola dostępne w każdym typie
       schema_Pool:        poolFields,
       schema_TicketType:  ticketTypeFields,
       schema_Sale:        saleFields,
-      // Surowe wyniki z endpointów pools i ticketTypes
+      schema_PriceZone:   priceZoneFields,
+      schema_PoolFilter:  poolFilterFields,
       pools:              poolsRaw,
       ticketTypes:        ticketTypesRaw,
     };
