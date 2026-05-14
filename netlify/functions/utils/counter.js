@@ -76,6 +76,7 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
   }
 
   // Filtruj po dacie i nazwie (OR: główna lub alternatywna) — client-side
+  // Pule z "upgrade" w nazwie są wykluczone (VIP upgrade to dodatek do biletu, nie osobny bilet)
   const matches = allItems.filter(item => {
     if (!item.event_time) return false;
     const d = new Date(item.event_time);
@@ -83,6 +84,7 @@ async function fetchEbilet(token, eventName, eventDate, altName) {
      || d.getMonth()    !== target.getMonth()
      || d.getDate()     !== target.getDate()) return false;
     const itemNorm = normalize(item.event_name);
+    if (itemNorm.includes('upgrade')) return false;
     return itemNorm.includes(normMain) || (normAlt && itemNorm.includes(normAlt));
   });
 
@@ -153,6 +155,8 @@ async function fetchTm(sessionId, eventName, eventDate, onSaleDate, altName) {
     const matchesMain = titleNorm.includes(normalize(eventName));
     const matchesAlt  = altName && titleNorm.includes(normalize(altName));
     if (!matchesMain && !matchesAlt) return false;
+    // Pule z "upgrade" w nazwie są wykluczone
+    if (titleNorm.includes('upgrade')) return false;
     if (!t.eventDate) return true;
     const p = t.eventDate.split('/');
     if (p.length !== 3) return true;
