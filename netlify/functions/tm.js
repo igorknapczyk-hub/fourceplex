@@ -77,13 +77,24 @@ async function getEventSales(sessionId, eventDate, onSaleDate) {
   return allTransactions;
 }
 
+/* ── Wyklucz transakcje z pul "upgrade" ── */
+function isUpgradeTransaction(t) {
+  const fields = [
+    t.offerName, t.priceLevelName, t.priceLevel,
+    t.seatType,  t.section,        t.row,
+    t.ticketType, t.productType,   t.offerType,
+  ];
+  return fields.some(f => typeof f === 'string' && f.toLowerCase().includes('upgrade'));
+}
+
 function filterAndCount(transactions, eventName, eventDate) {
   const target = new Date(eventDate);
-  // Filtruj po nazwie (case-insensitive, fragment) i dacie eventu
+  // Filtruj po nazwie (case-insensitive, fragment), dacie eventu i pomijaj pule "upgrade"
   const filtered = transactions.filter(t => {
     if (!t.eventTitle) return false;
     const nameMatch = t.eventTitle.toLowerCase().includes(eventName.toLowerCase());
     if (!nameMatch) return false;
+    if (isUpgradeTransaction(t)) return false;      // pomijaj pule "upgrade"
     if (!t.eventDate) return true;
     // eventDate z TM w formacie DD/MM/YY
     const parts = t.eventDate.split('/');

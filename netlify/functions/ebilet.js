@@ -107,11 +107,17 @@ async function querySales(token, eventName) {
   return data?.data?.sales?.items ?? [];
 }
 
+/* ── Wyklucz pule "upgrade" ── */
+function isUpgradePool(item) {
+  return (item.event_name || '').toLowerCase().includes('upgrade');
+}
+
 /* ── Filtruj po dacie (±2 dni) ── */
 function findAllMatchingEvents(items, eventDate) {
   const target = new Date(eventDate);
   return items.filter(item => {
     if (!item.event_time) return false;
+    if (isUpgradePool(item)) return false;          // pomijaj pule "upgrade"
     const d = new Date(item.event_time);
     return d.getFullYear() === target.getFullYear()
         && d.getMonth()    === target.getMonth()
