@@ -56,44 +56,74 @@ exports.handler = async function (event) {
           && d.getDate()     === target.getDate();
     });
 
-    // Introspection krok 1 — lista wszystkich typów w schemacie
-    let allTypes = null;
-    try {
-      const introRes = await fetch(process.env.EBILET_GRAPHQL_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({
-          query: `{ __schema { types { name kind } } }`,
-        }),
-      });
-      const introData = await introRes.json();
-      allTypes = (introData?.data?.__schema?.types ?? [])
-        .filter(t => !t.name.startsWith('__'))
-        .map(t => `${t.kind}: ${t.name}`);
-    } catch {}
+    // Introspection — pola typów Pool, TicketType, Sale
+    const introHelper = async (typeName) => {
+      try {
+        const r = await fetch(process.env.EBILET_GRAPHQL_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ query: `{ __type(name: "${typeName}") { fields { name type { name kind } } } }` }),
+        });
+        const d = await r.json();
+        return (d?.data?.__type?.fields ?? []).map(f => f.name);
+      } catch { return null; }
+    };
 
-    // Introspection krok 2 — pola query "sales" (żeby zobaczyć strukturę items)
-    let salesItemFields = null;
-    try {
-      const introRes2 = await fetch(process.env.EBILET_GRAPHQL_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({
-          query: `{ __type(name: "Query") { fields { name type { name kind ofType { name fields { name } } } } } }`,
-        }),
-      });
-      const introData2 = await introRes2.json();
-      salesItemFields = introData2?.data?.__type?.fields ?? null;
-    } catch {}
+    const [poolFields, ticketTypeFields, saleFields] = await Promise.all([
+      introHelper('Pool'),
+      introHelper('TicketType'),
+      introHelper('Sale'),
+    ]);
+
+    // Zapytaj endpoint pools dla tego eventu
+    let poolsRaw = null;
+    if (poolFields && poolFields.length > 0) {
+      try {
+        const safeFields = poolFields.filter(f =>
+          !['__typename'].includes(f)
+        ).join(' ');
+        const r = await fetch(process.env.EBILET_GRAPHQL_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            query: `query($n:String){ pools(filter:{event_name:{contains:$n}}orderBy:null){ items{ ${safeFields} } } }`,
+            variables: { n: eventName },
+          }),
+        });
+        const d = await r.json();
+        poolsRaw = d?.data?.pools?.items ?? d?.errors ?? d;
+      } catch (e) { poolsRaw = { error: e.message }; }
+    }
+
+    // Zapytaj endpoint ticketTypes dla tego eventu
+    let ticketTypesRaw = null;
+    if (ticketTypeFields && ticketTypeFields.length > 0) {
+      try {
+        const safeFields = ticketTypeFields.join(' ');
+        const r = await fetch(process.env.EBILET_GRAPHQL_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            query: `query($n:String){ ticketTypes(filter:{event_name:{contains:$n}}orderBy:null){ items{ ${safeFields} } } }`,
+            variables: { n: eventName },
+          }),
+        });
+        const d = await r.json();
+        ticketTypesRaw = d?.data?.ticketTypes?.items ?? d?.errors ?? d;
+      } catch (e) { ticketTypesRaw = { error: e.message }; }
+    }
 
     result.ebilet = {
       totalItemsReturned: items.length,
       itemsMatchingDate:  dateMatched.length,
-      uniqueEventNames:   [...new Set(items.map(i => i.event_name))],
       rawItems:           dateMatched,
-      // Schemat — wszystkie typy i pola query
-      schema_allTypes:       allTypes,
-      schema_queryFields:    salesItemFields,
+      // Pola dostępne w każdym typie
+      schema_Pool:        poolFields,
+      schema_TicketType:  ticketTypeFields,
+      schema_Sale:        saleFields,
+      // Surowe wyniki z endpointów pools i ticketTypes
+      pools:              poolsRaw,
+      ticketTypes:        ticketTypesRaw,
     };
   } catch (err) {
     result.ebilet = { error: err.message };
