@@ -346,6 +346,7 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
 </style>
 <link rel="stylesheet" href="fourceplex-theme.css">
 <script src="fourceplex-confirm.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -483,6 +484,9 @@ td.num-b.live-bg{background:rgba(200,240,96,.035)}
       </select>
       <button class="btn btn-teal btn-sm" onclick="doCountAll()">⊞ Policz wszystko</button>
       <button class="btn btn-accent" onclick="togglePanel('addPanel')">+ Dodaj event</button>
+      <button class="btn btn-sm" onclick="generateBackup()" title="Pobierz backup .xlsx aktywnych eventów" style="flex-shrink:0;background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.3);color:var(--blue)">
+        <svg style="width:10px;height:10px;vertical-align:middle;margin-right:3px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3"/><path d="M3 12h10"/></svg>Backup .xlsx
+      </button>
     </div>
     <div class="tab-bar">
       <button class="tab-btn active" id="tabActive" onclick="switchTab('active')">Aktywne<span class="tab-count" id="cntActive"></span></button>
@@ -1270,6 +1274,129 @@ async function deleteCurrentEvent(){
 
 
 
+/* ── BACKUP XLSX ── */
+function generateBackup(){
+  if(typeof XLSX==='undefined'){notify('SheetJS nie załadowany','err');return;}
+
+  const evs=window._events||[];
+  const allSnaps=window._snaps||{};
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-2);cutoff.setHours(0,0,0,0);
+  const active=evs
+    .filter(e=>new Date(e.date)>=cutoff)
+    .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+
+  const now=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const nowStr=`${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}  ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const parseSD=s=>{const p=(s||'').split('.');return new Date(+p[2],+p[1]-1,+p[0]);};
+
+  const R=[];
+
+  // ── Nagłówek pliku ──
+  R.push([`Backup: ${nowStr}`]);
+  R.push([`Fource.Plex — Ticketing — Backup aktywnych eventów`]);
+  R.push([`Aktywnych eventów: ${active.length}`]);
+  R.push([]);
+
+  // ── Kolumny dla sekcji LIVE / Snapshot ──
+  const LIVE_HDR=['LIVE ●','TM','eB','Inne','Comps','Total','Wraps','% CAP'];
+  const SNAP_HDR=['SNAPSHOT','Data','TM','eB','Inne','Comps','Total','% CAP'];
+
+  active.forEach(ev=>{
+    const tot=(ev.tm||0)+(ev.eb||0)+(ev.other||0);
+    const gc=getGuestComps(ev.name,ev.date);
+    const sold=Math.max(0,tot-gc);
+    const pct=ev.cap?Math.round(sold/ev.cap*100):null;
+    const be=ev.breakEven||(ev.cap?Math.round(ev.cap*.5):0);
+    const beHit=be>0&&sold>=be;
+
+    // snapshoty — tylko prawdziwe, od najnowszego
+    const snaps=(allSnaps[ev.id]||[])
+      .filter(s=>s.createdBy!=='seed')
+      .sort((a,b)=>parseSD(b.date)-parseSD(a.date));
+
+    // ── Wiersz koncertu ──
+    R.push([
+      `▶  ${ev.name}${ev.altName?`  /  ${ev.altName}`:''}`,
+      '',
+      fd(ev.date),
+      ev.venue||'—',
+      ev.price?`${ev.price} PLN`:'—',
+      ev.cap?`CAP: ${ev.cap.toLocaleString('pl-PL')}`:'',
+      ev.onSale?`On-Sale: ${fd(ev.onSale)}`:'',
+      be?`BE: ${be.toLocaleString('pl-PL')}${beHit?' ✓':''}`:'',
+    ]);
+
+    // ── Notatki / VIP / Dodał ──
+    if(ev.notes||ev.vip||ev.addedBy){
+      const noteCell=ev.notes?`Notatki: ${ev.notes}`:'';
+      const vipCell=ev.vip?`VIP: ${ev.vip}`:'';
+      const byCell=ev.addedBy?`Dodał: ${ev.addedBy}`:'';
+      R.push([noteCell,'','',vipCell,'',byCell]);
+    }
+
+    // ── LIVE ──
+    R.push(LIVE_HDR);
+    R.push([
+      '',
+      ev.tm||0,
+      ev.eb||0,
+      ev.other||0,
+      gc||0,
+      sold,
+      ev.wraps||0,
+      pct!=null?`${pct}%`:'—',
+    ]);
+
+    // ── Snapshoty ──
+    if(snaps.length){
+      R.push([]);
+      R.push(SNAP_HDR);
+      snaps.forEach((s,si)=>{
+        // Wraps = diff vs poprzedni snapshot
+        const prev=snaps[si+1];
+        const wDiff=(prev&&prev.total!=null)?((s.total||0)-(prev.total||0)):null;
+        const wCell=wDiff!=null?(wDiff>0?`+${wDiff}`:String(wDiff)):'';
+        R.push([
+          '',
+          s.date||'',
+          s.tm||0,
+          s.eb||0,
+          s.other||0,
+          s.comps||0,
+          s.total||0,
+          s.pct!=null?`${s.pct}%`:'—',
+        ]);
+      });
+    }
+
+    R.push([]);  // separator
+    R.push([]);  // dodatkowy odstęp
+  });
+
+  // ── Buduj arkusz ──
+  const ws=XLSX.utils.aoa_to_sheet(R);
+
+  // Szerokości kolumn
+  ws['!cols']=[
+    {wch:42}, // A — nazwa / label
+    {wch:10}, // B — TM
+    {wch:14}, // C — eB / data
+    {wch:10}, // D — Inne / venue / TM
+    {wch:10}, // E — Comps
+    {wch:12}, // F — Total
+    {wch:10}, // G — Wraps
+    {wch:8},  // H — % CAP
+  ];
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Ticketing Backup');
+
+  const slug=`${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
+  XLSX.writeFile(wb,`ticketing-backup-${slug}.xlsx`);
+  notify('✓ Backup .xlsx pobrany');
+}
+
 /* ── INIT ── */
 window.addEventListener('DOMContentLoaded',()=>{
   loadUsers();updateStats();renderTable();
@@ -1282,7 +1409,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAllPanels();if(mo)mo.classList.remove('open');}});
 });
 
-Object.assign(window,{openModal,closeModal,openUserModal,selectForPin,confirmPin,togglePanel,closePanel,closeAllPanels,sortBy,switchTab,confirmDelete,renderTable,saveEvent,openEdit,deleteCurrentEvent,iEdit,iEditSnap,doCountAll,doCountOne,notify});
+Object.assign(window,{openModal,closeModal,openUserModal,selectForPin,confirmPin,togglePanel,closePanel,closeAllPanels,sortBy,switchTab,confirmDelete,renderTable,saveEvent,openEdit,deleteCurrentEvent,iEdit,iEditSnap,doCountAll,doCountOne,notify,generateBackup});
 
 /* ── VIP FLOATING TOOLTIP ── */
 (function(){
