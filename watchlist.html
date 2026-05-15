@@ -1255,10 +1255,23 @@ Zasady:
 Venue: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
 
   // ── Wywołanie 2: web_search — plShow, spotifyUrl ──
-  const prompt2=`Przeszukaj internet i znajdź:
-1. Czy artysta ${name} kiedykolwiek wystąpił w Polsce — koncert solowy LUB festiwal (Open'er, OFF Festival, Audioriver, Unsound, Fest Festival, Tauron Nowa Muzyka i inne). Jeśli tak — podaj nazwę wydarzenia i rok (np. Open'er Festival 2024). Jeśli nie — wpisz NIE.
-2. Pełny URL profilu artysty na Spotify.
-Odpowiedz TYLKO JSON: {"plShow":"NIE lub nazwa+rok","spotifyUrl":"URL lub pusty string"}`;
+  const prompt2=`Użyj web_search żeby sprawdzić czy artysta "${name}" wystąpił kiedykolwiek w Polsce.
+
+Wykonaj następujące wyszukiwania:
+- "${name}" koncert Polska
+- "${name}" Poland concert
+- "${name}" Open'er OR "OFF Festival" OR Audioriver OR Unsound OR Bittersweet OR "Fest Festival" OR "Tauron Nowa Muzyka" OR "Poznań" OR "Kraków" OR "Warszawa" OR "Wrocław"
+- "${name}" site:facebook.com OR site:ticketmaster.pl OR site:ebilet.pl OR site:going.pl
+
+Na podstawie wyników odpowiedz:
+- Jeśli znalazłeś dowód że artysta grał w Polsce (jakikolwiek koncert solowy, support lub festiwal, kiedykolwiek) — podaj nazwę wydarzenia/miejsca i rok. Jeśli był wielokrotnie — podaj najnowszy.
+- Jeśli nie znalazłeś żadnych dowodów — wpisz NIE.
+- NIE zgaduj i NIE zakładaj. Tylko potwierdzone informacje z sieci.
+
+Przy okazji znajdź też URL profilu ${name} na Spotify.
+
+Odpowiedz TYLKO tym JSON (bez markdown):
+{"plShow":"NIE lub np. Open'er Festival 2024","spotifyUrl":"https://open.spotify.com/artist/... lub pusty string"}`;
 
   const call1=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt1}]})});
 
