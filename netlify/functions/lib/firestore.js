@@ -14,7 +14,48 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const FieldValue = admin.firestore.FieldValue;
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Fuzzy match helpers ───────────────────────────────────────────────────────
+
+function levenshtein(a, b) {
+  const s1 = a.toLowerCase();
+  const s2 = b.toLowerCase();
+  if (s1 === s2) return 0;
+  const m = s1.length, n = s2.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  let prev = new Array(n + 1);
+  let curr = new Array(n + 1);
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+      curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[n];
+}
+
+function scoreMatch(name, query) {
+  if (!name || !query) return { tier: 'none', score: Infinity };
+  const n = name.toLowerCase().trim();
+  const q = query.toLowerCase().trim();
+  if (n === q) return { tier: 'exact', score: 0 };
+  if (n.includes(q) || q.includes(n)) return { tier: 'exact', score: 0 };
+  const distFull = levenshtein(n, q);
+  if (distFull <= 2) return { tier: 'fuzzy', score: distFull };
+  const words = n.split(/\s+/);
+  let bestWordDist = Infinity;
+  for (const word of words) {
+    const d = levenshtein(word, q);
+    if (d < bestWordDist) bestWordDist = d;
+  }
+  if (bestWordDist <= 2) return { tier: 'fuzzy', score: bestWordDist };
+  return { tier: 'none', score: Infinity };
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function convertDoc(doc) {
   const data = doc.data();
@@ -128,15 +169,65 @@ async function getTicketingEvents({ limit = 20, upcomingOnly = false } = {}) {
   }
 }
 
+function formatEvent(ev) {
+  const lastCountedAt = ev.lastCountedAt?.toDate
+    ? ev.lastCountedAt.toDate().toISOString()
+    : (ev.lastCountedAt || null);
+  return {
+    id: ev.id,
+    name: ev.name || '',
+    date: ev.date || null,
+    venue: ev.venue || '',
+    cap: ev.cap || 0,
+    total: ev.total || 0,
+    eb: ev.eb || 0,
+    tm: ev.tm || 0,
+    other: ev.other || 0,
+    vip: ev.vip || 0,
+    wraps: ev.wraps || 0,
+    internalBuys: ev.internalBuys || 0,
+    remains: ev.remains || 0,
+    pct: ev.pct || 0,
+    breakEven: ev.breakEven || 0,
+    price: ev.price || 0,
+    onSale: ev.onSale || '',
+    notes: ev.notes || '',
+    lastCountedAt,
+  };
+}
+
 async function getTicketingEvent(nameQuery) {
+  if (!nameQuery || typeof nameQuery !== 'string') {
+    return { matches: [], fuzzyMatches: [], query: nameQuery, isAmbiguous: false, isFuzzyOnly: false };
+  }
   try {
-    const snap = await db.collection('ticketing_events').get();
-    const query = nameQuery.toLowerCase().trim();
-    const docs = snap.docs.map(convertDoc).filter(Boolean);
-    return docs.find(d => (d.name || '').toLowerCase().includes(query)) || null;
+    const snapshot = await db.collection('ticketing_events').get();
+    const exactMatches = [];
+    const fuzzyMatches = [];
+
+    snapshot.forEach(doc => {
+      const ev = { id: doc.id, ...doc.data() };
+      const { tier, score } = scoreMatch(ev.name || '', nameQuery);
+      if (tier === 'exact') {
+        exactMatches.push(formatEvent(ev));
+      } else if (tier === 'fuzzy') {
+        fuzzyMatches.push({ ...formatEvent(ev), fuzzyScore: score });
+      }
+    });
+
+    exactMatches.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    fuzzyMatches.sort((a, b) => a.fuzzyScore - b.fuzzyScore);
+
+    return {
+      query: nameQuery,
+      matches: exactMatches,
+      fuzzyMatches,
+      isAmbiguous: exactMatches.length > 1,
+      isFuzzyOnly: exactMatches.length === 0 && fuzzyMatches.length > 0,
+    };
   } catch (err) {
     console.error('getTicketingEvent error:', err.message);
-    return null;
+    return { matches: [], fuzzyMatches: [], query: nameQuery, isAmbiguous: false, isFuzzyOnly: false };
   }
 }
 
