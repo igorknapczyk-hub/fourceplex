@@ -155,34 +155,76 @@ async function getTicketingEvents({ limit = 20, upcomingOnly = false } = {}) {
     if (upcomingOnly) q = q.where('date', '>=', todayString());
     q = q.orderBy('date', 'asc').limit(limit);
     const snap = await q.get();
-    return snap.docs.map(convertDoc).filter(Boolean);
+    const rawEvents = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(Boolean);
+    return Promise.all(rawEvents.map(async ev => {
+      const comps = await getGuestCompsForEvent(ev.name, ev.date);
+      return formatEvent(ev, comps);
+    }));
   } catch (err) {
     console.warn('getTicketingEvents fallback:', err.message);
     const snap = await db.collection('ticketing_events').limit(100).get();
-    let docs = snap.docs.map(convertDoc).filter(Boolean);
+    let rawEvents = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(Boolean);
     if (upcomingOnly) {
       const today = todayString();
-      docs = docs.filter(d => d.date >= today);
+      rawEvents = rawEvents.filter(d => (d.date || '') >= today);
     }
-    docs.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-    return docs.slice(0, limit);
+    rawEvents.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    rawEvents = rawEvents.slice(0, limit);
+    return Promise.all(rawEvents.map(async ev => {
+      const comps = await getGuestCompsForEvent(ev.name, ev.date);
+      return formatEvent(ev, comps);
+    }));
   }
 }
 
-function formatEvent(ev) {
+/**
+ * Pobiera liczbę Compsów (biletów gratisowych) dla danego koncertu.
+ * Identyczna logika jak w Plex/ticketing.html → getGuestComps().
+ */
+async function getGuestCompsForEvent(artistName, date) {
+  if (!artistName || !date) return 0;
+  try {
+    const snapshot = await db.collection('guest_shows').get();
+    const targetName = artistName.toLowerCase().trim();
+    let match = null;
+    snapshot.forEach(doc => {
+      if (match) return;
+      const data = doc.data();
+      const docName = (data.artistName || '').toLowerCase().trim();
+      if (docName === targetName && data.date === date) match = data;
+    });
+    if (!match) return 0;
+    const rows = match.comps || match.rozdane || [];
+    if (!Array.isArray(rows)) return 0;
+    return rows.reduce((sum, row) => sum + (parseInt(row.tickets) || 0), 0);
+  } catch (err) {
+    console.error('getGuestCompsForEvent error:', err);
+    return 0;
+  }
+}
+
+function formatEvent(ev, compsCount = 0) {
   const lastCountedAt = ev.lastCountedAt?.toDate
     ? ev.lastCountedAt.toDate().toISOString()
     : (ev.lastCountedAt || null);
+  const tm = ev.tm || 0;
+  const ebGross = ev.eb || 0;
+  const other = ev.other || 0;
+  const comps = compsCount || 0;
+  const ebDisplay = Math.max(0, ebGross - comps);
+  const total = tm + ebDisplay + other;
   return {
     id: ev.id,
     name: ev.name || '',
     date: ev.date || null,
     venue: ev.venue || '',
     cap: ev.cap || 0,
-    total: ev.total || 0,
-    eb: ev.eb || 0,
-    tm: ev.tm || 0,
-    other: ev.other || 0,
+    tm,
+    eb: ebDisplay,
+    ebGross,
+    other,
+    comps,
+    total,
     vip: ev.vip || 0,
     wraps: ev.wraps || 0,
     internalBuys: ev.internalBuys || 0,
@@ -202,18 +244,27 @@ async function getTicketingEvent(nameQuery) {
   }
   try {
     const snapshot = await db.collection('ticketing_events').get();
-    const exactMatches = [];
-    const fuzzyMatches = [];
-
+    const matchedEvents = [];
     snapshot.forEach(doc => {
       const ev = { id: doc.id, ...doc.data() };
       const { tier, score } = scoreMatch(ev.name || '', nameQuery);
-      if (tier === 'exact') {
-        exactMatches.push(formatEvent(ev));
-      } else if (tier === 'fuzzy') {
-        fuzzyMatches.push({ ...formatEvent(ev), fuzzyScore: score });
-      }
+      if (tier === 'exact' || tier === 'fuzzy') matchedEvents.push({ ev, tier, score });
     });
+
+    const eventsWithComps = await Promise.all(
+      matchedEvents.map(async ({ ev, tier, score }) => {
+        const comps = await getGuestCompsForEvent(ev.name, ev.date);
+        return { ev, tier, score, comps };
+      })
+    );
+
+    const exactMatches = [];
+    const fuzzyMatches = [];
+    for (const { ev, tier, score, comps } of eventsWithComps) {
+      const formatted = formatEvent(ev, comps);
+      if (tier === 'exact') exactMatches.push(formatted);
+      else fuzzyMatches.push({ ...formatted, fuzzyScore: score });
+    }
 
     exactMatches.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     fuzzyMatches.sort((a, b) => a.fuzzyScore - b.fuzzyScore);
