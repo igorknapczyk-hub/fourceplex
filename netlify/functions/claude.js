@@ -11,13 +11,20 @@ exports.handler = async function(event) {
   try {
     const body = JSON.parse(event.body);
 
+    // Jeśli klient przesłał _beta — użyj jako anthropic-beta header, usuń z body
+    const beta = body._beta;
+    if (beta) delete body._beta;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    };
+    if (beta) headers['anthropic-beta'] = beta;
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
+      headers,
       body: JSON.stringify(body)
     });
 
