@@ -439,6 +439,7 @@ select.form-input{cursor:pointer}
         <div id="fillInd" style="display:none" class="fill-ind"><div class="sp-sm"></div>Przeszukuję sieć...</div>
         <div class="form-grid">
           <div><div class="form-label">Gatunek</div><input class="form-input" type="text" id="fGenre" placeholder="auto"></div>
+          <div><div class="form-label">Podobne <span class="info-tip">?<span class="tip-box">Artyści w podobnym nurcie i skali, oddzielone przecinkami. Wypełniane automatycznie przez AI.</span></span></div><input class="form-input" type="text" id="fSimilar" placeholder="auto (AI)"></div>
           <div><div class="form-label">Monthly Reach <span class="info-tip">?<span class="tip-box">Przybliżony zasięg z publicznych źródeł.</span></span></div><input class="form-input" type="text" id="fListeners" placeholder="auto"></div>
           <div><div class="form-label">Link Spotify</div><input class="form-input" type="text" id="fSpotify" placeholder="https://open.spotify.com/artist/..."></div>
           <div><div class="form-label">PL Show</div><input class="form-input" type="text" id="fPlShow" placeholder="auto (NIE / miejsce + data)"></div>
@@ -540,18 +541,18 @@ select.form-input{cursor:pointer}
       <table>
         <colgroup>
           <col style="width:36px">
-          <col style="width:175px">
+          <col style="width:158px">
           <col style="width:40px">
           <col style="width:160px">
           <col style="width:170px">
           <col style="width:108px">
-          <col style="width:108px">
           <col style="width:150px">
+          <col style="width:135px">
           <col style="width:80px">
           <col style="width:100px">
           <col style="width:44px">
           <col style="width:44px">
-          <col style="width:90px">
+          <col style="width:70px">
         </colgroup>
         <thead><tr>
           <th class="th-check"></th>
@@ -560,7 +561,7 @@ select.form-input{cursor:pointer}
           <th>Status</th>
           <th id="th-predict" onclick="sortBy('predict')">Market Predict</th>
           <th id="th-genre" onclick="sortBy('genre')">Gatunek</th>
-          <th id="th-listeners" onclick="sortBy('listeners')">Monthly Reach</th>
+          <th id="th-similar">Podobne</th>
           <th id="th-plShow" onclick="sortBy('plShow')">PL Show</th>
           <th id="th-addedBy" onclick="sortBy('addedBy')">Dodał</th>
           <th id="th-dateAdded" onclick="sortBy('dateAdded')">Data dodania</th>
@@ -986,7 +987,9 @@ function getFiltered(){
 
 function statusSel(a){
   const cls=a.status==='reminder'?'s-reminder':a.status==='sent'?'s-sent':'s-check';
-  const sentLabel=a.status==='sent'&&a.sentDate?` (${new Date(a.sentDate).toLocaleDateString('pl')})`:'';
+  const _sd=a.sentDate?new Date(a.sentDate):null;
+  const sentLabel=_sd?` (${String(_sd.getDate()).padStart(2,'0')}.${String(_sd.getMonth()+1).padStart(2,'0')})`:'';
+
   const canEdit=PROMOTOR_USERS.includes(currentUser);
   return`<select class="status-select ${cls}" ${canEdit?'':'disabled title="Dostępne tylko dla Promotora"'} onchange="changeStatus(${a.id},this.value)" onclick="event.stopPropagation()">
     <option value="check" ${a.status==='check'?'selected':''}>Do sprawdzenia</option>
@@ -1058,13 +1061,13 @@ function renderTable(){
       <td>${statusSel(a)}</td>
       <td>${predictCell(a)}</td>
       <td>${a.genre||'—'}</td>
-      <td style="font-family:var(--mono);font-size:11px">${a.listeners||'—'}</td>
+      <td style="font-size:11px;color:var(--text2)">${(a.similar||'')}</td>
       <td>${plShowCell(a)}</td>
       <td>${addedByCell(a)}</td>
       <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${formatDate(a.dateAdded)}</td>
       <td style="text-align:center"><button class="btn-fire${inPromoter?' active':''}" onclick="togglePromoter(${a.id})" title="HOT!">🔥</button></td>
       <td style="text-align:center">${PROMOTOR_USERS.includes(currentUser)?`<button class="btn-target${promotorOfficeIds.has(a.id)?' active':''}" onclick="togglePromotorOffice(${a.id})" title="Dodaj do Promotor Office"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg></button>`:''}</td>
-      <td style="display:flex;gap:4px;align-items:center"><button class="btn" style="font-size:10px;padding:3px 7px" onclick="editArtist(${a.id})">edit</button><button class="btn-del" onclick="deleteArtist(${a.id})" title="Usuń artystę"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h12M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4"/></svg></button></td>
+      <td style="display:flex;gap:4px;align-items:center"><button class="btn-del" style="border-color:rgba(255,255,255,.1);background:transparent;color:var(--text3)" onclick="editArtist(${a.id})" title="Edytuj artystę"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3L5 14H2v-3L11 2z"/></svg></button><button class="btn-del" onclick="deleteArtist(${a.id})" title="Usuń artystę"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h12M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4"/></svg></button></td>
     </tr>`;
   }).join('');
 }
@@ -1130,7 +1133,7 @@ function togglePanel(id){
 
 /* ── ADD FORM ── */
 function onNameInput(){if(PROMOTOR_USERS.includes(currentUser))document.getElementById('autoFillBtn').style.opacity=document.getElementById('fName').value.trim()?'1':'.5';}
-function clearFields(){['fGenre','fListeners','fSpotify','fPlShow','fNotes','fPredMin','fPredMax','fSourceTip'].forEach(id=>{const el=document.getElementById(id);el.value='';el.classList.remove('ai-filled');});}
+function clearFields(){['fGenre','fSimilar','fListeners','fSpotify','fPlShow','fNotes','fPredMin','fPredMax','fSourceTip'].forEach(id=>{const el=document.getElementById(id);el.value='';el.classList.remove('ai-filled');});}
 
 function editArtist(id){
   const a=artists.find(x=>x.id===id);if(!a)return;
@@ -1138,6 +1141,7 @@ function editArtist(id){
   document.getElementById('formTitle').textContent='Edytuj artystę';
   document.getElementById('fName').value=a.name||'';
   document.getElementById('fGenre').value=a.genre||'';
+  document.getElementById('fSimilar').value=a.similar||'';
   document.getElementById('fListeners').value=a.listeners||'';
   document.getElementById('fSpotify').value=a.spotifyUrl||'';
   document.getElementById('fPlShow').value=a.plShow||'';
@@ -1226,10 +1230,11 @@ async function autoFill(){
   const prompt=`Jesteś ekspertem muzycznym i bookingowym. Podaj dane dla artysty: "${name}".
 
 Odpowiedz WYŁĄCZNIE tym JSON (bez markdown, bez komentarzy):
-{"genre":"gatunek po polsku","listeners":"np. 3.2M","spotifyUrl":"https://open.spotify.com/artist/... lub ''","plShow":"NIE lub 'nazwa miejsca/festiwalu + rok'","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania o aktualnym buzz/momencie artysty"}
+{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M","spotifyUrl":"https://open.spotify.com/artist/... lub ''","plShow":"NIE lub 'nazwa miejsca/festiwalu + rok'","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania o aktualnym buzz/momencie artysty"}
 
 Zasady:
 - genre: po polsku (np. "indie pop", "hip-hop", "electronic")
+- similar: 3-5 artystów w podobnym nurcie i zbliżonej skali popularności (Market Predict), oddzielone przecinkami
 - listeners: przybliżone Spotify Monthly Listeners (np. "4.2M")
 - spotifyUrl: pełny URL profilu Spotify lub pusty string
 - plShow: czy artysta grał kiedykolwiek solo/headliner w Polsce — jeśli tak podaj "nazwa miejsca lub festiwalu + rok", jeśli nie — "NIE"
@@ -1248,7 +1253,7 @@ Venue zostanie dobrane automatycznie: Chmury<200, Hydrozagadka 200-400, Niebo 40
     const data=await resp.json();
     const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
     let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}
-    [['fGenre',p.genre||''],['fListeners',p.listeners||''],['fSpotify',p.spotifyUrl||''],['fPlShow',p.plShow||'NIE'],['fPredMin',p.predMin||''],['fPredMax',p.predMax||'']].forEach(([id,v])=>{const el=document.getElementById(id);el.value=v;el.classList.add('ai-filled');});
+    [['fGenre',p.genre||''],['fSimilar',p.similar||''],['fListeners',p.listeners||''],['fSpotify',p.spotifyUrl||''],['fPlShow',p.plShow||'NIE'],['fPredMin',p.predMin||''],['fPredMax',p.predMax||'']].forEach(([id,v])=>{const el=document.getElementById(id);el.value=v;el.classList.add('ai-filled');});
     const fn=document.getElementById('fNotes');fn.value=[p.notes||'',p.predictReasoning?`\nPredict: ${p.predictReasoning}`:''].join('').trim();fn.classList.add('ai-filled');
     notify(`Dane dla "${name}" znalezione ✓`);
   }catch(e){const msg=e.message?.includes('Timeout')?'Timeout — spróbuj ponownie za chwilę':'Błąd AI — spróbuj ponownie';notify(msg,'err');}
@@ -1262,12 +1267,12 @@ function saveArtist(){
   const status=document.getElementById('fStatus').value;
   if(editId){
     const a=artists.find(x=>x.id===editId),prev=a.status;
-    Object.assign(a,{name,genre:document.getElementById('fGenre').value.trim(),listeners:document.getElementById('fListeners').value.trim(),spotifyUrl:document.getElementById('fSpotify').value.trim(),plShow:document.getElementById('fPlShow').value.trim()||'NIE',plChecked:true,notes:document.getElementById('fNotes').value.trim(),predMin:parseInt(document.getElementById('fPredMin').value)||0,predMax:parseInt(document.getElementById('fPredMax').value)||0,sourceTip:document.getElementById('fSourceTip').value.trim(),status});
+    Object.assign(a,{name,genre:document.getElementById('fGenre').value.trim(),similar:document.getElementById('fSimilar').value.trim(),listeners:document.getElementById('fListeners').value.trim(),spotifyUrl:document.getElementById('fSpotify').value.trim(),plShow:document.getElementById('fPlShow').value.trim()||'NIE',plChecked:true,notes:document.getElementById('fNotes').value.trim(),predMin:parseInt(document.getElementById('fPredMin').value)||0,predMax:parseInt(document.getElementById('fPredMax').value)||0,sourceTip:document.getElementById('fSourceTip').value.trim(),status});
     if(status==='sent'&&prev!=='sent'&&prev!=='reminder')a.sentDate=new Date().toISOString();
     if(status==='check')a.sentDate=null;
   }else{
     const now=new Date().toISOString();
-    artists.push({id:Date.now(),name,genre:document.getElementById('fGenre').value.trim(),listeners:document.getElementById('fListeners').value.trim(),spotifyUrl:document.getElementById('fSpotify').value.trim(),plShow:document.getElementById('fPlShow').value.trim()||'NIE',plChecked:true,notes:document.getElementById('fNotes').value.trim(),predMin:parseInt(document.getElementById('fPredMin').value)||0,predMax:parseInt(document.getElementById('fPredMax').value)||0,sourceTip:document.getElementById('fSourceTip').value.trim(),status,sentDate:status==='sent'?now:null,source:'manual',addedBy:currentUser,dateAdded:now,ts:Date.now(),trend:'flat',predHistory:[]});
+    artists.push({id:Date.now(),name,genre:document.getElementById('fGenre').value.trim(),similar:document.getElementById('fSimilar').value.trim(),listeners:document.getElementById('fListeners').value.trim(),spotifyUrl:document.getElementById('fSpotify').value.trim(),plShow:document.getElementById('fPlShow').value.trim()||'NIE',plChecked:true,notes:document.getElementById('fNotes').value.trim(),predMin:parseInt(document.getElementById('fPredMin').value)||0,predMax:parseInt(document.getElementById('fPredMax').value)||0,sourceTip:document.getElementById('fSourceTip').value.trim(),status,sentDate:status==='sent'?now:null,source:'manual',addedBy:currentUser,dateAdded:now,ts:Date.now(),trend:'flat',predHistory:[]});
   }
   const _saved=editId?artists.find(x=>x.id===editId):artists[artists.length-1];saveArtistToDb(_saved);closePanel('addPanel');editId=null;render();notify('Artysta zapisany ✓');
 }
