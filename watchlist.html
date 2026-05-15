@@ -1222,42 +1222,68 @@ async function saveBulkArtists(){
   }
 }
 
+function parseJson(txt){
+  try{return JSON.parse(txt.replace(/```json|```/g,'').trim());}
+  catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)return JSON.parse(m[0]);throw e;}
+}
+function extractText(data){
+  return(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+}
+
 async function autoFill(){
   const name=document.getElementById('fName').value.trim();
   if(!name){alert('Wpisz najpierw nazwę artysty.');return;}
   document.getElementById('fillInd').style.display='flex';
   document.getElementById('autoFillBtn').disabled=true;
-  const prompt=`Jesteś ekspertem muzycznym i bookingowym. Podaj dane dla artysty: "${name}".
+
+  // ── Wywołanie 1: wiedza treningowa — genre, listeners, predict, similar, notes ──
+  const prompt1=`Jesteś ekspertem muzycznym i bookingowym. Podaj dane dla artysty: "${name}".
 
 Odpowiedz WYŁĄCZNIE tym JSON (bez markdown, bez komentarzy):
-{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M","spotifyUrl":"https://open.spotify.com/artist/... lub ''","plShow":"NIE lub 'nazwa miejsca/festiwalu + rok'","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania o aktualnym buzz/momencie artysty"}
+{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania o aktualnym buzz/momencie artysty"}
 
 Zasady:
 - genre: po polsku (np. "indie pop", "hip-hop", "electronic")
-- similar: 3-5 artystów w podobnym nurcie i zbliżonej skali popularności (Market Predict), oddzielone przecinkami
+- similar: 3-5 artystów w podobnym nurcie i zbliżonej skali popularności, oddzielone przecinkami
 - listeners: przybliżone Spotify Monthly Listeners (np. "4.2M")
-- spotifyUrl: pełny URL profilu Spotify lub pusty string
-- plShow: czy artysta grał kiedykolwiek solo/headliner w Polsce — jeśli tak podaj "nazwa miejsca lub festiwalu + rok", jeśli nie — "NIE"
-- predMin/predMax: patrz instrukcja poniżej
+- predMin/predMax: realistyczny szacunek sprzedaży biletów na solo headlinerski koncert w Warszawie
+  · co 100 biletów poniżej 1800 (np. 600-700, 1200-1400)
+  · co 1000 biletów powyżej 1800 (np. 2000-3000, 8000-10000)
+  · supergwiazdy: 20000-50000+
+  · bierz pod uwagę: sale w Europie, monthly listeners, popularność gatunku w PL, momentum 12M
+  · NIE dopasowuj do venue — system dopasuje sam
+Venue: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
 
-Podaj predMin i predMax jako realistyczny szacunek sprzedaży biletów na solo headlinerski koncert w Warszawie, bez limitu górnego.
-- Dokładność: co 100 biletów przy wartościach poniżej 1800 (np. 600-700, 1200-1400)
-- Dokładność: co 1000 biletów przy wartościach powyżej 1800 (np. 2000-3000, 8000-10000)
-- Dla supergwiazd możesz szacować 20000-50000 lub więcej
-- Bierz pod uwagę: rozmiar sal w których artysta gra w Europie (UK/DE/FR), monthly listeners i ich trend, popularność gatunku w Polsce, momentum artysty w ostatnich 12 miesiącach
-- NIE dopasowuj sztucznie do venue — podaj szczery szacunek popytu, system sam dopasuje venue
-Venue zostanie dobrane automatycznie: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
+  // ── Wywołanie 2: web_search — plShow, spotifyUrl ──
+  const prompt2=`Przeszukaj internet i znajdź:
+1. Czy artysta ${name} kiedykolwiek wystąpił w Polsce — koncert solowy LUB festiwal (Open'er, OFF Festival, Audioriver, Unsound, Fest Festival, Tauron Nowa Muzyka i inne). Jeśli tak — podaj nazwę wydarzenia i rok (np. Open'er Festival 2024). Jeśli nie — wpisz NIE.
+2. Pełny URL profilu artysty na Spotify.
+Odpowiedz TYLKO JSON: {"plShow":"NIE lub nazwa+rok","spotifyUrl":"URL lub pusty string"}`;
+
+  const call1=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt1}]})});
+
+  const call2=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_beta:'web-search-2025-03-05',model:'claude-sonnet-4-20250514',max_tokens:300,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt2}]})});
+
   try{
-    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout — spróbuj ponownie')),25000));
-    const resp=await Promise.race([fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:prompt}]})}),timeout]);
-    const data=await resp.json();
-    const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
-    let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}
-    [['fGenre',p.genre||''],['fSimilar',p.similar||''],['fListeners',p.listeners||''],['fSpotify',p.spotifyUrl||''],['fPlShow',p.plShow||'NIE'],['fPredMin',p.predMin||''],['fPredMax',p.predMax||'']].forEach(([id,v])=>{const el=document.getElementById(id);el.value=v;el.classList.add('ai-filled');});
-    const fn=document.getElementById('fNotes');fn.value=[p.notes||'',p.predictReasoning?`\nPredict: ${p.predictReasoning}`:''].join('').trim();fn.classList.add('ai-filled');
+    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout')),25000));
+    const [r1,r2]=await Promise.race([Promise.all([call1,call2]),timeout]);
+    const [d1,d2]=await Promise.all([r1.json(),r2.json()]);
+
+    const p1=parseJson(extractText(d1));
+
+    let p2={plShow:'NIE',spotifyUrl:''};
+    try{p2=parseJson(extractText(d2));}catch(e){console.warn('call2 parse failed',e);}
+
+    [['fGenre',p1.genre||''],['fSimilar',p1.similar||''],['fListeners',p1.listeners||''],['fSpotify',p2.spotifyUrl||''],['fPlShow',p2.plShow||'NIE'],['fPredMin',p1.predMin||''],['fPredMax',p1.predMax||'']].forEach(([id,v])=>{const el=document.getElementById(id);el.value=v;el.classList.add('ai-filled');});
+    const fn=document.getElementById('fNotes');fn.value=[p1.notes||'',p1.predictReasoning?`\nPredict: ${p1.predictReasoning}`:''].join('').trim();fn.classList.add('ai-filled');
     notify(`Dane dla "${name}" znalezione ✓`);
-  }catch(e){const msg=e.message?.includes('Timeout')?'Timeout — spróbuj ponownie za chwilę':'Błąd AI — spróbuj ponownie';notify(msg,'err');}
-  finally{document.getElementById('fillInd').style.display='none';document.getElementById('autoFillBtn').disabled=false;}
+  }catch(e){
+    const msg=e.message==='Timeout'?'Timeout — spróbuj ponownie za chwilę':'Błąd AI — spróbuj ponownie';
+    notify(msg,'err');
+  }finally{
+    document.getElementById('fillInd').style.display='none';
+    document.getElementById('autoFillBtn').disabled=false;
+  }
 }
 
 function saveArtist(){
