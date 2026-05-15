@@ -803,13 +803,16 @@ async function updateMarketingNotes(showNameQuery, newNotes) {
  * Loguje zużycie tokenów po każdym wywołaniu Claude (fire-and-forget).
  * Ceny Sonnet 4.6: input $3/1M, output $15/1M, cache write $3.75/1M, cache read $0.30/1M.
  */
-async function logUsage({ chatId, userName, model, inputTokens, outputTokens, cacheCreationTokens, cacheReadTokens, stopReason }) {
+async function logUsage({ chatId, userName, model, inputTokens, outputTokens, cacheCreationTokens, cacheReadTokens, webSearchCount, stopReason }) {
   try {
+    // Sonnet 4.6: input $3/1M, output $15/1M, cache write $3.75/1M, cache read $0.30/1M
+    // Web search: $10/1000 = $0.01 per search
     const costUsd =
       (inputTokens * 0.000003) +
       (outputTokens * 0.000015) +
       (cacheCreationTokens * 0.00000375) +
-      (cacheReadTokens * 0.0000003);
+      (cacheReadTokens * 0.0000003) +
+      ((webSearchCount || 0) * 0.01);
 
     await db.collection('beata_usage').add({
       chatId: String(chatId),
@@ -819,6 +822,7 @@ async function logUsage({ chatId, userName, model, inputTokens, outputTokens, ca
       outputTokens,
       cacheCreationTokens,
       cacheReadTokens,
+      webSearchCount: webSearchCount || 0,
       costUsd,
       stopReason: stopReason || null,
       createdAt: FieldValue.serverTimestamp(),
@@ -841,7 +845,7 @@ async function getUsageStats({ days = 7 } = {}) {
     .where('date', '>=', cutoffStr)
     .get();
 
-  let totalCost = 0, totalInput = 0, totalOutput = 0, totalCacheRead = 0, totalCacheCreation = 0;
+  let totalCost = 0, totalInput = 0, totalOutput = 0, totalCacheRead = 0, totalCacheCreation = 0, totalWebSearches = 0;
   const byUser = {};
   const byDay = {};
 
@@ -852,6 +856,7 @@ async function getUsageStats({ days = 7 } = {}) {
     totalOutput += d.outputTokens || 0;
     totalCacheRead += d.cacheReadTokens || 0;
     totalCacheCreation += d.cacheCreationTokens || 0;
+    totalWebSearches += d.webSearchCount || 0;
 
     const user = d.userName || 'unknown';
     byUser[user] = (byUser[user] || 0) + (d.costUsd || 0);
@@ -868,6 +873,8 @@ async function getUsageStats({ days = 7 } = {}) {
     totalOutputTokens: totalOutput,
     totalCacheReadTokens: totalCacheRead,
     totalCacheCreationTokens: totalCacheCreation,
+    totalWebSearches,
+    webSearchCostUsd: Number((totalWebSearches * 0.01).toFixed(4)),
     cacheHitRatio: Number((totalCacheRead / Math.max(1, totalCacheRead + totalCacheCreation + totalInput)).toFixed(3)),
     byUser,
     byDay,
