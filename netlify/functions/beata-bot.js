@@ -175,6 +175,41 @@ Przy datach — "na piątek" = najbliższy piątek od ${iso}. "Następny piątek
 # DODAWANIE ARTYSTÓW DO WATCHLISTY
 Wymagane: name. Warto dopytać: genre, listeners (string jak "2.5M"), notes, predMin/predMax (skala: Chmury<200, Hydro 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, Torwar 1801-5000, Arena 5001+), plShow (default "NIE"), spotifyUrl.
 
+# WEB SEARCH — research w internecie
+
+Masz dostęp do narzędzia web_search. Używaj go gdy:
+
+KIEDY UŻYWAĆ:
+- User pyta o aktualne wydarzenia, newsy, trendy — szczególnie z 2025/2026 (po Twoim training cutoff).
+- User pyta o konkretne fakty których nie znasz albo nie jesteś pewna (liczba słuchaczy artysty na Spotify, kapacyta sali, ostatnie trasy artysty, kontakt do agencji, ceny biletów konkurencji).
+- User pyta o monitoring branży, konkurencji, kto się czym zajmuje.
+- Sama nie wiesz odpowiedzi — zamiast zmyślać, sprawdź w sieci.
+
+KIEDY NIE UŻYWAĆ:
+- Pytania o dane wewnętrzne FOURCE (zadania, sprzedaż, kampanie) — masz toolsy do Firestore.
+- Pytania ogólne na które znasz odpowiedź z pewnością (definicje, podstawowe fakty kulturowe).
+- Pytania o opinie, sugestie, brainstorm — to nie wymaga researchu.
+- Pytania polityczne, religijne, medyczne — szczerze odmów: "to nie obszar w którym mogę doradzać profesjonalnie, skonsultuj się ze specjalistą".
+
+JAK PREZENTOWAĆ WYNIKI:
+- Konkretnie, krótko. NIE wypisuj całych artykułów — wyciągnij to co ważne.
+- Dla kluczowych faktów (liczby, daty, ceny, statystyki) — dodaj link do źródła w formacie: "(źródło: domena.pl)". NIE wklejaj długich URL-i.
+- Dla opinii, syntezy, własnych wniosków — bez linkowania.
+- Gdy źródła są sprzeczne, zaznacz: "Różne źródła podają różne liczby...".
+- Gdy informacja może być sprzed dni/tygodni, zaznacz datę.
+- Gdy nie znalazłaś dobrej odpowiedzi, powiedz to wprost — nie zmyślaj.
+
+LIMITY:
+- Max 5 wyszukań na rozmowę. Używaj rozsądnie, nie szukaj jeśli nie trzeba.
+- Po znalezieniu odpowiedzi nie kontynuuj searchu tylko żeby wzbogacić — odpowiedz krótko z tym co masz.
+
+PRZYKŁADY:
+User: "ile słuchaczy ma Pentatonix na Spotify?" → web_search → "Pentatonix ma obecnie X słuchaczy miesięcznie. (spotify.com)"
+User: "ile biletów na Pentatonix?" → NIE web_search, użyj get_ticketing_event z Firestore.
+User: "co słychać u Live Nation w PL?" → web_search → synteza ostatnich newsów z linkami.
+User: "ile osób mieści Niebo Warszawa?" → web_search → "Niebo: ok. 700 osób. (klubniebo.pl)"
+User: "co myślisz politycznie?" → "To nie obszar w którym mogę profesjonalnie się wypowiadać."
+
 # CZEGO NIE MASZ JESZCZE
 Kalendarza Google, scheduled briefów, Meta Ads, usuwania.`;
 }
@@ -829,12 +864,16 @@ async function handleMessage(message) {
             cache_control: { type: 'ephemeral' },
           },
         ],
-        tools,
+        tools: [
+          ...tools,
+          { type: 'web_search_20250305', name: 'web_search', max_uses: 5 },
+        ],
         messages,
       });
 
       // Usage logger — fire-and-forget, nie blokuje odpowiedzi
       if (response.usage) {
+        const webSearchCount = response.usage.server_tool_use?.web_search_requests || 0;
         logUsage({
           chatId,
           userName: senderName,
@@ -843,6 +882,7 @@ async function handleMessage(message) {
           outputTokens: response.usage.output_tokens || 0,
           cacheCreationTokens: response.usage.cache_creation_input_tokens || 0,
           cacheReadTokens: response.usage.cache_read_input_tokens || 0,
+          webSearchCount,
           stopReason: response.stop_reason,
         }).catch(err => console.error('logUsage failed:', err));
       }
