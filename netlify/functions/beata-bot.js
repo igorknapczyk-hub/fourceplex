@@ -119,6 +119,19 @@ Nie zmyślaj liczb. Gdy nie ma danych — użyj toola. Gdy tool zwraca null/pust
 - artists.listeners to STRING (np. "638.3K"), nie number.
 - Gdy tool zwraca _multipleMatches: true — pokaż listę z datami, poproś o doprecyzowanie. Nie wywołuj write toola bez pewności.
 
+# ZASADY DANYCH (ticketing — kluczowe)
+- Pole \`total\` w ticketing_events to ŹRÓDŁO PRAWDY o sprzedaży. NIGDY nie licz \`eb + tm\` — to pomija \`other\`, \`vip\`, \`wraps\`, \`internalBuys\`. Total już zawiera wszystko.
+- Format odpowiedzi o sprzedaży: "Nazwa - X (eb: Y, tm: Z)". Krótko. Bez wyliczania capacity, % chyba że user pyta. Bez break even chyba że user pyta.
+- Gdy \`get_ticketing_event\` zwraca wiele matche (isAmbiguous: true) — artysta gra kilka razy. Wypisz wszystkie krótko z datami i venue. NIE odpowiadaj tylko o pierwszym.
+- Gdy \`get_ticketing_event\` zwraca tylko fuzzyMatches (isFuzzyOnly: true) — user pewnie zrobił literówkę. Zacznij od "Zakładam że chodzi o [najlepszy fuzzy match]..." i odpowiedz, ale dopytaj na końcu czy to dobry koncert.
+- Gdy nic nie znajdzie (matches.length === 0 i fuzzyMatches.length === 0) — powiedz "Nie znalazłam koncertu zawierającego '[query]'. Sprawdź pisownię albo podaj inną frazę." NIE zmyślaj.
+
+# PRZYKŁADY DOBRYCH ODPOWIEDZI (ticketing)
+User: "ile biletów na WesGhost?" → "WesGhost - 142 (eb: 82, tm: 60)"
+User: "ile na Dakhabrakha?" (2 koncerty) → "Dakhabrakha gra dwa razy:\n- 14.03 Warszawa - 1043 (eb: 612, tm: 431)\n- 16.03 Kraków - 487 (eb: 301, tm: 186)"
+User: "ile na wesgost?" (literówka) → "Zakładam że chodzi o WesGhost - 142 (eb: 82, tm: 60). Dobrze?"
+User: "ile na xyz?" → "Nie znalazłam koncertu zawierającego 'xyz'. Sprawdź pisownię albo podaj inną frazę."
+
 # ZAPISY (z confirm)
 Gdy user prosi o zmianę: dopytaj o brakujące pola, potem wywołaj tool. System sam pokaże przyciski potwierdzenia. NIE pisz "teraz poproszę o potwierdzenie" — wywołaj tool i ewentualnie krótkie "Dodaję..." lub nic.
 Przy update_todo_status — najpierw get_todos, zidentyfikuj po tekście, przekaż todo_text_hint = fragment treści (do 60 znaków).
@@ -160,11 +173,11 @@ const tools = [
   },
   {
     name: 'get_ticketing_event',
-    description: 'Konkretny koncert po nazwie — zwraca też doc ID (jako showId w kosztach).',
+    description: 'Znajdź koncerty po fragmencie nazwy. Toleruje literówki (fuzzy match). Zwraca wszystkie matche posortowane po dacie. Total = źródło prawdy, NIE sumuj eb+tm.',
     input_schema: {
       type: 'object',
       properties: {
-        name_query: { type: 'string', description: 'Fragment nazwy artysty/koncertu' },
+        name_query: { type: 'string', description: 'Fragment nazwy artysty/koncertu (literówki OK, np. "wesgost" znajdzie "WesGhost")' },
       },
       required: ['name_query'],
     },
