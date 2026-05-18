@@ -6,19 +6,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fource.Plex — Promotor Office</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0e0e11;--bg2:#16161a;--bg3:#1e1e24;--bg4:#26262e;
+  --bg:#ffffff;--bg2:#f2f2f2;--bg3:#e5e5e5;--bg4:#d4d4d4;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --text:#f0eff4;--text2:#9998a8;--text3:#5c5b6e;
-  --accent:#c8f060;--accent2:#9de84a;
-  --blue:#60a5fa;--blue2:#3b82f6;
-  --purple:#a78bfa;--teal:#34d399;--amber:#fbbf24;--red:#f87171;
-  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --text:#0a0a0a;--text2:#737373;--text3:#a1a1a1;
+  --accent:#000000;--accent2:#171717;
+  --blue:#1a4fa0;--blue2:#3b82f6;
+  --purple:#5b3ea8;--teal:#0a7a4a;--amber:#92600a;--red:#c22b10;
+  --mono:'Geist Mono',ui-monospace,monospace;--sans:'Geist',ui-sans-serif,system-ui,sans-serif;
 }
-body.light{--bg:#f0f0f5;--bg2:#ffffff;--bg3:#e6e6ec;--bg4:#d8d8e2;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);--text:#16161e;--text2:#56566a;--text3:#8f8fa0;--accent:#7ab000;--accent2:#5d8a00;}
-body.light img[alt="Fource.Plex"]{filter:invert(1);mix-blend-mode:normal;opacity:.85}
+
 .theme-toggle{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .15s,border-color .15s,background .15s;line-height:0}
 .theme-toggle:hover{color:var(--text);border-color:rgba(128,128,128,.25)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -29,7 +28,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
 
 /* ── LAYOUT ── */
-.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:54px 1fr;height:100vh;overflow:hidden}
+.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:1fr;height:100vh;overflow:hidden}
 
 /* ── TOPBAR ── */
 .topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:200}
@@ -75,19 +74,19 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .sidebar-footer-text{font-size:11px;color:var(--text3);font-family:var(--mono)}
 
 /* ── MAIN ── */
-.main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.main{display:flex;flex-direction:column;padding-top:96px;overflow:hidden;background:var(--bg)}
 .content-area{flex:1;display:flex;overflow:hidden;min-height:0}
 
 /* ── LIST PANEL ── */
-.list-panel{width:42%;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.list-panel{width:40%;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .list-header{padding:10px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .list-header-title{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
 .show-list{flex:1;overflow-y:auto}
 /* taby */
 .po-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
-.po-tab{flex:1;padding:8px 0;font-family:var(--mono);font-size:10px;text-align:center;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;letter-spacing:.05em}
-.po-tab:hover{color:var(--text)}
-.po-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.po-tab{flex:1;padding:8px 0;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;text-align:center;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+.po-tab:hover{color:var(--text2)}
+.po-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 /* deal done star */
 .deal-done-btn{font-family:var(--mono);font-size:10px;letter-spacing:.10em;font-weight:500;padding:6px 14px;border-radius:6px;border:1.5px solid rgba(52,211,153,.35);background:rgba(52,211,153,.06);color:var(--text3);cursor:pointer;transition:all .18s;flex-shrink:0;white-space:nowrap}
 .deal-done-btn:hover{border-color:rgba(52,211,153,.6);background:rgba(52,211,153,.12);color:var(--teal)}
@@ -95,7 +94,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .deal-done-btn.is-done:hover{border-color:rgba(248,113,113,.45);background:rgba(248,113,113,.08);color:var(--red)}
 
 /* ── ARTIST ITEM ── */
-.artist-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;position:relative}
+.artist-item{padding:11px 14px;cursor:pointer;transition:background .12s;position:relative}
 .artist-item:hover{background:var(--bg3)}
 .artist-item.selected{background:rgba(96,165,250,.05);border-left:2px solid var(--blue)}
 .artist-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
@@ -138,14 +137,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .venue-tag{font-family:var(--mono);font-size:9px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.25);color:var(--blue);padding:2px 6px;border-radius:3px}
 
 /* ── TOOLBAR ── */
-.toolbar{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.toolbar{background:#ffffff;display:flex;align-items:center;gap:8px;padding:8px 16px;flex-shrink:0}
 .toolbar-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-right:4px}
 .search-wrap{position:relative;flex:1;min-width:140px;max-width:280px}
 .search-wrap svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:12px;height:12px;color:var(--text3);pointer-events:none}
 .search-wrap input{width:100%;padding:5px 9px 5px 26px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:12px;outline:none;transition:border-color .15s}
 .search-wrap input::placeholder{color:var(--text3)}
 .search-wrap input:focus{border-color:var(--blue)}
-.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:5px 12px;border-radius:6px;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);transition:all .15s;white-space:nowrap}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:5px 12px;border-radius:6px;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text);transition:all .15s;white-space:nowrap}
 .btn:hover{background:var(--bg4);color:var(--text)}
 .btn-sm{padding:3px 8px;font-size:11px}
 .btn-blue{background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.3);color:var(--blue)}
@@ -193,7 +192,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .user-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s}
 .user-option:hover{border-color:rgba(255,255,255,.18)}
 .user-option.selected{border-color:var(--blue);background:rgba(96,165,250,.06)}
-.user-avatar-sm{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#0e0e11;flex-shrink:0}
+.user-avatar-sm{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#ffffff;flex-shrink:0}
 .user-option-name{font-size:14px;font-weight:500}
 .modal-divider{height:1px;background:var(--border);margin:14px 0}
 .add-user-row{display:flex;gap:8px}
@@ -239,47 +238,34 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 
 <div class="layout" id="app-layout" style="display:none">
 
-<!-- ── TOPBAR ── -->
-<div class="topbar">
-  <div class="topbar-left">
-    <img src="logo-dark.png"  class="fp-logo fp-logo-dark"  alt="Fource.Plex" style="height:30px;margin-right:10px"><img src="logo-light.png" class="fp-logo fp-logo-light" alt="Fource.Plex" style="height:30px;margin-right:10px">
-    <div>
-      <span class="brand-logo" style="color:var(--blue)">PROMOTOR</span>
-      <span class="brand-logo" style="font-size:14px;color:var(--text2);margin-left:4px">OFFICE</span>
-      <span class="brand-tag">Fource.Plex</span>
-    </div>
-  </div>
-  <div class="topbar-right">
-    <div class="topbar-notif notif-todo" id="notif-todo" title="Zadania Do zrobienia i Zablokowane">
+<div class="floating-controls">
+    <div class="topbar-notif notif-todo" id="notif-todo" onclick="window.location.href='index.html'" title="Zadania Do zrobienia i Zablokowane" style="cursor:pointer">
       <strong class="notif-count" id="notif-todo-count">0</strong>
       <span class="notif-lbl">do zrobienia</span>
     </div>
-    <div class="topbar-notif notif-zlecone" id="notif-zlecone" title="Zadania zlecone przez Ciebie">
-      <strong class="notif-count" id="notif-zlecone-count">0</strong>
-      <span class="notif-lbl">zlecone</span>
+    <div class="topbar-notif notif-notes" id="notif-notes" onclick="window.location.href='index.html'" title="Nowe notatki wykonania">
+      <strong class="notif-count" id="notif-notes-count">0</strong>
+      <span class="notif-lbl">nowe notatki</span>
     </div>
     <div class="topbar-notif notif-wtoku" id="notif-wtoku" title="Zadania W toku">
       <strong class="notif-count" id="notif-wtoku-count">0</strong>
       <span class="notif-lbl">w toku</span>
     </div>
-    <div class="topbar-notif notif-notes" id="notif-notes" style="display:none" onclick="window.location.href='index.html'" title="Nowe notatki wykonania — kliknij aby przejść">
-      <svg viewBox="0 0 14 14" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" style="flex-shrink:0;color:var(--amber)"><path d="M2 2h10v8H8l-3 2v-2H2z"/></svg>
-      <strong class="notif-count" id="notif-notes-count">0</strong>
-      <span class="notif-lbl">nowych notatek</span>
+    <div class="topbar-notif notif-zlecone" id="notif-zlecone" style="display:none">
+      <strong class="notif-count" id="notif-zlecone-count">0</strong>
+      <span class="notif-lbl">zlecone</span>
     </div>
-    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Tryb jasny / ciemny">
-      <svg id="theme-icon" viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
-    </button>
     <div class="user-badge" onclick="openModal()">
       <div class="user-dot" id="badge-dot"></div>
       <span id="badge-name">–</span>
     </div>
-  </div>
 </div>
 
 <!-- ── SIDEBAR ── -->
 <div class="sidebar">
-  <div class="nav-label">Moduły</div>
+<div style="padding:16px 20px 10px;flex-shrink:0;margin-bottom:4px">
+  <img src="logo-light.png" alt="Fource.Plex" class="fp-logo" style="width:100%;display:block;height:auto;max-height:48px;object-fit:contain;object-position:left">
+</div>
   <a class="nav-item" href="index.html">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M1 6h14M5 6v8"/></svg>
     Terrarium
@@ -304,10 +290,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 4h8M4 7h8M4 10h5"/><rect x="1" y="1" width="14" height="14" rx="1.5"/></svg>
     Listy Gości
   </a>
-  <a class="nav-item" href="projekty.html">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-    Projekty
-  </a>
+  <div class="nav-item" style="opacity:.4;cursor:default;pointer-events:none">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><line x1="8" y1="1" x2="8" y2="15"/><path d="M11 4H6.5a2.5 2.5 0 000 5h3a2.5 2.5 0 010 5H5"/></svg>
+    Księgowość
+  </div>
   <a class="nav-item active" href="promotor-office.html">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
     Promotor Office
@@ -319,15 +305,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     Fource.pl
     <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
   </a>
-
-  <div class="sidebar-footer">
-    <div class="sidebar-footer-logo"><span>F</span>OURCE</div>
-    <div class="sidebar-footer-text">Agency Hub © 2026</div>
-  </div>
 </div>
 
 <!-- ── MAIN ── -->
 <div class="main">
+<div class="module-header">Promotor Office</div>
+
   <div class="toolbar">
     <span class="toolbar-title">Artyści</span>
     <div class="search-wrap">
@@ -414,7 +397,7 @@ window.dispatchEvent(new Event('po-firebase-ready'));
     _prev=tc;
     if(nZc)nZc.textContent=zc;if(nZ)nZ.classList.toggle('active',zc>0);
     if(nWc)nWc.textContent=wc;if(nW)nW.classList.toggle('active',wc>0);
-    if(nN)nN.style.display=nc>0?'':'none';if(nNc)nNc.textContent=nc;
+    if(nN)nN.classList.toggle('active',nc>0);if(nNc)nNc.textContent=nc;
   },()=>{});
 })();
 </script>

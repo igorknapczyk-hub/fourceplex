@@ -6,22 +6,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fource.Plex — Terrarium</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
 :root{
-  --bg:#0e0e11;--bg2:#16161a;--bg3:#1e1e24;--bg4:#26262e;
+  --bg:#ffffff;--bg2:#f2f2f2;--bg3:#e5e5e5;--bg4:#d4d4d4;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --text:#f0eff4;--text2:#9998a8;--text3:#5c5b6e;
-  --accent:#c8f060;--accent2:#9de84a;
-  --purple:#a78bfa;--teal:#34d399;--amber:#fbbf24;--red:#f87171;--blue:#60a5fa;
-  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --text:#0a0a0a;--text2:#737373;--text3:#a1a1a1;
+  --accent:#000000;--accent2:#171717;
+  --purple:#5b3ea8;--teal:#0a7a4a;--amber:#92600a;--red:#c22b10;--blue:#1a4fa0;
+  --mono:'Geist Mono',ui-monospace,monospace;--sans:'Geist',ui-sans-serif,system-ui,sans-serif;
 }
 /* ── LIGHT MODE ── */
-body.light{--bg:#f0f0f5;--bg2:#ffffff;--bg3:#e6e6ec;--bg4:#d8d8e2;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);--text:#16161e;--text2:#56566a;--text3:#8f8fa0;--accent:#7ab000;--accent2:#5d8a00;}
-body.light img[alt="Fource.Plex"]{filter:invert(1);mix-blend-mode:normal;opacity:.85}
+
 .theme-toggle{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .15s,border-color .15s,background .15s;line-height:0}
 .theme-toggle:hover{color:var(--text);border-color:rgba(128,128,128,.25)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -32,7 +31,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
 
 /* ── LAYOUT ── */
-.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:54px 1fr;height:100vh;overflow:hidden}
+.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:1fr;height:100vh;overflow:hidden}
 
 /* ── TOPBAR — bez zmian, już spójny z innymi modułami ── */
 .topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:200}
@@ -97,10 +96,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 }
 
 /* ── WIDGET CARD ── */
-.widget{background:var(--bg2);border:1px solid var(--border);border-radius:10px;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-.widget-header{display:flex;align-items:center;justify-content:space-between;padding:11px 15px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
-.widget-title{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--text3)}
-.widget-badges{display:flex;gap:5px;align-items:center}
+.widget{background:transparent;border:none;border-radius:0;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 .wbadge{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;white-space:nowrap}
 .b-lime  {background:rgba(200,240,96,.12); color:var(--accent)}
 .b-purple{background:rgba(167,139,250,.12);color:var(--purple)}
@@ -108,10 +104,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .b-amber {background:rgba(251,191,36,.12); color:var(--amber)}
 .b-red   {background:rgba(248,113,113,.12);color:var(--red)}
 .b-blue  {background:rgba(96,165,250,.12); color:var(--blue)}
-.widget-body{padding:12px 14px;flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.widget-body{padding:0;flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.detail-close-row{display:flex;justify-content:flex-end;flex-shrink:0;margin-bottom:6px}
 
 /* ── SHARED ── */
-.btn{background:var(--accent);color:#0e0e11;border:none;border-radius:6px;padding:6px 13px;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn{background:var(--accent);color:#ffffff;border:none;border-radius:6px;padding:6px 13px;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;transition:opacity .15s}
 .btn:hover{opacity:.85}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:5px;padding:4px 10px;font-family:var(--sans);font-size:12px;cursor:pointer;text-decoration:none;display:inline-block;transition:color .15s,border-color .15s}
@@ -120,7 +117,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 
 /* ── STAT ROW ── */
 .stat-row{display:flex;gap:8px;flex-shrink:0;margin-bottom:10px}
-.stat-box{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:9px 10px;text-align:center}
+.stat-box{flex:1;background:transparent;border:none;border-radius:6px;padding:9px 10px;text-align:center}
 .stat-num{font-family:var(--mono);font-size:20px;font-weight:300;color:var(--text);line-height:1}
 .stat-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin-top:3px}
 
@@ -135,10 +132,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .assignee-row{display:flex;gap:5px;flex-wrap:wrap}
 .a-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:3px 10px;font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;transition:all .12s}
 .a-btn:hover{color:var(--text)}
-.a-btn.sel{color:#0e0e11;border-color:transparent}
+.a-btn.sel{color:#ffffff;border-color:transparent}
 .todo-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:0}
-.todo-item{display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:6px;background:var(--bg3);border:1px solid transparent;flex-shrink:0;transition:border-color .1s}
-.todo-item:hover{border-color:var(--border2)}
+.todo-item{display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:6px;background:transparent;border:1px solid transparent;flex-shrink:0;transition:background .1s}
+.todo-item:hover{background:var(--bg2)}
 .todo-cb{width:15px;height:15px;border:1.5px solid var(--text3);border-radius:3px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:2px}
 .todo-cb.done{border-color:var(--accent);background:rgba(200,240,96,.15)}
 .todo-cb.done::after{content:'';width:7px;height:4px;border-left:1.5px solid var(--accent);border-bottom:1.5px solid var(--accent);transform:rotate(-45deg) translateY(-1px);display:block}
@@ -167,7 +164,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .todo-date-input{background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-family:var(--mono);font-size:11px;padding:4px 8px;outline:none;margin-top:5px;width:100%;transition:border-color .15s;cursor:pointer;appearance:none;-webkit-appearance:none}
 .todo-date-input:focus{border-color:rgba(200,240,96,.4)}
 .todo-date-input::-webkit-calendar-picker-indicator{filter:invert(.45);cursor:pointer;opacity:.7}
-.todo-item.overdue{border-color:rgba(248,113,113,.45)!important;background:rgba(248,113,113,.04)}
+.todo-item.overdue{border-color:rgba(248,113,113,.45)!important;background:transparent}
 .todo-due{font-family:var(--mono);font-size:9px;color:var(--text3)}
 .todo-due.urgent{color:var(--red)}
 /* priority toggle */
@@ -176,7 +173,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 /* priority badge */
 .prio-badge{font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:3px;letter-spacing:.03em;flex-shrink:0;background:rgba(248,113,113,.13);color:var(--red);border:1px solid rgba(248,113,113,.28)}
 /* PILNE highlight */
-.todo-item.pilne{border-left:2px solid var(--red)!important;background:rgba(248,113,113,.03)}
+.todo-item.pilne{border-left:2px solid var(--red)!important;background:transparent}
 /* todo note */
 .todo-note{font-size:11px;color:var(--text3);margin-top:3px;font-style:italic;line-height:1.4;word-break:break-word}
 .todo-note-input{width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text2);font-family:var(--sans);font-size:11px;padding:3px 0;outline:none;transition:border-color .15s;font-style:italic}
@@ -203,7 +200,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .filter-btn.active{background:var(--bg4);border-color:var(--border2);color:var(--text)}
 
 /* ── selected task highlight ── */
-.todo-item.selected{border-color:rgba(200,240,96,.5)!important;background:rgba(200,240,96,.04)!important;cursor:default}
+.todo-item.selected{border-color:var(--border2)!important;background:var(--bg2)!important;cursor:default}
 /* ── note textarea in add form ── */
 .todo-note-textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:12px;padding:7px 11px;outline:none;resize:vertical;min-height:58px;max-height:100px;transition:border-color .15s;margin-top:5px}
 .todo-note-textarea:focus{border-color:rgba(200,240,96,.4)}
@@ -218,14 +215,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .detail-status-badge{font-size:11px!important;padding:4px 11px!important}
 .detail-due{font-family:var(--mono);font-size:11px;color:var(--text3);flex-shrink:0}
 .detail-due.urgent{color:var(--red)}
-.detail-note-block{background:var(--bg3);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.5;font-style:italic;flex-shrink:0;word-break:break-word}
+.detail-note-block{background:transparent;border-left:2px solid var(--border2);padding:6px 12px;font-size:12px;color:var(--text2);line-height:1.5;font-style:italic;flex-shrink:0;word-break:break-word}
 .detail-link-row{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--blue);text-decoration:none;padding:6px 10px;border-radius:5px;background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.15);flex-shrink:0;transition:opacity .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .detail-link-row.drive-link{color:var(--teal);background:rgba(52,211,153,.07);border-color:rgba(52,211,153,.15)}
 .detail-link-row:hover{opacity:.75}
 .detail-exec-section{flex:1;display:flex;flex-direction:column;gap:7px;min-height:0;border-top:1px solid var(--border);padding-top:10px;margin-top:4px}
 .detail-section-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);flex-shrink:0}
 .exec-notes-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:0}
-.exec-note-item{background:var(--bg3);border-radius:5px;padding:8px 10px;flex-shrink:0}
+.exec-note-item{background:transparent;border-bottom:1px solid var(--border);padding:8px 0;flex-shrink:0}
 .exec-note-text{font-size:12px;color:var(--text);line-height:1.4;word-break:break-word}
 .exec-note-meta{font-family:var(--mono);font-size:9px;color:var(--text3)}
 .exec-note-footer{display:flex;align-items:center;justify-content:space-between;margin-top:4px;gap:8px}
@@ -341,7 +338,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .user-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s}
 .user-option:hover{border-color:rgba(255,255,255,.18)}
 .user-option.selected{border-color:var(--accent);background:rgba(200,240,96,.06)}
-.uav{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#0e0e11;flex-shrink:0}
+.uav{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#ffffff;flex-shrink:0}
 .user-option-name{font-size:14px;font-weight:500}
 .modal-divider{height:1px;background:var(--border);margin:12px 0}
 .add-user-row{display:flex;gap:7px}
@@ -355,47 +352,34 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 <body>
 <div class="layout">
 
-<!-- ── TOPBAR ── -->
-<div class="topbar">
-  <div class="topbar-left">
-    <img src="logo-dark.png"  class="fp-logo fp-logo-dark"  alt="Fource.Plex" style="height:30px;margin-right:10px"><img src="logo-light.png" class="fp-logo fp-logo-light" alt="Fource.Plex" style="height:30px;margin-right:10px">
-    <div><span class="brand-logo">TERRARIUM</span><span class="brand-tag">Fource.Plex</span></div>
-  </div>
-  <div class="topbar-right">
-    <!-- Do zrobienia -->
+<div class="floating-controls">
     <div class="topbar-notif notif-todo" id="notif-todo" title="Zadania Do zrobienia i Zablokowane">
       <strong class="notif-count" id="notif-todo-count">0</strong>
       <span class="notif-lbl">do zrobienia</span>
     </div>
-    <!-- Zlecone -->
-    <div class="topbar-notif notif-zlecone" id="notif-zlecone" title="Zadania zlecone przez Ciebie">
-      <strong class="notif-count" id="notif-zlecone-count">0</strong>
-      <span class="notif-lbl">zlecone</span>
+    <div class="topbar-notif notif-notes" id="notif-notes" onclick="jumpToNewNotes()" title="Nowe notatki wykonania">
+      <strong class="notif-count" id="notif-notes-count">0</strong>
+      <span class="notif-lbl">nowe notatki</span>
     </div>
-    <!-- W toku -->
     <div class="topbar-notif notif-wtoku" id="notif-wtoku" title="Zadania W toku">
       <strong class="notif-count" id="notif-wtoku-count">0</strong>
       <span class="notif-lbl">w toku</span>
     </div>
-    <!-- Nowe notatki (ukryte gdy 0) -->
-    <div class="topbar-notif notif-notes" id="notif-notes" style="display:none" onclick="jumpToNewNotes()" title="Nowe notatki wykonania — kliknij aby przejść">
-      <svg viewBox="0 0 14 14" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" style="flex-shrink:0;color:var(--amber)"><path d="M2 2h10v8H8l-3 2v-2H2z"/></svg>
-      <strong class="notif-count" id="notif-notes-count">0</strong>
-      <span class="notif-lbl">nowych notatek</span>
+    <div class="topbar-notif notif-zlecone" id="notif-zlecone" style="display:none">
+      <strong class="notif-count" id="notif-zlecone-count">0</strong>
+      <span class="notif-lbl">zlecone</span>
     </div>
-    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Tryb jasny / ciemny">
-      <svg id="theme-icon" viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
-    </button>
     <div class="user-badge" onclick="openModal()">
       <div class="user-dot" id="badge-dot"></div>
       <span id="badge-name">Wybierz użytkownika</span>
     </div>
-  </div>
 </div>
 
 <!-- ── SIDEBAR ── -->
 <div class="sidebar">
-  <div class="nav-label">Moduły</div>
+<div style="padding:16px 20px 10px;flex-shrink:0;margin-bottom:4px">
+  <img src="logo-light.png" alt="Fource.Plex" class="fp-logo" style="width:100%;display:block;height:auto;max-height:48px;object-fit:contain;object-position:left">
+</div>
   <div class="nav-item active">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M1 6h14M5 6v8"/></svg>
     Terrarium
@@ -420,9 +404,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 4h8M4 7h8M4 10h5"/><rect x="1" y="1" width="14" height="14" rx="1.5"/></svg>
     Listy Gości
   </div>
-  <div class="nav-item" onclick="location.href='projekty.html'">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-    Projekty
+  <div class="nav-item" style="opacity:.4;cursor:default;pointer-events:none">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><line x1="8" y1="1" x2="8" y2="15"/><path d="M11 4H6.5a2.5 2.5 0 000 5h3a2.5 2.5 0 010 5H5"/></svg>
+    Księgowość
   </div>
   <a class="nav-item" href="promotor-office.html" id="promotor-nav" style="display:none;color:var(--blue)">
     <svg class="nav-icon" style="opacity:1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
@@ -450,27 +434,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
     TM1 Ticketmaster
     <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
   </a>
-
-  <div class="sidebar-footer">
-    <div class="sidebar-footer-logo"><span>F</span>OURCE</div>
-    <div class="sidebar-footer-text">Agency Hub © 2026</div>
-  </div>
 </div>
 
 <!-- ── MAIN ── -->
 <div class="main">
+<div class="module-header">Terrarium</div>
+
 <div class="main-scroll">
 <div class="widgets-grid">
 
   <!-- ═══ W1: JASZCZURZE SPRAWY — lewa kolumna, pełna wysokość ═══ -->
   <div class="widget" style="grid-column:1;grid-row:1">
-    <div class="widget-header">
-      <span class="widget-title">Jaszczurze sprawy</span>
-      <div class="widget-badges">
-        <span class="wbadge b-red" id="todo-badge-pilne" style="display:none">0 pilnych</span>
-        <span class="wbadge b-lime" id="todo-badge">0 zadań</span>
-      </div>
-    </div>
     <div class="widget-body">
       <div class="todo-add">
         <div class="todo-input-row">
@@ -488,6 +462,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
       <div id="todo-filter-wrap" style="display:none">
         <div class="todo-filter-row" id="todo-filter-row"></div>
       </div>
+      <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;flex-shrink:0">
+        <span class="wbadge b-red" id="todo-badge-pilne" style="display:none">0 pilnych</span>
+      </div>
       <div class="todo-tabs" id="todo-tabs">
         <div class="todo-tab active" id="tab-otrzymane" onclick="switchTodoTab('otrzymane')">Otrzymane <span id="tab-cnt-otrzymane"></span></div>
         <div class="todo-tab" id="tab-zlecone" onclick="switchTodoTab('zlecone')">Zlecone <span id="tab-cnt-zlecone"></span></div>
@@ -498,11 +475,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 
   <!-- ═══ PANEL SZCZEGÓŁÓW ZADANIA — prawa kolumna ═══ -->
   <div class="widget" id="task-detail-panel" style="grid-column:2;grid-row:1">
-    <div class="widget-header detail-header">
-      <span class="widget-title" id="detail-panel-title">Szczegóły zadania</span>
-      <button class="btn-ghost" onclick="closeTaskDetail()" id="detail-close-btn" style="display:none;padding:2px 8px;font-size:11px">✕</button>
-    </div>
     <div class="widget-body" style="overflow:hidden">
+      <div class="detail-close-row">
+        <button class="btn-ghost" onclick="closeTaskDetail()" id="detail-close-btn" style="display:none;padding:2px 8px;font-size:11px">✕</button>
+      </div>
       <div class="empty-state" id="detail-empty" style="margin-top:40px">Wybierz zadanie z listy</div>
       <div id="detail-content" style="display:none;flex:1;flex-direction:column;gap:10px;overflow-y:auto;min-height:0"></div>
     </div>
@@ -879,7 +855,6 @@ function addSectionHeader(list,label){
 /* ── MAIN RENDER ── */
 function renderTodos(todos){
   const list=document.getElementById('todo-list');
-  const badge=document.getElementById('todo-badge');
   const badgePilne=document.getElementById('todo-badge-pilne');
 
   /* auto-delete "zrobione" starszych niż 2 dni */
@@ -904,7 +879,6 @@ function renderTodos(todos){
   /* badge counts */
   const pending=visible.filter(t=>getTodoStatus(t)!=='zrobione').length;
   const pilne=visible.filter(t=>isTodoPilne(t)&&getTodoStatus(t)!=='zrobione').length;
-  if(badge)badge.textContent=`${pending} zadań`;
   if(badgePilne){badgePilne.style.display=pilne?'':'none';badgePilne.textContent=`${pilne} pilnych`;}
 
   /* topbar notification pills */
@@ -945,7 +919,7 @@ function renderTodos(todos){
   _tasksWithNewNotes=newNoteTaskIds;
   const ntNotes=document.getElementById('notif-notes');
   const ntNotesCount=document.getElementById('notif-notes-count');
-  if(ntNotes)ntNotes.style.display=newNotesCount>0?'':'none';
+  if(ntNotes)ntNotes.classList.toggle('active',newNotesCount>0);
   if(ntNotesCount)ntNotesCount.textContent=newNotesCount;
 
   /* update tab counts */
@@ -1024,22 +998,18 @@ function closeTaskDetail(){
   const content=document.getElementById('detail-content');
   const empty=document.getElementById('detail-empty');
   const closeBtn=document.getElementById('detail-close-btn');
-  const titleEl=document.getElementById('detail-panel-title');
   if(content){content.style.display='none';content.innerHTML='';}
   if(empty)empty.style.display='';
   if(closeBtn)closeBtn.style.display='none';
-  if(titleEl)titleEl.textContent='Szczegóły zadania';
 }
 
 function renderTaskDetail(t){
   const content=document.getElementById('detail-content');
   const empty=document.getElementById('detail-empty');
   const closeBtn=document.getElementById('detail-close-btn');
-  const titleEl=document.getElementById('detail-panel-title');
   if(!content)return;
   if(empty)empty.style.display='none';
   if(closeBtn)closeBtn.style.display='';
-  if(titleEl)titleEl.textContent=t.text.length>28?t.text.slice(0,28)+'…':t.text;
 
   /* Mark exec-notes as seen when task detail is opened */
   if(_tasksWithNewNotes&&_tasksWithNewNotes.has(t.id)){markNotesSeen();renderTodos(_latestTodos);}

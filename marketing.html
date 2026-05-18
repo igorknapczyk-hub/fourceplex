@@ -6,20 +6,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fource.Plex — Marketing</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
-  --bg:#0e0e11;--bg2:#16161a;--bg3:#1e1e24;--bg4:#26262e;
+  --bg:#ffffff;--bg2:#f2f2f2;--bg3:#e5e5e5;--bg4:#d4d4d4;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --text:#f0eff4;--text2:#9998a8;--text3:#5c5b6e;
-  --accent:#c8f060;--accent2:#9de84a;
-  --purple:#a78bfa;--teal:#34d399;--amber:#fbbf24;--red:#f87171;--blue:#60a5fa;
-  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --text:#0a0a0a;--text2:#737373;--text3:#a1a1a1;
+  --accent:#000000;--accent2:#171717;
+  --purple:#5b3ea8;--teal:#0a7a4a;--amber:#92600a;--red:#c22b10;--blue:#1a4fa0;
+  --mono:'Geist Mono',ui-monospace,monospace;--sans:'Geist',ui-sans-serif,system-ui,sans-serif;
 }
 /* ── LIGHT MODE ── */
-body.light{--bg:#f0f0f5;--bg2:#ffffff;--bg3:#e6e6ec;--bg4:#d8d8e2;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);--text:#16161e;--text2:#56566a;--text3:#8f8fa0;--accent:#7ab000;--accent2:#5d8a00;}
-body.light img[alt="Fource.Plex"]{filter:invert(1);mix-blend-mode:normal;opacity:.85}
+
 .theme-toggle{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .15s,border-color .15s,background .15s;line-height:0}
 .theme-toggle:hover{color:var(--text);border-color:rgba(128,128,128,.25)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -30,7 +29,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
 
 /* ── LAYOUT ── */
-.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:54px 1fr;height:100vh;overflow:hidden}
+.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:1fr;height:100vh;overflow:hidden}
 
 /* ── TOPBAR ── */
 .topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:200}
@@ -77,19 +76,19 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .sidebar-footer-text{font-size:11px;color:var(--text3);font-family:var(--mono)}
 
 /* ── MAIN ── */
-.main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.main{display:flex;flex-direction:column;padding-top:96px;overflow:hidden;background:var(--bg)}
 
 /* ── TOOLBAR ── */
-.toolbar{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.toolbar{background:#ffffff;display:flex;align-items:center;gap:8px;padding:8px 16px;flex-shrink:0}
 .toolbar-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-right:4px}
 .search-wrap{position:relative;flex:1;min-width:140px;max-width:280px}
 .search-wrap svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:12px;height:12px;color:var(--text3);pointer-events:none}
 .search-wrap input{width:100%;padding:5px 9px 5px 26px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:12px;outline:none;transition:border-color .15s}
 .search-wrap input::placeholder{color:var(--text3)}
 .search-wrap input:focus{border-color:var(--accent)}
-.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:5px 12px;border-radius:6px;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);transition:all .15s;white-space:nowrap}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:5px 12px;border-radius:6px;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text);transition:all .15s;white-space:nowrap}
 .btn:hover{background:var(--bg4);color:var(--text)}
-.btn-accent{background:var(--accent);border-color:var(--accent);color:#0e0e11;font-weight:600}
+.btn-accent{background:var(--accent);border-color:var(--accent);color:#ffffff;font-weight:600}
 .btn-accent:hover{background:var(--accent2);border-color:var(--accent2)}
 .btn-sm{padding:3px 8px;font-size:11px}
 .btn-teal{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--teal)}
@@ -105,7 +104,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 /* ── 2-PANEL LAYOUT ── */
 .content-area{flex:1;display:flex;overflow:hidden;min-height:0}
 .list-panel{width:40%;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.detail-panel{width:60%;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.detail-panel{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
 .detail-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-family:var(--mono);font-size:11px;letter-spacing:.08em;gap:10px}
 .detail-empty svg{width:32px;height:32px;opacity:.25}
 
@@ -124,7 +123,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .list-header{padding:10px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .list-header-title{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
 .show-list{flex:1;overflow-y:auto}
-.show-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;position:relative}
+.show-item{padding:10px 14px;cursor:pointer;transition:background .12s;position:relative}
 .show-item:hover{background:var(--bg3)}
 .show-item.selected{background:rgba(200,240,96,.05);border-left:2px solid var(--accent)}
 .show-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
@@ -159,8 +158,10 @@ button:disabled{opacity:.35;cursor:not-allowed}
 
 /* ── CHECKPOINTS ── */
 .cp-list{display:flex;flex-direction:column;gap:6px}
-.cp-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s;user-select:none}
+.cp-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
 .cp-row:hover{border-color:var(--border2)}
+.cp-row.done{border-color:rgba(52,211,153,.45);background:rgba(52,211,153,.18)}
+.cp-row.done:hover{border-color:rgba(52,211,153,.6);background:rgba(52,211,153,.26)}
 .cp-icon{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--text3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .cp-icon.done{border-color:var(--teal);background:rgba(52,211,153,.15)}
 .cp-icon.done::after{content:'✓';font-size:9px;color:var(--teal);font-weight:600}
@@ -308,7 +309,7 @@ select.form-input{cursor:pointer}
 .user-option{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s}
 .user-option:hover{border-color:rgba(255,255,255,.18)}
 .user-option.selected{border-color:var(--accent);background:rgba(200,240,96,.06)}
-.user-avatar-sm{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#0e0e11;flex-shrink:0}
+.user-avatar-sm{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#ffffff;flex-shrink:0}
 .user-option-name{font-size:14px;font-weight:500}
 .modal-divider{height:1px;background:var(--border);margin:14px 0}
 .add-user-row{display:flex;gap:8px}
@@ -322,43 +323,34 @@ select.form-input{cursor:pointer}
 <body>
 <div class="layout">
 
-<!-- ── TOPBAR ── -->
-<div class="topbar">
-  <div class="topbar-left">
-    <img src="logo-dark.png"  class="fp-logo fp-logo-dark"  alt="Fource.Plex" style="height:30px;margin-right:10px"><img src="logo-light.png" class="fp-logo fp-logo-light" alt="Fource.Plex" style="height:30px;margin-right:10px">
-    <div><span class="brand-logo">MARKETING</span><span class="brand-tag">Fource.Plex</span></div>
-  </div>
-  <div class="topbar-right">
-    <div class="topbar-notif notif-todo" id="notif-todo" title="Zadania Do zrobienia i Zablokowane">
+<div class="floating-controls">
+    <div class="topbar-notif notif-todo" id="notif-todo" onclick="window.location.href='index.html'" title="Zadania Do zrobienia i Zablokowane" style="cursor:pointer">
       <strong class="notif-count" id="notif-todo-count">0</strong>
       <span class="notif-lbl">do zrobienia</span>
     </div>
-    <div class="topbar-notif notif-zlecone" id="notif-zlecone" title="Zadania zlecone przez Ciebie">
-      <strong class="notif-count" id="notif-zlecone-count">0</strong>
-      <span class="notif-lbl">zlecone</span>
+    <div class="topbar-notif notif-notes" id="notif-notes" onclick="window.location.href='index.html'" title="Nowe notatki wykonania">
+      <strong class="notif-count" id="notif-notes-count">0</strong>
+      <span class="notif-lbl">nowe notatki</span>
     </div>
     <div class="topbar-notif notif-wtoku" id="notif-wtoku" title="Zadania W toku">
       <strong class="notif-count" id="notif-wtoku-count">0</strong>
       <span class="notif-lbl">w toku</span>
     </div>
-    <div class="topbar-notif notif-notes" id="notif-notes" style="display:none" onclick="window.location.href='index.html'" title="Nowe notatki wykonania — kliknij aby przejść">
-      <svg viewBox="0 0 14 14" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" style="flex-shrink:0;color:var(--amber)"><path d="M2 2h10v8H8l-3 2v-2H2z"/></svg>
-      <strong class="notif-count" id="notif-notes-count">0</strong>
-      <span class="notif-lbl">nowych notatek</span>
+    <div class="topbar-notif notif-zlecone" id="notif-zlecone" style="display:none">
+      <strong class="notif-count" id="notif-zlecone-count">0</strong>
+      <span class="notif-lbl">zlecone</span>
     </div>
-    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Tryb jasny / ciemny">
-      <svg id="theme-icon" viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
-    </button>
     <div class="user-badge" onclick="openUserModal()">
       <div class="user-dot" id="badge-dot"></div>
       <span id="badge-name">Wybierz użytkownika</span>
     </div>
-  </div>
 </div>
 
 <!-- ── SIDEBAR ── -->
 <div class="sidebar">
-  <div class="nav-label">Moduły</div>
+<div style="padding:16px 20px 10px;flex-shrink:0;margin-bottom:4px">
+  <img src="logo-light.png" alt="Fource.Plex" class="fp-logo" style="width:100%;display:block;height:auto;max-height:48px;object-fit:contain;object-position:left">
+</div>
   <div class="nav-item" onclick="location.href='index.html'">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M1 6h14M5 6v8"/></svg>
     Terrarium
@@ -383,9 +375,9 @@ select.form-input{cursor:pointer}
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 4h8M4 7h8M4 10h5"/><rect x="1" y="1" width="14" height="14" rx="1.5"/></svg>
     Listy Gości
   </div>
-  <div class="nav-item" onclick="location.href='projekty.html'">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-    Projekty
+  <div class="nav-item" style="opacity:.4;cursor:default;pointer-events:none">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><line x1="8" y1="1" x2="8" y2="15"/><path d="M11 4H6.5a2.5 2.5 0 000 5h3a2.5 2.5 0 010 5H5"/></svg>
+    Księgowość
   </div>
   <a class="nav-item" href="promotor-office.html" id="promotor-nav" style="display:none;color:var(--blue)">
     <svg class="nav-icon" style="opacity:1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
@@ -419,14 +411,12 @@ select.form-input{cursor:pointer}
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 5v6M5 8h6"/></svg>
     Dodaj kampanię
   </div>
-  <div class="sidebar-footer">
-    <div class="sidebar-footer-logo"><span>F</span>OURCE</div>
-    <div class="sidebar-footer-text">Agency Hub © 2026</div>
-  </div>
 </div>
 
 <!-- ── MAIN ── -->
 <div class="main">
+<div class="module-header">Marketing</div>
+
   <div class="toolbar">
     <span class="toolbar-title">Kampanie</span>
     <div class="search-wrap">
@@ -475,7 +465,7 @@ select.form-input{cursor:pointer}
     <div class="slide-field">
       <div class="form-label">Typ kampanii</div>
       <div style="display:flex;gap:0;border:1px solid var(--border2);border-radius:6px;overflow:hidden;margin-top:2px">
-        <button id="dtype-single" onclick="setDateType('single')" style="flex:1;padding:6px;background:var(--accent);color:#0e0e11;font-family:var(--mono);font-size:10px;font-weight:600;border:none;cursor:pointer;letter-spacing:.06em">JEDEN DZIEŃ</button>
+        <button id="dtype-single" onclick="setDateType('single')" style="flex:1;padding:6px;background:var(--accent);color:#ffffff;font-family:var(--mono);font-size:10px;font-weight:600;border:none;cursor:pointer;letter-spacing:.06em">JEDEN DZIEŃ</button>
         <button id="dtype-range" onclick="setDateType('range')" style="flex:1;padding:6px;background:var(--bg3);color:var(--text2);font-family:var(--mono);font-size:10px;border:none;cursor:pointer;letter-spacing:.06em">TRASA</button>
       </div>
     </div>
@@ -611,7 +601,7 @@ window.dispatchEvent(new Event('fb-ready'));
     _prev=tc;
     if(nZc)nZc.textContent=zc;if(nZ)nZ.classList.toggle('active',zc>0);
     if(nWc)nWc.textContent=wc;if(nW)nW.classList.toggle('active',wc>0);
-    if(nN)nN.style.display=nc>0?'':'none';if(nNc)nNc.textContent=nc;
+    if(nN)nN.classList.toggle('active',nc>0);if(nNc)nNc.textContent=nc;
   },()=>{});
 })();
 </script>
@@ -1270,8 +1260,8 @@ function buildChartShell(uid,title){
         <svg id="chart-svg-${uid}" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
       </div>
       <div class="chart-legend">
-        <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--accent);height:8px;border-radius:2px"></div>Wydatki tygodniowe (zł, lewa oś)</div>
-        <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--purple)"></div>Sprzedaż biletów (szt., prawa oś)</div>
+        <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#0a7a4a;height:8px;border-radius:2px"></div>Wydatki tygodniowe (zł, lewa oś)</div>
+        <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#111111"></div>Sprzedaż biletów (szt., prawa oś)</div>
       </div>
     </div>
   </div>`;
@@ -1290,6 +1280,8 @@ async function fetchTicketPoints(artistName,concertDate){
       const snap=await getDocs(query(collection(window._db,'ticketing_snapshots'),where('eventId','==',matchedEvt.id)));
       snap.forEach(d=>{
         const s=d.data();
+        /* Skip seed snapshots — same logic as Ticketing module */
+        if(s.createdBy==='seed')return;
         const ms=typeof s.createdAt==='number'?s.createdAt:(s.createdAt?.seconds?s.createdAt.seconds*1000:null);
         if(!ms)return;
         ticketPoints.push({ms,sold:(s.tm||0)+(s.eb||0)+(s.other||0)});
@@ -1315,14 +1307,16 @@ async function drawChart(uid,costs,concertDate,artistName){
     const d=c.costDate?new Date(c.costDate):(c.createdAt?new Date(c.createdAt.seconds*1000):null);
     if(d&&d<earliest)earliest=new Date(d);
   });
-  ticketPoints.forEach(t=>{const d=new Date(t.ms);if(d<earliest)earliest=new Date(d);});
+  /* Only non-zero snapshots affect chart start — ignore early zero-sales data */
+  ticketPoints.forEach(t=>{if(t.sold>0){const d=new Date(t.ms);if(d<earliest)earliest=new Date(d);}});
 
   const mondayOf=d=>{const r=new Date(d);const dy=r.getDay();r.setDate(r.getDate()-(dy===0?6:dy-1));r.setHours(0,0,0,0);return r;};
   const startWeek=mondayOf(earliest);
-  const endDate=showDate<today?new Date(showDate):new Date(today);
+  /* Always extend x-axis to concert date, regardless of current sales progress */
+  const endDate=new Date(showDate);
 
   const weeks=[];const cur=new Date(startWeek);
-  while(cur<=endDate||weeks.length<2){weeks.push(new Date(cur));cur.setDate(cur.getDate()+7);if(weeks.length>20)break;}
+  while(cur<=endDate||weeks.length<2){weeks.push(new Date(cur));cur.setDate(cur.getDate()+7);if(weeks.length>30)break;}
 
   const cumCosts=weeks.map(w=>{
     const wE=new Date(w);wE.setDate(wE.getDate()+6);wE.setHours(23,59,59);
@@ -1341,12 +1335,21 @@ async function drawChart(uid,costs,concertDate,artistName){
   const chartW=W-PL-PR,chartH=H-PT-PB,n=weeks.length;
   const weeklySpend=cumCosts.map((v,i)=>i===0?v:v-cumCosts[i-1]);
   const costYMax=Math.max(...weeklySpend,1)/0.8;
-  const maxTickets=Math.max(...filledTickets,1);
+  /* Y-max for sales = capacity from Ticketing (full chart height), fallback to actual max */
+  const maxTickets=(matchedEvt&&matchedEvt.cap)?matchedEvt.cap:Math.max(...filledTickets,1);
   const xPos=i=>PL+(n<=1?chartW/2:i*(chartW/(n-1)));
   const barW=Math.max(4,Math.min(28,(chartW/(n||1))*0.55));
   const yT=v=>PT+chartH-(v/maxTickets)*chartH;
   const pathLine=pts=>`M${pts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join('L')}`;
-  const tickPts=filledTickets.map((v,i)=>[xPos(i),yT(v)]);
+  /* Sales line: starts from first non-zero snapshot, ends at last real snapshot */
+  let salesStartIdx=weekTickets.findIndex(v=>v!==null&&v>0);
+  if(salesStartIdx<0)salesStartIdx=weekTickets.length;
+  let salesEndIdx=-1;
+  for(let i=weekTickets.length-1;i>=0;i--){if(weekTickets[i]!==null){salesEndIdx=i;break;}}
+  const tickPts=[];
+  if(salesStartIdx<=salesEndIdx){
+    for(let i=salesStartIdx;i<=salesEndIdx;i++){tickPts.push([xPos(i),yT(filledTickets[i])]);}
+  }
 
   const gridLines=[0.25,0.5,0.75,1].map(p=>{
     const y=(PT+chartH-(p*0.8*chartH)).toFixed(1);
@@ -1358,13 +1361,19 @@ async function drawChart(uid,costs,concertDate,artistName){
 
   const tickYLabels=[0.5,1].map(p=>{
     const y=(PT+chartH-(p*chartH)).toFixed(1);
-    return`<text x="${(W-PR+4)}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="start" font-size="7" fill="#a78bfa" font-family="monospace" opacity="0.7">${Math.round(maxTickets*p)}</text>`;
+    return`<text x="${(W-PR+4)}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="start" font-size="7" fill="#555555" font-family="monospace" opacity="0.9">${Math.round(maxTickets*p)}</text>`;
   }).join('');
 
   const labelStep=Math.max(1,Math.ceil(n/6));
   const xLabels=weeks.map((w,i)=>{
     if(i%labelStep!==0&&i!==n-1)return'';
-    return`<text x="${xPos(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="7.5" fill="#5c5b6e" font-family="monospace">${w.getDate().toString().padStart(2,'0')}.${(w.getMonth()+1).toString().padStart(2,'0')}</text>`;
+    /* Last label = concert date (from Ticketing) */
+    const isLast=i===n-1;
+    const lbl=isLast
+      ?`${showDate.getDate().toString().padStart(2,'0')}.${(showDate.getMonth()+1).toString().padStart(2,'0')}`
+      :`${w.getDate().toString().padStart(2,'0')}.${(w.getMonth()+1).toString().padStart(2,'0')}`;
+    const weight=isLast?'font-weight="700" fill="#111111"':'fill="#5c5b6e"';
+    return`<text x="${xPos(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="7.5" ${weight} font-family="monospace">${lbl}</text>`;
   }).join('');
 
   const weekCostItems=weeks.map(w=>{
@@ -1379,20 +1388,26 @@ async function drawChart(uid,costs,concertDate,artistName){
     const wLabel=`${weeks[i].getDate().toString().padStart(2,'0')}.${(weeks[i].getMonth()+1).toString().padStart(2,'0')}`;
     const itemList=weekCostItems[i].map(c=>`${c.description||c.category}: ${fmtPLN(c.amount)} zł`).join('\n');
     const tip=`Tydzień ${wLabel}: ${fmtPLN(v)} zł${itemList?'\n'+itemList:''}`;
-    return`<rect x="${x}" y="${y}" width="${barW}" height="${bh.toFixed(1)}" rx="2" fill="#c8f060" opacity="0.75" data-tip="${tip.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" style="cursor:default"/>`;
+    return`<rect x="${x}" y="${y}" width="${barW}" height="${bh.toFixed(1)}" rx="2" fill="#0a7a4a" opacity="0.85" data-tip="${tip.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" style="cursor:default"/>`;
   }).join('');
 
-  const tickArea=`M${xPos(0).toFixed(1)},${PT+chartH} L${tickPts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join('L')} L${xPos(n-1).toFixed(1)},${PT+chartH}Z`;
-  const tickDots=tickPts.map(([x,y],i)=>filledTickets[i]>0&&weekTickets[i]!==null?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#a78bfa" stroke="#0e0e11" stroke-width="1"/>`:'').join('');
+  const tickArea=tickPts.length>1
+    ?`M${xPos(salesStartIdx).toFixed(1)},${PT+chartH} L${tickPts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join('L')} L${xPos(salesEndIdx).toFixed(1)},${PT+chartH}Z`
+    :'';
+  const tickDots=tickPts.map(([x,y],idx)=>{
+    const i=salesStartIdx+idx;
+    return filledTickets[i]>0&&weekTickets[i]!==null
+      ?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#111111" stroke="#ffffff" stroke-width="1"/>`:'';
+  }).join('');
 
   svgEl.innerHTML=`
 <defs><linearGradient id="gT-${uid}" x1="0" y1="0" x2="0" y2="1">
-  <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.18"/>
-  <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.02"/>
+  <stop offset="0%" stop-color="#555555" stop-opacity="0.18"/>
+  <stop offset="100%" stop-color="#555555" stop-opacity="0.01"/>
 </linearGradient></defs>
 ${gridLines}${bars}
-<path d="${tickArea}" fill="url(#gT-${uid})" pointer-events="none"/>
-<path d="${pathLine(tickPts)}" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>
+${tickPts.length?`<path d="${tickArea}" fill="url(#gT-${uid})" pointer-events="none"/>
+<path d="${pathLine(tickPts)}" fill="none" stroke="#111111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`:''}
 ${tickDots}${xLabels}${tickYLabels}
 <line x1="${PL}" y1="${PT+chartH}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
 <line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
@@ -1407,7 +1422,13 @@ ${tickDots}${xLabels}${tickYLabels}
   if(statusEl){
     if(!matchedEvt){statusEl.textContent='brak koncertu w Ticketingu';statusEl.style.color='var(--text3)';}
     else if(!ticketPoints.length){statusEl.textContent='brak snapshotów w Ticketingu';statusEl.style.color='var(--amber)';}
-    else{statusEl.textContent=`max ${maxTickets} sprzedanych · ${ticketPoints.length} raportów`;statusEl.style.color='var(--teal)';}
+    else{
+      const lastSold=filledTickets[filledTickets.length-1]||0;
+      statusEl.textContent=matchedEvt.cap
+        ?`${lastSold}/${matchedEvt.cap} sprzedanych · ${ticketPoints.length} raportów`
+        :`${lastSold} sprzedanych · ${ticketPoints.length} raportów`;
+      statusEl.style.color='var(--teal)';
+    }
   }
 }
 

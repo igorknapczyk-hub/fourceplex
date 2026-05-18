@@ -6,19 +6,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Watchlist — Fource.Plex</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0e0e11;--bg2:#16161a;--bg3:#1e1e24;--bg4:#26262e;
+  --bg:#ffffff;--bg2:#f2f2f2;--bg3:#e5e5e5;--bg4:#d4d4d4;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --text:#f0eff4;--text2:#9998a8;--text3:#5c5b6e;
-  --accent:#c8f060;--accent2:#9de84a;
-  --purple:#a78bfa;--teal:#34d399;--amber:#fbbf24;--red:#f87171;--blue:#60a5fa;
-  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --text:#0a0a0a;--text2:#737373;--text3:#a1a1a1;
+  --accent:#000000;--accent2:#171717;
+  --purple:#5b3ea8;--teal:#0a7a4a;--amber:#92600a;--red:#c22b10;--blue:#1a4fa0;
+  --mono:'Geist Mono',ui-monospace,monospace;--sans:'Geist',ui-sans-serif,system-ui,sans-serif;
 }
 /* ── LIGHT MODE ── */
-body.light{--bg:#f0f0f5;--bg2:#ffffff;--bg3:#e6e6ec;--bg4:#d8d8e2;--border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);--text:#16161e;--text2:#56566a;--text3:#8f8fa0;--accent:#7ab000;--accent2:#5d8a00;}
-body.light img[alt="Fource.Plex"]{filter:invert(1);mix-blend-mode:normal;opacity:.85}
+
 .theme-toggle{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 8px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .15s,border-color .15s,background .15s;line-height:0}
 .theme-toggle:hover{color:var(--text);border-color:rgba(128,128,128,.25)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -28,7 +27,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 ::-webkit-scrollbar-track{background:var(--bg2)}
 ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
 
-.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:54px 1fr;height:100vh;overflow:hidden}
+.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:1fr;height:100vh;overflow:hidden}
 
 /* TOPBAR */
 .topbar{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:100}
@@ -80,7 +79,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .sidebar-footer-text{font-size:11px;color:var(--text3);font-family:var(--mono)}
 
 /* MAIN */
-.main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.main{display:flex;flex-direction:column;padding-top:96px;overflow:hidden;background:var(--bg)}
 .main-fixed{flex-shrink:0}
 
 /* STATS */
@@ -95,7 +94,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .stat-sub.warn{color:var(--amber)}
 
 /* TOOLBAR */
-.toolbar{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.toolbar{background:#ffffff;display:flex;align-items:center;gap:8px;padding:8px 16px;flex-wrap:wrap}
 .search-wrap{position:relative;flex:1;min-width:160px}
 .search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text3)}
 .search-wrap input{width:100%;padding:6px 10px 6px 29px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;transition:border-color .15s}
@@ -103,7 +102,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .search-wrap input:focus{border-color:var(--accent)}
 select.filter{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-family:var(--sans);font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;outline:none}
 select.filter:focus{border-color:var(--accent)}
-.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:6px 13px;border-radius:6px;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);transition:all .15s;white-space:nowrap}
+.btn{font-family:var(--sans);font-size:12px;font-weight:500;padding:6px 13px;border-radius:6px;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text);transition:all .15s;white-space:nowrap}
 .btn:hover{background:var(--bg4);color:var(--text)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
 .btn-del{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:5px;border:1px solid rgba(248,113,113,.25);background:rgba(248,113,113,.08);color:var(--red);cursor:pointer;transition:all .15s;flex-shrink:0;padding:0}
@@ -116,8 +115,8 @@ select.filter:focus{border-color:var(--accent)}
 .btn-target.active{border-color:rgba(96,165,250,.8);background:rgba(96,165,250,.15);opacity:1;color:var(--blue)}
 .th-check{padding:0 4px!important;text-align:center}
 #select-all-cb{cursor:pointer;accent-color:var(--accent)}
-.btn-accent{background:var(--accent);border-color:var(--accent);color:#0e0e11;font-weight:500}
-.btn-accent:hover{background:var(--accent2);border-color:var(--accent2);color:#0e0e11}
+.btn-accent{background:var(--accent);border-color:var(--accent);color:#ffffff;font-weight:500}
+.btn-accent:hover{background:var(--accent2);border-color:var(--accent2);color:#ffffff}
 .btn-purple{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.3);color:var(--purple)}
 .btn-purple:hover{background:rgba(167,139,250,.22)}
 .btn-teal{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--teal)}
@@ -149,7 +148,7 @@ thead th{font-family:var(--mono);font-size:9px;font-weight:500;color:var(--text3
 thead th:hover{color:var(--text2)}
 thead th.sort-asc::after{content:' ↑';color:var(--accent)}
 thead th.sort-desc::after{content:' ↓';color:var(--accent)}
-tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr{transition:background .1s}
 tbody tr:hover>td{background:var(--bg3)}
 tbody tr.row-ai{border-left:2px solid rgba(167,139,250,.5)}
 tbody tr.row-manual{border-left:2px solid rgba(52,211,153,.4)}
@@ -174,8 +173,8 @@ input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--ac
 /* STATUS */
 .status-select{font-family:var(--mono);font-size:10px;padding:3px 7px;border-radius:4px;cursor:pointer;outline:none;border:1px solid transparent;background:transparent;transition:all .15s;max-width:100%}
 .s-check{color:var(--text3);border-color:var(--border);background:rgba(92,91,110,.25)}
-.s-sent{color:var(--teal);border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.1)}
-.s-reminder{color:var(--amber);border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.1)}
+.s-sent{color:#ffffff!important;border-color:var(--teal)!important;background:var(--teal)!important}
+.s-reminder{color:#ffffff!important;border-color:var(--amber)!important;background:var(--amber)!important}
 .status-select option{background:var(--bg3);color:var(--text);font-family:var(--mono)}
 .status-select:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
 
@@ -185,14 +184,14 @@ input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--ac
 
 /* PL SHOW */
 .pl-no{font-family:var(--mono);font-size:10px;color:var(--text3);background:rgba(92,91,110,.2);border:1px solid var(--border);padding:2px 7px;border-radius:4px;white-space:nowrap}
-.pl-yes{font-family:var(--mono);font-size:10px;color:var(--teal);background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);padding:2px 7px;border-radius:4px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;display:inline-block}
+.pl-yes{font-family:var(--mono);font-size:10px;color:var(--text);background:var(--bg2);border:1px solid var(--border2);padding:2px 7px;border-radius:4px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;display:inline-block}
 .pl-loading{font-family:var(--mono);font-size:10px;color:var(--text3);display:inline-flex;align-items:center;gap:4px}
 .sp-xs{width:10px;height:10px;border:1.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 
 /* PREDICT + TREND */
 .predict-wrap{display:flex;align-items:center;gap:5px;flex-wrap:nowrap}
 .predict-num{font-family:var(--mono);font-size:10px;color:var(--text2);white-space:nowrap}
-.venue-tag{font-family:var(--mono);font-size:9px;color:var(--blue);background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);padding:1px 5px;border-radius:3px;white-space:nowrap}
+.venue-tag{font-family:var(--mono);font-size:9px;color:var(--text2);background:var(--bg2);border:1px solid var(--border2);padding:1px 5px;border-radius:3px;white-space:nowrap}
 .trend-up{color:var(--teal);font-size:13px;flex-shrink:0}
 .trend-down{color:var(--red);font-size:13px;flex-shrink:0}
 .trend-flat{color:var(--text3);font-size:12px;flex-shrink:0}
@@ -292,38 +291,30 @@ select.form-input{cursor:pointer}
 
 <div class="layout">
 
-<div class="topbar">
-  <div class="topbar-left">
-    <img src="logo-dark.png"  class="fp-logo fp-logo-dark"  alt="Fource.Plex" style="height:30px;margin-right:10px"><img src="logo-light.png" class="fp-logo fp-logo-light" alt="Fource.Plex" style="height:30px;margin-right:10px">
-    <div><span class="brand-logo">WATCHLIST</span><span class="brand-tag">Fource.Plex</span></div>
-  </div>
-  <div class="topbar-right">
-    <div class="topbar-notif notif-todo" id="notif-todo" title="Zadania Do zrobienia i Zablokowane">
+<div class="floating-controls">
+    <div class="topbar-notif notif-todo" id="notif-todo" onclick="window.location.href='index.html'" title="Zadania Do zrobienia i Zablokowane" style="cursor:pointer">
       <strong class="notif-count" id="notif-todo-count">0</strong>
       <span class="notif-lbl">do zrobienia</span>
     </div>
-    <div class="topbar-notif notif-zlecone" id="notif-zlecone" title="Zadania zlecone przez Ciebie">
-      <strong class="notif-count" id="notif-zlecone-count">0</strong>
-      <span class="notif-lbl">zlecone</span>
+    <div class="topbar-notif notif-notes" id="notif-notes" onclick="window.location.href='index.html'" title="Nowe notatki wykonania">
+      <strong class="notif-count" id="notif-notes-count">0</strong>
+      <span class="notif-lbl">nowe notatki</span>
     </div>
     <div class="topbar-notif notif-wtoku" id="notif-wtoku" title="Zadania W toku">
       <strong class="notif-count" id="notif-wtoku-count">0</strong>
       <span class="notif-lbl">w toku</span>
     </div>
-    <div class="topbar-notif notif-notes" id="notif-notes" style="display:none" onclick="window.location.href='index.html'" title="Nowe notatki wykonania — kliknij aby przejść">
-      <svg viewBox="0 0 14 14" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" style="flex-shrink:0;color:var(--amber)"><path d="M2 2h10v8H8l-3 2v-2H2z"/></svg>
-      <strong class="notif-count" id="notif-notes-count">0</strong>
-      <span class="notif-lbl">nowych notatek</span>
+    <div class="topbar-notif notif-zlecone" id="notif-zlecone" style="display:none">
+      <strong class="notif-count" id="notif-zlecone-count">0</strong>
+      <span class="notif-lbl">zlecone</span>
     </div>
-    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Tryb jasny / ciemny">
-      <svg id="theme-icon" viewBox="0 0 20 20" width="16" height="16" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
-    </button>
     <div class="user-badge" onclick="openUserModal()"><div class="user-dot" id="badge-dot"></div><span id="currentUserLabel">Wybierz użytkownika</span></div>
-  </div>
 </div>
 
 <div class="sidebar">
-  <div class="nav-label">Moduły</div>
+<div style="padding:16px 20px 10px;flex-shrink:0;margin-bottom:4px">
+  <img src="logo-light.png" alt="Fource.Plex" class="fp-logo" style="width:100%;display:block;height:auto;max-height:48px;object-fit:contain;object-position:left">
+</div>
   <a class="nav-item" href="index.html">
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M1 6h14M5 6v8"/></svg>
     Terrarium
@@ -349,10 +340,10 @@ select.form-input{cursor:pointer}
     <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 4h8M4 7h8M4 10h5"/><rect x="1" y="1" width="14" height="14" rx="1.5"/></svg>
     Listy Gości
   </a>
-  <a class="nav-item" href="projekty.html">
-    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-    Projekty
-  </a>
+  <div class="nav-item" style="opacity:.4;cursor:default;pointer-events:none">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><line x1="8" y1="1" x2="8" y2="15"/><path d="M11 4H6.5a2.5 2.5 0 000 5h3a2.5 2.5 0 010 5H5"/></svg>
+    Księgowość
+  </div>
   <a class="nav-item" href="promotor-office.html" id="promotor-nav" style="display:none;color:var(--blue)">
     <svg class="nav-icon" style="opacity:1" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
     Promotor Office
@@ -379,14 +370,11 @@ select.form-input{cursor:pointer}
     TM1 Ticketmaster
     <svg style="width:9px;height:9px;margin-left:auto;opacity:.4;flex-shrink:0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg>
   </a>
-
-  <div class="sidebar-footer">
-    <div class="sidebar-footer-logo"><span>F</span>OURCE</div>
-    <div class="sidebar-footer-text">Agency Hub © 2026</div>
-  </div>
 </div>
 
 <div class="main">
+<div class="module-header">Watchlist</div>
+
   <div class="main-fixed">
     <div class="stats-bar" id="statsBar"></div>
     <div id="fbConnecting" style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:rgba(251,191,36,.08);border-bottom:1px solid rgba(251,191,36,.2);font-family:var(--mono);font-size:11px;color:var(--amber)">
@@ -410,12 +398,12 @@ select.form-input{cursor:pointer}
 
 
       <button class="btn btn-teal" id="cmpBtn" disabled onclick="togglePanel('comparePanel')">Porównaj (0/4)</button>
-      <button class="btn btn-accent" onclick="togglePanel('addPanel')">+ Dodaj</button>
-      <button class="btn" id="bulkAddBtn" onclick="togglePanel('bulkPanel')" title="Dodaj wielu artystów naraz">+ Dodaj wiele</button>
       <button class="btn" id="refreshBtn" onclick="refreshSelectedOrAll()" title="Odśwież trend zaznaczonych (lub wszystkich)" style="flex-shrink:0">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="vertical-align:middle;margin-right:4px"><path d="M13 8A5 5 0 112 8" stroke-linecap="round"/><path d="M13 4v4h-4"/></svg><span id="refreshBtnLabel">Odśwież trendy</span>
       </button>
       <button class="btn btn-purple" id="aiBtn" onclick="togglePanel('aiPanel')" style="flex-shrink:0">Odkryj z AI ↗</button>
+      <button class="btn" id="bulkAddBtn" onclick="togglePanel('bulkPanel')" title="Dodaj wielu artystów naraz">+ Dodaj wiele</button>
+      <button class="btn" onclick="togglePanel('addPanel')" style="background:#111111;border-color:#111111;color:#ffffff">+ Dodaj</button>
 
     </div>
   </div>
@@ -638,7 +626,7 @@ window.dispatchEvent(new Event('firebase-ready'));
     _prev=tc;
     if(nZc)nZc.textContent=zc;if(nZ)nZ.classList.toggle('active',zc>0);
     if(nWc)nWc.textContent=wc;if(nW)nW.classList.toggle('active',wc>0);
-    if(nN)nN.style.display=nc>0?'':'none';if(nNc)nNc.textContent=nc;
+    if(nN)nN.classList.toggle('active',nc>0);if(nNc)nNc.textContent=nc;
   },()=>{});
 })();
 </script>
@@ -1060,8 +1048,8 @@ function renderTable(){
       <td>${spotifyCell(a)}</td>
       <td>${statusSel(a)}</td>
       <td>${predictCell(a)}</td>
-      <td>${a.genre||'—'}</td>
-      <td style="font-size:11px;color:var(--text2)">${(a.similar||'')}</td>
+      <td data-notes="${a.genre||''}" onmouseenter="showTip(event,this)" onmousemove="moveTip(event)" onmouseleave="hideTip()" style="cursor:default">${a.genre||'—'}</td>
+      <td data-notes="${a.similar||''}" onmouseenter="showTip(event,this)" onmousemove="moveTip(event)" onmouseleave="hideTip()" style="font-size:11px;color:var(--text2);cursor:default">${(a.similar||'')}</td>
       <td>${plShowCell(a)}</td>
       <td>${addedByCell(a)}</td>
       <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${formatDate(a.dateAdded)}</td>
