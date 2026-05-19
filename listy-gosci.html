@@ -111,13 +111,13 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .sec-title{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
 .sec-head-right{display:flex;align-items:center;gap:5px}
 .sec-badge{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:3px;font-weight:500}
-.acc-purple .sec-badge{background:rgba(167,139,250,.12);color:var(--purple)}
-.acc-teal   .sec-badge{background:rgba(52,211,153,.12);color:var(--teal)}
-.acc-blue   .sec-badge{background:rgba(96,165,250,.12);color:var(--blue)}
-.acc-amber  .sec-badge{background:rgba(251,191,36,.12);color:var(--amber)}
+.acc-purple .sec-badge,
+.acc-teal   .sec-badge,
+.acc-blue   .sec-badge,
+.acc-amber  .sec-badge{background:#ffffff;border:1px solid var(--border);color:var(--text);font-family:var(--sans)}
 .itable-wrap{overflow-x:auto}
 .itable{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
-.itable th{font-family:var(--mono);font-size:8px;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);padding:4px 6px;text-align:left;border-bottom:1px solid var(--border);font-weight:400}
+.itable th{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--text);padding:4px 6px;text-align:left;border-bottom:1px solid var(--border)}
 .itable td{padding:1px 0;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
 .itable tr:last-child td{border-bottom:none}
 .col-cb{width:22px}.col-name{width:26%}.col-email{width:26%}.col-from{width:16%}.col-media{width:46px}.col-tick{width:46px}.col-del{width:22px}
@@ -512,7 +512,7 @@ function bindGuestEvents(showId){
 
 /* ══ HELPERS ══ */
 function fmtDate(s){if(!s)return'–';try{const d=new Date(s);return`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;}catch{return s;}}
-function isActive(show){if(!show.date)return true;const c=new Date();c.setDate(c.getDate()-2);return new Date(show.date)>=c;}
+function isActive(show){if(!show.date)return true;const c=new Date();c.setDate(c.getDate()-0);return new Date(show.date)>=c;}
 function daysInfo(dateStr){
   if(!dateStr)return{text:'',cls:''};
   const now=new Date();now.setHours(0,0,0,0);
@@ -572,10 +572,10 @@ function renderList(){
       </div>
       <div class="show-venue">${esc(show.venue||'–')}</div>
       <div class="show-progress-row">
-        <span style="font-family:var(--mono);font-size:10px;color:var(--teal)">Goście&thinsp;<strong>${gT}</strong></span>
-        <span style="font-family:var(--mono);font-size:10px;color:var(--purple)">Foto&thinsp;<strong>${fT}</strong></span>
-        <span style="font-family:var(--mono);font-size:10px;color:var(--blue)">Media&thinsp;<strong>${mT}</strong></span>
-        <span style="font-family:var(--mono);font-size:10px;color:var(--amber)">Comps&thinsp;<strong>${cT}</strong></span>
+        <span style="font-family:var(--sans);font-size:11px;color:var(--text)">Goście&thinsp;<strong>${gT}</strong></span>
+        <span style="font-family:var(--sans);font-size:11px;color:var(--text)">Foto&thinsp;<strong>${fT}</strong></span>
+        <span style="font-family:var(--sans);font-size:11px;color:var(--text)">Media&thinsp;<strong>${mT}</strong></span>
+        <span style="font-family:var(--sans);font-size:11px;color:var(--text)">Comps&thinsp;<strong>${cT}</strong></span>
         <div class="show-item-actions">
           <button class="trash-btn edit-btn" title="Edytuj"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg></button>
           <button class="trash-btn delete-btn" title="Usuń" data-id="${show.id}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 5h10M5 5V3h6v2M6 8v4M10 8v4"/><rect x="3" y="5" width="10" height="9" rx="1"/></svg></button>
@@ -719,10 +719,7 @@ function renderDetail(show){
         <div class="detail-sub">${fmtDate(show.date)}${show.venue?' · '+esc(show.venue):''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:2px">
-        <button class="btn btn-sm" id="edit-show-btn" title="Edytuj podstawowe informacje o koncercie" style="background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--purple)">
-          <svg style="width:10px;height:10px;vertical-align:middle;margin-right:3px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3-8 8H3v-3L11 2z"/></svg>Edytuj
-        </button>
-        <button class="btn btn-sm" id="gen-doc-btn" style="background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--teal)">
+<button class="btn btn-sm" id="gen-doc-btn" style="background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.3);color:var(--teal)">
           <svg style="width:10px;height:10px;vertical-align:middle;margin-right:3px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2h7l3 3v9H3V2z"/><path d="M10 2v3h3"/><path d="M5 9h6M5 11.5h4"/></svg>Generuj .xlsx
         </button>
       </div>
@@ -798,7 +795,6 @@ function renderDetail(show){
   })();
 
   /* ── edit basic info ── */
-  document.getElementById('edit-show-btn').addEventListener('click',()=>openEditPanel(show.id));
 
   /* ── generate xls ── */
   document.getElementById('gen-doc-btn').addEventListener('click',()=>generateDoc(show));

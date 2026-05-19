@@ -1221,6 +1221,7 @@ function extractText(data){
 async function autoFill(){
   const name=document.getElementById('fName').value.trim();
   if(!name){alert('Wpisz najpierw nazwę artysty.');return;}
+  const requestedName=name;
   document.getElementById('fillInd').style.display='flex';
   document.getElementById('autoFillBtn').disabled=true;
 
@@ -1274,6 +1275,11 @@ Odpowiedz TYLKO tym JSON (bez markdown):
 
     let p2={plShow:'NIE',spotifyUrl:''};
     try{p2=parseJson(extractText(d2));}catch(e){console.warn('call2 parse failed',e);}
+
+    if(document.getElementById('fName').value.trim()!==requestedName){
+      notify(`Wyniki dla "${requestedName}" pominięte — wpisałeś już inną nazwę`,'err');
+      return;
+    }
 
     [['fGenre',p1.genre||''],['fSimilar',p1.similar||''],['fListeners',p1.listeners||''],['fSpotify',p2.spotifyUrl||''],['fPlShow',p2.plShow||'NIE'],['fPredMin',p1.predMin||''],['fPredMax',p1.predMax||'']].forEach(([id,v])=>{const el=document.getElementById(id);el.value=v;el.classList.add('ai-filled');});
     const fn=document.getElementById('fNotes');fn.value=[p1.notes||'',p1.predictReasoning?`\nPredict: ${p1.predictReasoning}`:''].join('').trim();fn.classList.add('ai-filled');

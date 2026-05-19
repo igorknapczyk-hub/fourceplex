@@ -799,7 +799,7 @@ function renderTable(){
   const vSel=document.getElementById('filterVenue');
   if(vSel){const cur=vSel.value;vSel.innerHTML='<option value="">Wszystkie venue</option>'+venues.map(v=>`<option ${v===cur?'selected':''} value="${v}">${v}</option>`).join('');}
 
-  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-0); cutoff.setHours(0,0,0,0);
   const activeEvs=evs.filter(ev=>new Date(ev.date)>=cutoff);
   const pastEvs  =evs.filter(ev=>new Date(ev.date)<cutoff);
   const ca=document.getElementById('cntActive'),cp=document.getElementById('cntPast');
@@ -1037,7 +1037,7 @@ function renderTable(){
   const pm=document.getElementById('panMid');
   if(pm&&pm._firstRender!==false){
     pm._firstRender=false;
-    setTimeout(()=>{pm.scrollLeft=pm.scrollWidth;},50);
+    setTimeout(()=>{pm.scrollLeft=0;},50);
   }
 }
 
@@ -1115,7 +1115,7 @@ async function iEdit(td,evId,field){
 /* ── COUNT ALL — saves today's snapshot for all active events ── */
 async function doCountAll(){
   if(!curUser){notify('Wybierz użytkownika','err');return;}
-  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-0); cutoff.setHours(0,0,0,0);
   const evs=(window._events||[]).filter(e=>new Date(e.date)>=cutoff);
   if(!evs.length){notify('Brak aktywnych eventów','err');return;}
   const total=evs.length;
@@ -1195,7 +1195,7 @@ async function doCountOne(evId){
 /* ── STATS ── */
 function updateStats(){
   const evs=window._events||[];
-  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-2); cutoff.setHours(0,0,0,0);
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-0); cutoff.setHours(0,0,0,0);
   const act=evs.filter(e=>new Date(e.date)>=cutoff);
   const tot=act.reduce((s,e)=>s+(e.tm||0)+(e.eb||0)+(e.other||0),0);
   const pctsArr=act.filter(e=>e.cap>0).map(e=>((e.tm||0)+(e.eb||0)+(e.other||0))/e.cap*100);
@@ -1268,7 +1268,7 @@ function generateBackup(){
 
   const evs=window._events||[];
   const allSnaps=window._snaps||{};
-  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-2);cutoff.setHours(0,0,0,0);
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-0);cutoff.setHours(0,0,0,0);
   const active=evs
     .filter(e=>new Date(e.date)>=cutoff)
     .sort((a,b)=>(a.date||'').localeCompare(b.date||''));

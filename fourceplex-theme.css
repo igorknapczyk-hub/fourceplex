@@ -102,9 +102,9 @@ body {
 ═══════════════════════════════════ */
 .module-header {
   position: fixed;
-  top: 54px;
+  top: 44px;
   left: 240px;
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 600;
   color: var(--text);
   letter-spacing: -0.03em;
@@ -447,24 +447,26 @@ body {
 ═══════════════════════════════════ */
 .todo-list  { gap: 7px; }
 .todo-item {
-  background: rgba(255,255,255,0.038);
-  border: 1px solid var(--glass-border);
+  background: transparent !important;
+  border: none !important;
   border-radius: var(--r-sm);
-  padding: 10px 14px;
-  transition: all var(--dur) var(--ease);
+  padding: 7px 9px !important;
+  transition: background .12s !important;
+  transform: none !important;
 }
 .todo-item:hover {
-  background: rgba(255,255,255,0.060);
-  border-color: rgba(255,255,255,0.14);
-  transform: translateX(2px);
+  background: #F6F4EC !important;
+  border-color: transparent !important;
+  transform: none !important;
 }
 .todo-item.pilne {
+  border: none !important;
   border-left: 2px solid var(--red) !important;
-  background: rgba(238,110,110,0.055);
+  background: transparent !important;
 }
 .todo-item.overdue {
-  border-color: rgba(238,110,110,0.40) !important;
-  background: rgba(238,110,110,0.055);
+  border: none !important;
+  background: transparent !important;
 }
 
 .todo-text { font-size: 13px; }

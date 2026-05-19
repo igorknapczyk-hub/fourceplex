@@ -158,7 +158,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 
 /* ── CHECKPOINTS ── */
 .cp-list{display:flex;flex-direction:column;gap:6px}
-.cp-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+.cp-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;background:#ffffff;border:1px solid var(--border);cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
 .cp-row:hover{border-color:var(--border2)}
 .cp-row.done{border-color:rgba(52,211,153,.45);background:rgba(52,211,153,.18)}
 .cp-row.done:hover{border-color:rgba(52,211,153,.6);background:rgba(52,211,153,.26)}
@@ -192,17 +192,17 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .tour-dates-list{margin-bottom:7px}
 .tour-budget-sum{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px}
 .tour-dates-detail{display:flex;flex-direction:column;gap:4px;margin-top:6px}
-.tour-date-item{display:flex;align-items:center;gap:8px;padding:5px 10px;background:var(--bg3);border-radius:5px;border:1px solid var(--border);font-size:12px}
-.tour-date-d{font-family:var(--mono);font-size:10px;color:var(--text3);flex-shrink:0;width:60px}
-.tour-date-v{flex:1;color:var(--text2)}
-.tour-date-b{font-family:var(--mono);font-size:10px;color:var(--text3);flex-shrink:0;text-align:right}
+.tour-date-item{display:flex;align-items:center;gap:8px;padding:5px 10px;background:#ffffff;border-radius:5px;border:1px solid var(--border);font-size:12px}
+.tour-date-d{font-family:var(--mono);font-size:10px;color:var(--text);flex-shrink:0;width:60px}
+.tour-date-v{flex:1;color:var(--text)}
+.tour-date-b{font-family:var(--mono);font-size:10px;color:var(--text);flex-shrink:0;text-align:right}
 
 /* ── COSTS ── */
 .cost-table{width:100%;border-collapse:collapse;font-size:12px}
 .cost-table th{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:4px 8px;text-align:left;border-bottom:1px solid var(--border)}
 .cost-table td{padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
 .cost-table tr:last-child td{border-bottom:none}
-.cost-cat{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;background:var(--bg4);color:var(--text3)}
+.cost-cat{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;background:#ffffff;border:1px solid var(--border);color:var(--text2)}
 .cost-amount{font-family:var(--mono);color:var(--text);white-space:nowrap}
 .cost-delete{color:var(--text3);cursor:pointer;font-size:14px;transition:color .15s;padding:2px 4px;border-radius:3px}
 .cost-delete:hover{color:var(--red);background:rgba(248,113,113,.1)}
@@ -1359,6 +1359,12 @@ async function drawChart(uid,costs,concertDate,artistName){
 <text x="${(PL-4)}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="end" font-size="7" fill="#5c5b6e" font-family="monospace">${label}</text>`;
   }).join('');
 
+  /* Capacity guidelines at 25/50/75% — subtle, unlabeled */
+  const capLines=[0.25,0.5,0.75].map(p=>{
+    const y=(PT+chartH-(p*chartH)).toFixed(1);
+    return`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="rgba(0,0,0,0.07)" stroke-width="1" stroke-dasharray="2,3"/>`;
+  }).join('');
+
   const tickYLabels=[0.5,1].map(p=>{
     const y=(PT+chartH-(p*chartH)).toFixed(1);
     return`<text x="${(W-PR+4)}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="start" font-size="7" fill="#555555" font-family="monospace" opacity="0.9">${Math.round(maxTickets*p)}</text>`;
@@ -1405,7 +1411,7 @@ async function drawChart(uid,costs,concertDate,artistName){
   <stop offset="0%" stop-color="#555555" stop-opacity="0.18"/>
   <stop offset="100%" stop-color="#555555" stop-opacity="0.01"/>
 </linearGradient></defs>
-${gridLines}${bars}
+${gridLines}${capLines}${bars}
 ${tickPts.length?`<path d="${tickArea}" fill="url(#gT-${uid})" pointer-events="none"/>
 <path d="${pathLine(tickPts)}" fill="none" stroke="#111111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`:''}
 ${tickDots}${xLabels}${tickYLabels}

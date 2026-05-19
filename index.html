@@ -134,8 +134,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .a-btn:hover{color:var(--text)}
 .a-btn.sel{color:#ffffff;border-color:transparent}
 .todo-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:0}
-.todo-item{display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:6px;background:transparent;border:1px solid transparent;flex-shrink:0;transition:background .1s}
-.todo-item:hover{background:var(--bg2)}
+.todo-item{display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:6px;background:transparent;border:none;flex-shrink:0;transition:background .1s}
+.todo-item:hover{background:#F6F4EC}
 .todo-cb{width:15px;height:15px;border:1.5px solid var(--text3);border-radius:3px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:2px}
 .todo-cb.done{border-color:var(--accent);background:rgba(200,240,96,.15)}
 .todo-cb.done::after{content:'';width:7px;height:4px;border-left:1.5px solid var(--accent);border-bottom:1.5px solid var(--accent);transform:rotate(-45deg) translateY(-1px);display:block}
@@ -164,7 +164,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .todo-date-input{background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-family:var(--mono);font-size:11px;padding:4px 8px;outline:none;margin-top:5px;width:100%;transition:border-color .15s;cursor:pointer;appearance:none;-webkit-appearance:none}
 .todo-date-input:focus{border-color:rgba(200,240,96,.4)}
 .todo-date-input::-webkit-calendar-picker-indicator{filter:invert(.45);cursor:pointer;opacity:.7}
-.todo-item.overdue{border-color:rgba(248,113,113,.45)!important;background:transparent}
+.todo-item.overdue{background:transparent}
 .todo-due{font-family:var(--mono);font-size:9px;color:var(--text3)}
 .todo-due.urgent{color:var(--red)}
 /* priority toggle */
@@ -173,7 +173,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 /* priority badge */
 .prio-badge{font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:3px;letter-spacing:.03em;flex-shrink:0;background:rgba(248,113,113,.13);color:var(--red);border:1px solid rgba(248,113,113,.28)}
 /* PILNE highlight */
-.todo-item.pilne{border-left:2px solid var(--red)!important;background:transparent}
+.todo-item.pilne{border-left:2px solid var(--red);padding-left:7px;background:transparent}
 /* todo note */
 .todo-note{font-size:11px;color:var(--text3);margin-top:3px;font-style:italic;line-height:1.4;word-break:break-word}
 .todo-note-input{width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text2);font-family:var(--sans);font-size:11px;padding:3px 0;outline:none;transition:border-color .15s;font-style:italic}
@@ -200,7 +200,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14
 .filter-btn.active{background:var(--bg4);border-color:var(--border2);color:var(--text)}
 
 /* ── selected task highlight ── */
-.todo-item.selected{border-color:var(--border2)!important;background:var(--bg2)!important;cursor:default}
+.todo-item.selected{background:#F6F4EC!important;cursor:default}
 /* ── note textarea in add form ── */
 .todo-note-textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:12px;padding:7px 11px;outline:none;resize:vertical;min-height:58px;max-height:100px;transition:border-color .15s;margin-top:5px}
 .todo-note-textarea:focus{border-color:rgba(200,240,96,.4)}
@@ -645,12 +645,17 @@ function getDueDays(dueDate){
 /* ── UI: assignee buttons (add form) ── */
 function renderAssigneeButtons(){
   const row=document.getElementById('assignee-row');row.innerHTML='';
-  const noneActive=selectedAssignees.size===0;
+  const allNames=Object.keys(ASSIGNEES);
+  const allSel=selectedAssignees.size===allNames.length&&allNames.every(n=>selectedAssignees.has(n));
   const none=document.createElement('span');
-  none.className='a-btn'+(noneActive?' sel':'');
-  if(noneActive)none.style.cssText='background:rgba(200,240,96,.15);color:var(--accent);border-color:rgba(200,240,96,.4)';
+  none.className='a-btn'+(allSel?' sel':'');
+  if(allSel)none.style.cssText='background:rgba(200,240,96,.15);color:var(--accent);border-color:rgba(200,240,96,.4)';
   none.textContent='Do wszystkich';
-  none.onclick=()=>{selectedAssignees.clear();renderAssigneeButtons()};
+  none.onclick=()=>{
+    if(allSel){selectedAssignees.clear();}
+    else{selectedAssignees=new Set(allNames);}
+    renderAssigneeButtons();
+  };
   row.appendChild(none);
   Object.entries(ASSIGNEES).forEach(([name,color])=>{
     const btn=document.createElement('span');
@@ -756,12 +761,17 @@ function editTodo(id){
 }
 function renderEditAssignees(){
   const row=document.getElementById('edit-assignee-row');if(!row)return;row.innerHTML='';
-  const noneActive=_editSelectedAssignees.size===0;
+  const allNames=Object.keys(ASSIGNEES);
+  const allSel=_editSelectedAssignees.size===allNames.length&&allNames.every(n=>_editSelectedAssignees.has(n));
   const none=document.createElement('span');
-  none.className='a-btn'+(noneActive?' sel':'');
-  if(noneActive)none.style.cssText='background:rgba(200,240,96,.15);color:var(--accent);border-color:rgba(200,240,96,.4)';
+  none.className='a-btn'+(allSel?' sel':'');
+  if(allSel)none.style.cssText='background:rgba(200,240,96,.15);color:var(--accent);border-color:rgba(200,240,96,.4)';
   none.textContent='Do wszystkich';
-  none.onclick=()=>{_editSelectedAssignees.clear();renderEditAssignees()};
+  none.onclick=()=>{
+    if(allSel){_editSelectedAssignees.clear();}
+    else{_editSelectedAssignees=new Set(allNames);}
+    renderEditAssignees();
+  };
   row.appendChild(none);
   Object.entries(ASSIGNEES).forEach(([name,color])=>{
     const sel=_editSelectedAssignees.has(name);
@@ -804,7 +814,7 @@ function buildTodoEl(t){
 
   const asgHtml=asgns.map(n=>{
     const c=ASSIGNEES[n]||'#888';
-    return`<span class="assignee-tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${escHtml(n)}</span>`;
+    return`<span class="assignee-tag" style="background:${c};color:#ffffff;border:1px solid ${c}">${escHtml(n)}</span>`;
   }).join('');
 
   let dueHtml='';
@@ -1023,7 +1033,7 @@ function renderTaskDetail(t){
 
   const asgHtml=asgns.map(n=>{
     const c=ASSIGNEES[n]||'#888';
-    return`<span class="assignee-tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${escHtml(n)}</span>`;
+    return`<span class="assignee-tag" style="background:${c};color:#ffffff;border:1px solid ${c}">${escHtml(n)}</span>`;
   }).join('');
 
   let dueHtml='';

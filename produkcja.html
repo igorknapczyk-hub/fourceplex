@@ -355,7 +355,7 @@ const delExp=id=>deleteDoc(doc(db,'production_expenses',id));
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(s){if(!s)return'–';const p=s.split('-');return p[2]+'.'+p[1]+'.'+p[0];}
 function fmtPLN(n){return(+n||0).toLocaleString('pl-PL');}
-function isActive(show){if(!show.date)return true;const c=new Date();c.setDate(c.getDate()-2);c.setHours(0,0,0,0);return new Date(show.date)>=c;}
+function isActive(show){if(!show.date)return true;const c=new Date();c.setDate(c.getDate()-0);c.setHours(0,0,0,0);return new Date(show.date)>=c;}
 function isWeekend(d){if(!d)return false;const w=new Date(d).getDay();return w===5||w===6||w===0;}
 function dayName(d){return['Niedziela','Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota'][new Date(d).getDay()];}
 function daysUntil(d){const n=new Date();n.setHours(0,0,0,0);return Math.round((new Date(d)-n)/864e5);}
@@ -806,7 +806,6 @@ function renderDetail(show){
     +'<input id="rider-input" type="url" placeholder="Wklej link Google Drive…" style="display:none;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:11px;padding:4px 9px;border-radius:5px;outline:none;width:230px;transition:border-color .15s" value="'+esc(show.riderUrl||'')+'">'
     +'</div>'
     +'<button class="btn btn-sm btn-purple" id="btn-setlist"'+(past?'':' disabled title="Dostępne po koncercie"')+'>🎵 ZAiKS</button>'
-    +'<button class="btn btn-sm" id="btn-edit">✏️ Edytuj</button>'
     +'</div>'
     +'</div>'
     +'</div>'
@@ -925,7 +924,6 @@ function renderDetail(show){
   if(_prevFocusId==='tt-area'&&ttEl)setTimeout(()=>{ttEl.focus();if(_prevTtSel)ttEl.setSelectionRange(_prevTtSel[0],_prevTtSel[1]);},0);
   if(_prevFocusId==='notes-area'&&notesEl)setTimeout(()=>{notesEl.focus();if(_prevNotesSel)notesEl.setSelectionRange(_prevNotesSel[0],_prevNotesSel[1]);},0);
 
-  document.getElementById('btn-edit').addEventListener('click',()=>openPanel(show));
   document.getElementById('btn-setlist').addEventListener('click',()=>openSetlist(show));
 }
 
