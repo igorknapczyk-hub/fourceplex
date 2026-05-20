@@ -741,7 +741,17 @@ initAuth(function(name, email){
   const nm=document.getElementById('badge-name');
   if(nm)nm.textContent=name;
   checkAccess();
-  if(typeof renderList==='function')renderList();
+  // Poczekaj aż Firebase v10 załaduje artystów
+  if(window._poLoaded){
+    if(typeof renderList==='function')renderList();
+  } else {
+    window.addEventListener('po-firebase-ready',function(){
+      // Daj czas onSnapshot na pierwsze dane
+      setTimeout(function(){
+        if(typeof renderList==='function')renderList();
+      }, 500);
+    },{once:true});
+  }
 });
 </script>
 </body>
