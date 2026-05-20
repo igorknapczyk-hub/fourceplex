@@ -1226,22 +1226,34 @@ async function autoFill(){
   document.getElementById('autoFillBtn').disabled=true;
 
   // ── Wywołanie 1: wiedza treningowa — genre, listeners, predict, similar, notes ──
-  const prompt1=`Jesteś ekspertem muzycznym i bookingowym. Podaj dane dla artysty: "${name}".
+  const prompt1=`Jesteś ekspertem muzycznym i bookingowym. Użyj web_search żeby znaleźć aktualne, prawdziwe dane o artyście: "${name}".
 
-Odpowiedz WYŁĄCZNIE tym JSON (bez markdown, bez komentarzy):
-{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania o aktualnym buzz/momencie artysty"}
+Wykonaj następujące wyszukiwania:
+- "${name}" Spotify monthly listeners
+- "${name}" music genre biography
+- "${name}" similar artists
+- "${name}" concert Europe 2024 2025 tickets sold
 
-Zasady:
+WAŻNE ZASADY:
+- Jeśli nie możesz znaleźć wiarygodnych danych dla tego artysty — zwróć {"error":"Nie znaleziono danych dla tego artysty"} i NIE wypełniaj pozostałych pól
+- NIE wymyślaj danych — tylko zweryfikowane informacje z internetu
+- Listeners muszą pochodzić ze Spotify (szukaj na open.spotify.com lub w artykułach)
+- Jeśli artysta jest niszowy i nie ma danych — powiedz to wprost przez pole error
+
+Na podstawie wyników wyszukiwania odpowiedz WYŁĄCZNIE tym JSON (bez markdown, bez komentarzy):
+{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania oparte na znalezionych danych","notes":"1-2 zdania o aktualnym buzz/momencie artysty — tylko potwierdzone fakty"}
+
+Zasady dla pól:
 - genre: po polsku (np. "indie pop", "hip-hop", "electronic")
-- similar: 3-5 artystów w podobnym nurcie i zbliżonej skali popularności, oddzielone przecinkami
-- listeners: przybliżone Spotify Monthly Listeners (np. "4.2M")
+- similar: 3-5 artystów w podobnym nurcie i zbliżonej skali popularności
+- listeners: przybliżone Spotify Monthly Listeners — TYLKO jeśli znalazłeś w sieci
 - predMin/predMax: realistyczny szacunek sprzedaży biletów na solo headlinerski koncert w Warszawie
   · co 100 biletów poniżej 1800 (np. 600-700, 1200-1400)
   · co 1000 biletów powyżej 1800 (np. 2000-3000, 8000-10000)
   · supergwiazdy: 20000-50000+
   · bierz pod uwagę: sale w Europie, monthly listeners, popularność gatunku w PL, momentum 12M
   · NIE dopasowuj do venue — system dopasuje sam
-Venue: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
+Venue ref: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
 
   // ── Wywołanie 2: web_search — plShow, spotifyUrl ──
   const prompt2=`Użyj web_search żeby sprawdzić czy artysta "${name}" wystąpił kiedykolwiek w Polsce.
@@ -1262,7 +1274,7 @@ Przy okazji znajdź też URL profilu ${name} na Spotify.
 Odpowiedz TYLKO tym JSON (bez markdown):
 {"plShow":"NIE lub np. Open'er Festival 2024","spotifyUrl":"https://open.spotify.com/artist/... lub pusty string"}`;
 
-  const call1=fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt1}]})});
+  const call1=fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_beta:'web-search-2025-03-05',model:'claude-sonnet-4-20250514',max_tokens:800,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt1}]})});
 
   const call2=fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_beta:'web-search-2025-03-05',model:'claude-sonnet-4-20250514',max_tokens:300,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt2}]})});
 
@@ -1272,6 +1284,10 @@ Odpowiedz TYLKO tym JSON (bez markdown):
     const [d1,d2]=await Promise.all([r1.json(),r2.json()]);
 
     const p1=parseJson(extractText(d1));
+    if(p1 && p1.error){
+      notify('Nie znaleziono danych: '+p1.error,'err');
+      return;
+    }
 
     let p2={plShow:'NIE',spotifyUrl:''};
     try{p2=parseJson(extractText(d2));}catch(e){console.warn('call2 parse failed',e);}
