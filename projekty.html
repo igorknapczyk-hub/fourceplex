@@ -209,6 +209,12 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .save-ind.show{opacity:1}
 </style>
 <link rel="stylesheet" href="fourceplex-theme.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({apiKey:"AIzaSyCUsvjkzYG3AVROysZh9BtN2_vagSSyMww",authDomain:"fourceplex-market.firebaseapp.com",projectId:"fourceplex-market",storageBucket:"fourceplex-market.firebasestorage.app",messagingSenderId:"300062366060",appId:"1:300062366060:web:0cf7bd4128bea35cc63b49"});
+</script>
+<script src="fourceplex-auth.js"></script>
 </head>
 <body>
 <div class="layout">
@@ -231,7 +237,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
       <strong class="notif-count" id="notif-notes-count">0</strong>
       <span class="notif-lbl">nowych notatek</span>
     </div>
-    <div class="user-badge" id="user-badge-btn">
+    <div class="user-badge" id="user-badge-btn" onclick="signOut()">
       <div class="user-dot" id="badge-dot"></div>
       <span id="badge-name">Wybierz użytkownika</span>
     </div>
@@ -347,21 +353,6 @@ button:disabled{opacity:.35;cursor:not-allowed}
 </div>
 </div>
 
-<div id="modal-overlay">
-  <div id="modal">
-    <div class="modal-title">Wybierz użytkownika</div>
-    <div class="user-list" id="user-list"></div>
-    <div id="pin-section" style="display:none">
-      <div class="modal-divider"></div>
-      <div class="add-user-row">
-        <input class="modal-input" id="pin-input" type="password" placeholder="PIN…" maxlength="4" inputmode="numeric">
-        <button class="btn" id="btn-pin-ok">OK</button>
-      </div>
-      <div id="pin-error" style="display:none;color:#f87171;font-size:11px;margin-top:6px;font-family:var(--mono);letter-spacing:.05em">Nieprawidłowy PIN</div>
-    </div>
-  </div>
-</div>
-
 <div id="confirm-overlay">
   <div id="confirm-box">
     <div class="confirm-title">Wyrzucić projekt?</div>
@@ -400,37 +391,15 @@ function flashSaved(){const e=document.getElementById('save-ind');e.classList.ad
 const ALL_TAGS=['Trasa','Festiwal','Research','Biurowe','Brainstorm'];
 function tClass(t){return{Trasa:'trasa',Festiwal:'festiwal',Research:'research',Biurowe:'biurowe',Brainstorm:'brainstorm'}[t]||'';}
 
-/* ── USERS ── */
-const SESSION_KEY_P='fourceplex_current_user';
-const USERS=[
-  {name:'Igor',    pin:'1111',color:'#34d399'},
-  {name:'Mariusz', pin:'2222',color:'#fbbf24'},
-  {name:'Monika',  pin:'3333',color:'#a78bfa'},
-  {name:'Radek',   pin:'4444',color:'#60a5fa'},
-  {name:'Gość',    pin:'5555',color:'#fb923c'},
-];
-let currentUser=null,_loginUser=null;
-function uColor(n){const u=USERS.find(u=>u.name===n);return u?u.color:'#888';}
-function uInit(n){return n?n[0].toUpperCase():'?';}
-function setBadge(n){document.getElementById('badge-dot').style.background=uColor(n);document.getElementById('badge-name').textContent=n;}
-function openModal(){_loginUser=null;renderUsers();document.getElementById('pin-section').style.display='none';document.getElementById('modal-overlay').classList.add('open');}
-function closeModal(){document.getElementById('modal-overlay').classList.remove('open');_loginUser=null;}
-function renderUsers(){
-  const el=document.getElementById('user-list');el.innerHTML='';
-  USERS.forEach(u=>{
-    const d=document.createElement('div');d.className='user-opt'+(u.name===_loginUser?' selected':'');
-    d.innerHTML=`<div class="uav" style="background:${u.color}">${uInit(u.name)}</div><span class="user-opt-name">${esc(u.name)}</span>`;
-    d.onclick=()=>selectForPin(u.name);
-    el.appendChild(d);
-  });
-}
-function selectForPin(name){_loginUser=name;renderUsers();document.getElementById('pin-section').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-error').style.display='none';document.getElementById('pin-input').focus();}
-function confirmPin(){const pin=document.getElementById('pin-input').value;const u=USERS.find(u=>u.name===_loginUser);if(u&&pin===u.pin){currentUser=_loginUser;localStorage.setItem(SESSION_KEY_P,currentUser);setBadge(currentUser);closeModal();const _np=document.getElementById('nav-produkcja');if(_np){const _ip=['Radek','Igor'].includes(currentUser);_np.classList.toggle('disabled',!_ip);_np.title=_ip?'':'Dostępne tylko dla Promotora';}}else{document.getElementById('pin-error').style.display='block';document.getElementById('pin-input').value='';document.getElementById('pin-input').focus();}}
-document.getElementById('btn-pin-ok').addEventListener('click',confirmPin);
-document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPin();});
-document.getElementById('user-badge-btn').onclick=openModal;
-document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay')&&currentUser)closeModal();});
-(()=>{const s=localStorage.getItem(SESSION_KEY_P);const u=USERS.find(u=>u.name===s);if(s&&u){currentUser=s;setBadge(s);}else openModal();})();
+/* ── USERS — auth handled by fourceplex-auth.js ── */
+let currentUser=null;
+initAuth(function(name, email){
+  currentUser=name;
+  const dot=document.getElementById('badge-dot');
+  if(dot)dot.style.background=getUserColor(email);
+  const nm=document.getElementById('badge-name');
+  if(nm)nm.textContent=name;
+});
 
 /* ── STATE ── */
 let allProjects=[],selectedId=null,saveTimer=null,nfTags=[],editTags=[],trashId=null;

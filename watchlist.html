@@ -271,23 +271,15 @@ select.form-input{cursor:pointer}
 </style>
 <link rel="stylesheet" href="fourceplex-theme.css">
 <script src="fourceplex-confirm.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({apiKey:"AIzaSyCUsvjkzYG3AVROysZh9BtN2_vagSSyMww",authDomain:"fourceplex-market.firebaseapp.com",projectId:"fourceplex-market",storageBucket:"fourceplex-market.firebasestorage.app",messagingSenderId:"300062366060",appId:"1:300062366060:web:0cf7bd4128bea35cc63b49"});
+</script>
+<script src="fourceplex-auth.js"></script>
 </head>
 <body>
 
-<div class="modal-overlay" id="userModal">
-  <div class="modal">
-    <div class="modal-title">Kto jesteś?</div>
-    <div class="user-list" id="userList"></div>
-    <div id="pin-section" style="display:none">
-      <div style="height:1px;background:var(--border);margin:12px 0"></div>
-      <div class="new-user-row">
-        <input class="form-input" type="password" id="pin-input" placeholder="PIN…" maxlength="4" inputmode="numeric" style="flex:1">
-        <button class="btn btn-accent" onclick="confirmPin()">OK</button>
-      </div>
-      <div id="pin-error" style="display:none;color:#f87171;font-size:11px;margin-top:6px;font-family:var(--mono);letter-spacing:.05em">Nieprawidłowy PIN</div>
-    </div>
-  </div>
-</div>
 
 <div class="layout">
 
@@ -308,7 +300,7 @@ select.form-input{cursor:pointer}
       <strong class="notif-count" id="notif-zlecone-count">0</strong>
       <span class="notif-lbl">zlecone</span>
     </div>
-    <div class="user-badge" onclick="openUserModal()"><div class="user-dot" id="badge-dot"></div><span id="currentUserLabel">Wybierz użytkownika</span></div>
+    <div class="user-badge" onclick="signOut()"><div class="user-dot" id="badge-dot"></div><span id="currentUserLabel">Wybierz użytkownika</span></div>
 </div>
 
 <div class="sidebar">
@@ -649,37 +641,8 @@ function venueForPredict(max){
   return'Stadion';
 }
 
-const SESSION_KEY_WL='fourceplex_current_user';
 const PROMOTOR_USERS=['Radek','Igor'];
-const USERS=[
-  {name:'Igor',    pin:'1111',color:'#34d399'},
-  {name:'Mariusz', pin:'2222',color:'#fbbf24'},
-  {name:'Monika',  pin:'3333',color:'#a78bfa'},
-  {name:'Radek',   pin:'4444',color:'#60a5fa'},
-  {name:'Gość',    pin:'5555',color:'#fb923c'},
-];
-let currentUser='',_loginUser=null;
-function userColor(name){const u=USERS.find(u=>u.name===name);return u?u.color:'#a78bfa';}
-function openUserModal(){
-  _loginUser=null;
-  const list=document.getElementById('userList');
-  list.innerHTML=USERS.map(u=>`<div class="user-opt ${u.name===_loginUser?'selected-user':''}" onclick="selectForPin('${u.name}')"><div class="user-avatar" style="background:${u.color}22;color:${u.color}">${u.name[0].toUpperCase()}</div>${u.name}</div>`).join('');
-  document.getElementById('pin-section').style.display='none';
-  document.getElementById('userModal').classList.add('open');
-}
-function selectForPin(name){
-  _loginUser=name;
-  const list=document.getElementById('userList');
-  list.innerHTML=USERS.map(u=>`<div class="user-opt ${u.name===_loginUser?'selected-user':''}" onclick="selectForPin('${u.name}')"><div class="user-avatar" style="background:${u.color}22;color:${u.color}">${u.name[0].toUpperCase()}</div>${u.name}</div>`).join('');
-  document.getElementById('pin-section').style.display='block';
-  document.getElementById('pin-input').value='';
-  document.getElementById('pin-error').style.display='none';
-  document.getElementById('pin-input').focus();
-}
-function updatePromotorNav(){
-  const el=document.getElementById('promotor-nav');
-  if(el)el.style.display=PROMOTOR_USERS.includes(currentUser)?'flex':'none';
-}
+function userColor(name){return (typeof getUserColor==='function')?getUserColor(name):'#a78bfa';}
 function applyPromotorRestrictions(){
   const isPromotor=PROMOTOR_USERS.includes(currentUser);
   const tip='Dostępne tylko dla Promotora';
@@ -701,39 +664,6 @@ function applyPromotorRestrictions(){
     navProd.classList.toggle('disabled',!isPromotor);
     navProd.title=isPromotor?'':tip;
   }
-}
-function confirmPin(){
-  const pin=document.getElementById('pin-input').value;
-  const u=USERS.find(u=>u.name===_loginUser);
-  if(u&&pin===u.pin){
-    currentUser=_loginUser;
-    localStorage.setItem(SESSION_KEY_WL,currentUser);
-    document.getElementById('currentUserLabel').textContent=currentUser;
-    document.getElementById('userModal').classList.remove('open');
-    const dot=document.getElementById('badge-dot');
-    if(dot)dot.style.background=userColor(currentUser);
-    _loginUser=null;
-    updatePromotorNav();
-    applyPromotorRestrictions();
-    renderTable();
-  }else{
-    document.getElementById('pin-error').style.display='block';
-    document.getElementById('pin-input').value='';
-    document.getElementById('pin-input').focus();
-  }
-}
-document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmPin();});
-function loadUsers(){
-  const saved=localStorage.getItem(SESSION_KEY_WL);
-  const u=USERS.find(u=>u.name===saved);
-  if(saved&&u){
-    currentUser=saved;
-    document.getElementById('currentUserLabel').textContent=saved;
-    const dot=document.getElementById('badge-dot');
-    if(dot)dot.style.background=userColor(saved);
-    updatePromotorNav();
-    applyPromotorRestrictions();
-  }else openUserModal();
 }
 
 let artists=[],sortCol='dateAdded',sortDir=1,selected=[],editId=null,promoterIds=new Set(),promotorOfficeIds=new Set();
@@ -1167,7 +1097,7 @@ function updateBulkCount(){
   }
 }
 async function saveBulkArtists(){
-  if(!currentUser){openUserModal();return;}
+  if(!currentUser){return;}
   const lines=parseBulkLines();
   if(!lines.length)return;
   const btn=document.getElementById('bulkSaveBtn');
@@ -1312,7 +1242,7 @@ Odpowiedz TYLKO tym JSON (bez markdown):
 function saveArtist(){
   const name=document.getElementById('fName').value.trim();
   if(!name){alert('Nazwa artysty jest wymagana.');return;}
-  if(!currentUser){openUserModal();return;}
+  if(!currentUser){return;}
   const status=document.getElementById('fStatus').value;
   if(editId){
     const a=artists.find(x=>x.id===editId),prev=a.status;
@@ -1443,7 +1373,14 @@ async function deleteArtist(id){
   notify(`${a.name} usunięty z listy`);
 }
 
-loadUsers();
+initAuth(function(name, email){
+  const lbl=document.getElementById('currentUserLabel');
+  if(lbl)lbl.textContent=name;
+  const dot=document.getElementById('badge-dot');
+  if(dot)dot.style.background=getUserColor(email);
+  if(typeof applyPromotorRestrictions==='function')applyPromotorRestrictions();
+  if(typeof renderTable==='function')renderTable();
+});
 /* ── THEME ── */
 (function(){
   const TK='fourceplex_theme';
