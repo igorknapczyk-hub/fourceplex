@@ -415,7 +415,7 @@ function venueForPredict(max){
   if(max<=1800)return'Progresja';if(max<=5000)return'COS Torwar';
   return'Atlas Arena+';
 }
-function userColor(name){const u=USERS.find(u=>u.name===name);return u?u.color:'#a78bfa';}
+function userColor(name){return getUserColor(name)||'#a78bfa';}
 function fmtDate(iso){if(!iso)return'—';try{return new Date(iso).toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});}catch{return'—';}}
 
 /* ── LIST ── */
