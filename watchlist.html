@@ -1279,7 +1279,7 @@ Odpowiedz TYLKO tym JSON (bez markdown):
   const call2=fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_beta:'web-search-2025-03-05',model:'claude-sonnet-4-20250514',max_tokens:300,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt2}]})});
 
   try{
-    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout')),25000));
+    const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout')),270000));
     const [r1,r2]=await Promise.race([Promise.all([call1,call2]),timeout]);
     const [d1,d2]=await Promise.all([r1.json(),r2.json()]);
 
