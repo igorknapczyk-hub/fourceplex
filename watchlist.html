@@ -903,7 +903,7 @@ async function refreshArtistTrend(a){
 TYLKO JSON: {"trend":"up|down|flat","predMin":N,"predMax":N,"note":"1 zdanie co się zmieniło"}
 predMin/predMax — realistyczny szacunek biletów solo headliner Warszawa, bez limitu górnego. Dokładność co 100 poniżej 1800, co 1000 powyżej 1800. NIE dopasowuj do venue, podaj szczery szacunek popytu. Bierz pod uwagę sale europejskie (UK/DE/FR), listeners, trend, popularność gatunku w Polsce. Venue auto: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
   try{
-    const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:prompt}]})});
+    const resp=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
     let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else return;}
@@ -1262,9 +1262,9 @@ Przy okazji znajdź też URL profilu ${name} na Spotify.
 Odpowiedz TYLKO tym JSON (bez markdown):
 {"plShow":"NIE lub np. Open'er Festival 2024","spotifyUrl":"https://open.spotify.com/artist/... lub pusty string"}`;
 
-  const call1=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt1}]})});
+  const call1=fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt1}]})});
 
-  const call2=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_beta:'web-search-2025-03-05',model:'claude-sonnet-4-20250514',max_tokens:300,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt2}]})});
+  const call2=fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_beta:'web-search-2025-03-05',model:'claude-sonnet-4-20250514',max_tokens:300,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:prompt2}]})});
 
   try{
     const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout')),25000));
@@ -1323,7 +1323,7 @@ async function runAiSearch(){
 TYLKO JSON: {"artists":[{"name":"","genre":"","listeners":"XM","spotifyUrl":"URL lub ''","plShow":"NIE lub info","predMin":N,"predMax":N,"notes":"1 zdanie o momencie artysty"}]}
 predMin/predMax — realistyczny szacunek biletów solo headliner Warszawa, bez limitu górnego. Dokładność co 100 poniżej 1800, co 1000 powyżej 1800. NIE dopasowuj do venue, system sam dobiera. Bierz pod uwagę sale europejskie (UK/DE/FR), listeners, trend, popularność gatunku w Polsce. Dla supergwiazd 20000-50000+. Venue auto: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
   try{
-    const fetchPromise=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})});
+    const fetchPromise=fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})});
     const resp=await Promise.race([fetchPromise,new Promise((_,r)=>setTimeout(()=>r(new Error('Timeout')),25000))]);
     const data=await resp.json();
     const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -1355,7 +1355,7 @@ ${details}
 TYLKO JSON: {"artists":[${sel.map(a=>`{"name":"${a.name}","currentBuzz":"opis","recentActivity":"ostatnie wydawnictwa/trasy","polishPotential":"ocena","predictUpdated":{"min":N,"max":N},"venue":"sala Warszawa","growthOutlook":"rosnący/stabilny/malejący"}`).join(',')}],"winner":"imię artysty z największym potencjałem","verdict":"2-3 zdania po polsku — kto wygrywa i dlaczego"}
 predictUpdated min/max — realistyczny szacunek biletów solo headliner Warszawa, bez limitu górnego. Dokładność co 100 poniżej 1800, co 1000 powyżej 1800. NIE dopasowuj do venue, podaj szczery szacunek popytu. Bierz pod uwagę sale europejskie (UK/DE/FR), listeners, trend, popularność gatunku w Polsce. Dla supergwiazd 20000-50000+. Venue auto: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
   try{
-    const fetchPromise=fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:900,messages:[{role:'user',content:prompt}]})});
+    const fetchPromise=fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:900,messages:[{role:'user',content:prompt}]})});
     const resp=await Promise.race([fetchPromise,new Promise((_,r)=>setTimeout(()=>r(new Error('Timeout')),25000))]);
     const data=await resp.json();
     const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
@@ -1407,7 +1407,7 @@ async function importSingle(name){
 predMin/predMax — realistyczny szacunek biletów solo headliner Warszawa, bez limitu górnego. Dokładność co 100 poniżej 1800, co 1000 powyżej 1800. NIE dopasowuj do venue. Venue auto: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
   const now=new Date().toISOString();
   try{
-    const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:prompt}]})});
+    const resp=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:prompt}]})});
     const data=await resp.json();
     const txt=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
     let p;try{p=JSON.parse(txt.replace(/```json|```/g,'').trim());}catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)p=JSON.parse(m[0]);else throw e;}

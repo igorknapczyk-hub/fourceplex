@@ -1681,7 +1681,7 @@ Skup się na:
 
 Pisz inspirująco i skrótowo — daj marketingowcom pomysły do rozwinięcia, nie instrukcje do wykonania. Odpowiadaj po polsku, używaj punktorów.`;
   try{
-    const res=await fetch('/.netlify/functions/claude',{
+    const res=await fetch('/api/claude',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYSTEM,messages:aiHistory})
     });
@@ -1793,7 +1793,7 @@ async function loadMetaAds(showId, artistName, range='30d'){
   const params=new URLSearchParams({range});
   const trimmed=(artistName||'').trim();
   if(trimmed)params.set('search',trimmed);
-  const url=`/.netlify/functions/meta-campaigns?${params}`;
+  const url=`/api/meta-campaigns?${params}`;
 
   let data;
   try{

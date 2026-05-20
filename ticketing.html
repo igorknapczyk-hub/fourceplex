@@ -1127,7 +1127,7 @@ async function doCountAll(){
   countingNotif.innerHTML='⏳ Liczę 0 / '+total+' eventów...';
   document.body.appendChild(countingNotif);
   // Odpal background function
-  fetch('/.netlify/functions/count-background',{
+  fetch('/api/count-background',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({events:evs.map(ev=>({
@@ -1169,7 +1169,7 @@ async function doCountOne(evId){
   if(!curUser){notify('Wybierz użytkownika','err');return;}
   notify('Liczę...','info');
   const prevUpdatedAt=ev.updatedAt||0;
-  fetch('/.netlify/functions/count-background',{
+  fetch('/api/count-background',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({events:[{

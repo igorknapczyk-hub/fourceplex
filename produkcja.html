@@ -1010,7 +1010,7 @@ document.getElementById('setlist-close-btn2').addEventListener('click',()=>docum
 document.getElementById('setlist-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('setlist-overlay'))document.getElementById('setlist-overlay').classList.remove('open');});
 
 async function fetchSetlistFromApi(artistName,date){
-  const res=await fetch('/.netlify/functions/setlist-fm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({artistName,date})});
+  const res=await fetch('/api/setlist-fm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({artistName,date})});
   if(!res.ok)throw new Error('HTTP '+res.status+' dla '+artistName);
   return await res.json();
 }

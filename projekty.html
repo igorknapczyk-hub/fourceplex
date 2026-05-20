@@ -651,7 +651,7 @@ document.getElementById('ai-btn').onclick=async()=>{
   const sys=`Jesteś kreatywnym konsultantem agencji koncertowej FOURCE. Pomagasz rozwijać projekty muzyczne — aktywnie pchasz projekt naprzód. Odpowiadasz po polsku, konkretnie i energetycznie. Jesteś partnerem twórczym.`;
   const msg=`Projekt: „${p.title||'Bez nazwy'}"\nTagi: ${(p.tags||[]).join(', ')||'brak'}\n\nKONCEPT 1:\n${(p.koncept1||'').trim()||'(pusty)'}\n\nKONCEPT 2:\n${(p.koncept2||'').trim()||'(pusty)'}\n\nLinki: ${links.join('\n')||'brak'}\nPliki: ${files.join(', ')||'brak'}\n\nZadanie: 1) Wyciągnij 2-3 kluczowe wątki/potencjały. 2) Wskaż 1-2 rzeczy do doprecyzowania. 3) Zadaj 3-4 konkretne pytania które popchną projekt dalej. Operuj konkretami.`;
   try{
-    const res=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:[{role:'user',content:msg}]})});
+    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:[{role:'user',content:msg}]})});
     if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
     resp.textContent=data?.content?.[0]?.text||'(brak odpowiedzi)';
