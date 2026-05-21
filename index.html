@@ -874,12 +874,13 @@ function renderTodos(todos){
   if(ntZleconeCount)ntZleconeCount.textContent=zleconeCount;
   if(ntZlecone)ntZlecone.classList.toggle('active',zleconeCount>0);
 
-  /* new exec-notes detection */
-  const seenTs=getNotesSeenTs();
+  /* new exec-notes detection — per-task tracking */
   let newNotesCount=0;
   const newNoteTaskIds=new Set();
   visible.forEach(t=>{
     const notes=Array.isArray(t.execNotes)?t.execNotes:[];
+    if(!notes.length)return;
+    const seenTs=getNotesSeenTsForTask(t.id);
     const hasNew=notes.some(n=>n.addedBy!==currentUser&&n.addedAt&&new Date(n.addedAt).getTime()>seenTs);
     if(hasNew){newNotesCount++;newNoteTaskIds.add(t.id);}
   });
@@ -908,24 +909,37 @@ function renderTodos(todos){
 /* ── TOPBAR NOTIF STATE ── */
 let _prevTodoCount=null;
 let _tasksWithNewNotes=new Set();
-const NOTES_SEEN_KEY=()=>`fp_notes_seen_${currentUser||'anon'}`;
-function getNotesSeenTs(){
-  if(!currentUser)return Date.now();
-  const v=localStorage.getItem(NOTES_SEEN_KEY());
-  if(v)return parseInt(v,10);
-  /* First load — set baseline to now so old notes don't flood */
+const NOTES_SEEN_KEY=()=>`fp_notes_seen_map_${currentUser||'anon'}`;
+function getNotesSeenMap(){
+  if(!currentUser)return {};
+  try{
+    const v=localStorage.getItem(NOTES_SEEN_KEY());
+    return v?JSON.parse(v):{};
+  }catch(e){return {};}
+}
+function saveNotesSeenMap(map){
+  if(!currentUser)return;
+  localStorage.setItem(NOTES_SEEN_KEY(),JSON.stringify(map));
+}
+function getNotesSeenTsForTask(taskId){
+  const map=getNotesSeenMap();
+  if(map[taskId])return map[taskId];
+  /* First time seeing this task — set baseline to now so old notes don't flood */
   const now=Date.now();
-  localStorage.setItem(NOTES_SEEN_KEY(),now);
+  map[taskId]=now;
+  saveNotesSeenMap(map);
   return now;
 }
-function markNotesSeen(){
-  if(currentUser)localStorage.setItem(NOTES_SEEN_KEY(),Date.now());
+function markTaskNotesSeen(taskId){
+  if(!currentUser||!taskId)return;
+  const map=getNotesSeenMap();
+  map[taskId]=Date.now();
+  saveNotesSeenMap(map);
 }
 function jumpToNewNotes(){
   if(!_tasksWithNewNotes||!_tasksWithNewNotes.size)return;
   const firstId=[..._tasksWithNewNotes][0];
-  markNotesSeen();
-  renderTodos(_latestTodos);
+  /* Otwarcie zadania samo oznaczy notatki w tym zadaniu jako przeczytane (ZMIANA 4) */
   openTaskDetail(firstId);
 }
 
@@ -978,8 +992,11 @@ function renderTaskDetail(t){
   if(empty)empty.style.display='none';
   if(closeBtn)closeBtn.style.display='';
 
-  /* Mark exec-notes as seen when task detail is opened */
-  if(_tasksWithNewNotes&&_tasksWithNewNotes.has(t.id)){markNotesSeen();renderTodos(_latestTodos);}
+  /* Mark exec-notes as seen for THIS task only when detail is opened */
+  if(_tasksWithNewNotes&&_tasksWithNewNotes.has(t.id)){
+    markTaskNotesSeen(t.id);
+    renderTodos(_latestTodos);
+  }
 
   const status=getTodoStatus(t);
   const pilne=isTodoPilne(t);

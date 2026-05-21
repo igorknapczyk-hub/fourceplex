@@ -1156,33 +1156,49 @@ async function autoFill(){
   document.getElementById('autoFillBtn').disabled=true;
 
   // ── Jedno wywołanie z web_search — wszystkie dane naraz ──
-  const prompt=`Jesteś ekspertem muzycznym i bookingowym. Użyj web_search żeby znaleźć dane o artyście: "${name}".
+  const prompt=`Jesteś bookerem agencji koncertowej. Twoje zadanie: zebrać kluczowe sygnały o artyście "${name}" i ocenić jego potencjał sprzedaży biletów na solo headliner w Warszawie.
 
-Wykonaj maksymalnie 3 wyszukiwania:
-1. "${name}" Spotify monthly listeners genre
-2. "${name}" similar artists biography
-3. "${name}" koncert Polska OR "Poland concert" festival
+Wykonaj maksymalnie 3 wyszukiwania (priorytetyzuj według tego co najważniejsze dla tego konkretnego artysty):
+
+PRIORYTET 1 — KONCERTY ZAGRANICZNE (ostatnie 36 miesięcy):
+"${name}" tour 2023 2024 2025 venue sold out
+Szukaj: największa sala w UK/DE/NL/FR/BE/USA w której zagrał sold-out lub blisko sold-out. Capacity sali to najsilniejszy sygnał.
+
+PRIORYTET 2 — SPOTIFY + MOMENTUM:
+"${name}" Spotify monthly listeners 2025 release
+Szukaj: aktualne monthly listeners, świeży release (album/single 2024-2025), trasa w trakcie, viral hit.
+
+PRIORYTET 3 — SOCIAL MEDIA (jeśli pierwsze dwa nie dały jasnego obrazu):
+"${name}" Instagram followers TikTok
+Szukaj: followers IG, TikTok, YouTube subs. Duża dysproporcja (np. 50k IG ale 2M TikTok) zmienia profil.
+
+JAK MYŚLEĆ O PREDYKCJI:
+
+Twoja intuicja powinna bazować na hierarchii sygnałów:
+1. **Największa sala sold-out za granicą (36 miesięcy)** — to twardy benchmark. Warszawa jako pierwszy koncert solo zazwyczaj sprzedaje 30-60% tego co największa sala europejska. Jeśli artysta wyprzedaje Roundhouse (3300) w Londynie i Den Atelier (1200) w Luxemburgu — Warszawa prawdopodobnie 800-1500.
+2. **Czy grał już w Polsce** — silny benchmark. Jeśli sprzedał Stodołę 2 lata temu — drugi koncert często sprzedaje 1.2-1.5x więcej. Jeśli zagrał festiwal (Open'er, OFF) z dobrymi reakcjami — to też sygnał.
+3. **Monthly listeners** — orientacyjny, ALE: 1M MEL nie znaczy automatycznie 1000 biletów. Gatunki różnią się drastycznie (hip-hop sprzedaje, jazz mniej). Sprawdź czy listeners rosną czy spadają w ciągu roku.
+4. **Social media** — duża obecność na TikTok dla młodszych artystów może być silniejszym sygnałem niż listeners. Mała IG przy dużych MEL = słabsze konwersje na bilety.
+5. **Momentum** — świeży release zawsze podbija predykcję. Brak nowej muzyki od 3+ lat obniża.
+
+Bądź realistyczny, nie optymistyczny. Łatwiej skorygować w górę niż przepalić budżet promocyjny.
 
 ZASADY:
-- Szukaj wytrwale — sprawdź warianty pisowni jeśli pierwsze wyszukiwanie nie zwróciło wyników
-- Jeśli nie znalazłeś dokładnych listeners — oszacuj na podstawie liczby followersów lub salach koncertowych
-- NIE wymyślaj faktów (konkretne liczby bez źródła, daty koncertów)
-- Zwróć {"error":"..."} TYLKO jeśli artysta dosłownie nie istnieje w internecie — to ostateczność
-- Dla artystów ze Spotify, managementem, koncertami w Europie — zawsze wypełnij wszystkie pola
+- Szukaj wytrwale — sprawdź warianty pisowni jeśli pierwsze wyszukiwanie nie dało wyników
+- Możesz oszacować listeners jeśli nie znalazłeś dokładnej liczby (na podstawie followersów lub salach)
+- NIE wymyślaj konkretnych nazw koncertów ani dat bez źródła
+- Zwróć {"error":"..."} TYLKO jeśli artysta dosłownie nie istnieje w internecie
 
-Odpowiedz WYŁĄCZNIE tym JSON (bez markdown, bez komentarzy):
-{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M lub szacunek","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania o momencie artysty","plShow":"NIE lub np. Open'er Festival 2024","spotifyUrl":"https://open.spotify.com/artist/... lub pusty string"}
+Odpowiedz WYŁĄCZNIE tym JSON (bez markdown):
+{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M","predMin":N,"predMax":N,"predictReasoning":"konkretne uzasadnienie wskazujące na największą salę + listeners + momentum","notes":"1-2 zdania o momencie artysty","plShow":"NIE lub np. Open'er Festival 2024","spotifyUrl":"https://open.spotify.com/artist/... lub pusty string"}
 
-Zasady dla pól:
-- genre: po polsku
-- similar: 3-5 artystów w podobnym nurcie i skali
-- listeners: Spotify Monthly Listeners (lub szacunek "ok. Xk"/"ok. XM")
-- predMin/predMax: realistyczny szacunek biletów na solo headliner w Warszawie
-  · co 100 poniżej 1800, co 1000 powyżej 1800, supergwiazdy 20000-50000+
-  · NIE dopasowuj do venue
-- plShow: jeśli znalazłeś dowód koncertu w PL — nazwa+rok, w przeciwnym razie "NIE"
-- spotifyUrl: jeśli znalazłeś — pełny URL profilu, w przeciwnym razie pusty string
-Venue ref: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000`;
+predictReasoning MUSI zawierać: największą salę zagraniczną z ostatnich 36 miesięcy (jeśli znalazłeś), listeners, kluczowy sygnał (nowy release/viral/trasa).
+
+predMin/predMax — przedział nie szerszy niż 30% (np. 800-1100, nie 500-1500). Jeśli nie masz pewności — bądź ostrożniejszy w dół.
+
+Zakresy: co 100 poniżej 1800 biletów, co 500 powyżej 1800, co 1000 powyżej 5000. NIE dopasowuj do konkretnych venue.
+
+Venue ref tylko orientacyjnie: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000`;
 
   const call=fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_beta:'web-search-2025-03-05',model:'claude-sonnet-4-20250514',max_tokens:600,tools:[{type:'web_search_20250305',name:'web_search',max_uses:3}],messages:[{role:'user',content:prompt}]})});
 
