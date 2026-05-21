@@ -985,6 +985,7 @@ async function handleCallbackQuery(cb) {
 // ── Vercel handler ──────────────────────────────────────────────────
 
 export default async function handler(req, res) {
+  return res.status(200).send('ok'); // tymczasowo wyłączona
   if (req.method !== 'POST') {
     return res.status(200).send('Beata bot działa.');
   }
