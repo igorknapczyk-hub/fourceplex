@@ -1156,33 +1156,35 @@ async function autoFill(){
   document.getElementById('autoFillBtn').disabled=true;
 
   // ── Wywołanie 1: wiedza treningowa — genre, listeners, predict, similar, notes ──
-  const prompt1=`Jesteś ekspertem muzycznym i bookingowym. Użyj web_search żeby znaleźć aktualne, prawdziwe dane o artyście: "${name}".
+  const prompt1=`Jesteś ekspertem muzycznym i bookingowym. Użyj web_search żeby znaleźć aktualne dane o artyście: "${name}".
 
-Wykonaj następujące wyszukiwania:
-- "${name}" Spotify monthly listeners
-- "${name}" music genre biography
-- "${name}" similar artists
-- "${name}" concert Europe 2024 2025 tickets sold
+Wykonaj wyszukiwania w tej kolejności:
+1. "${name}" Spotify monthly listeners
+2. "${name}" artist music genre
+3. "${name}" similar artists biography
+4. "${name}" live concert Europe 2024 2025
 
-WAŻNE ZASADY:
-- Jeśli nie możesz znaleźć wiarygodnych danych dla tego artysty — zwróć {"error":"Nie znaleziono danych dla tego artysty"} i NIE wypełniaj pozostałych pól
-- NIE wymyślaj danych — tylko zweryfikowane informacje z internetu
-- Listeners muszą pochodzić ze Spotify (szukaj na open.spotify.com lub w artykułach)
-- Jeśli artysta jest niszowy i nie ma danych — powiedz to wprost przez pole error
+ZASADY WYPEŁNIANIA:
+- Szukaj wytrwale — artysta może być znany pod nieco inną pisownią, sprawdź warianty
+- Jeśli nie znalazłeś dokładnych listeners — oszacuj na podstawie liczby followersów, wyświetleń, informacji o salach koncertowych
+- Jeśli nie znalazłeś podobnych artystów wprost — wywnioskuj z gatunku i opisu
+- NIE wymyślaj faktów (daty, nazwy koncertów, konkretne liczby bez źródła)
+- Zwróć {"error":"..."} TYLKO jeśli artysta dosłownie nie istnieje w internecie — to ostateczność
+- Dla artystów z Spotify, managementem, koncertami w Europie — zawsze wypełnij wszystkie pola
 
-Na podstawie wyników wyszukiwania odpowiedz WYŁĄCZNIE tym JSON (bez markdown, bez komentarzy):
-{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania oparte na znalezionych danych","notes":"1-2 zdania o aktualnym buzz/momencie artysty — tylko potwierdzone fakty"}
+Na podstawie wyników odpowiedz WYŁĄCZNIE tym JSON (bez markdown, bez komentarzy):
+{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M lub szacunek","predMin":N,"predMax":N,"predictReasoning":"1-2 zdania","notes":"1-2 zdania o momencie artysty"}
 
 Zasady dla pól:
-- genre: po polsku (np. "indie pop", "hip-hop", "electronic")
-- similar: 3-5 artystów w podobnym nurcie i zbliżonej skali popularności
-- listeners: przybliżone Spotify Monthly Listeners — TYLKO jeśli znalazłeś w sieci
-- predMin/predMax: realistyczny szacunek sprzedaży biletów na solo headlinerski koncert w Warszawie
-  · co 100 biletów poniżej 1800 (np. 600-700, 1200-1400)
-  · co 1000 biletów powyżej 1800 (np. 2000-3000, 8000-10000)
+- genre: po polsku (np. "indie pop", "hip-hop", "electronic", "soul")
+- similar: 3-5 artystów w podobnym nurcie i skali popularności
+- listeners: Spotify Monthly Listeners — jeśli nie znalazłeś dokładnie, podaj przedział "ok. Xk" lub "ok. XM"
+- predMin/predMax: realistyczny szacunek biletów na solo headliner w Warszawie
+  · co 100 poniżej 1800 (np. 600-700, 1200-1400)
+  · co 1000 powyżej 1800 (np. 2000-3000, 8000-10000)
   · supergwiazdy: 20000-50000+
-  · bierz pod uwagę: sale w Europie, monthly listeners, popularność gatunku w PL, momentum 12M
-  · NIE dopasowuj do venue — system dopasuje sam
+  · baz się na: sale europejskie, listeners, popularność gatunku w PL, momentum 12M
+  · NIE dopasowuj do venue
 Venue ref: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000, Galaktyka 50000+`;
 
   // ── Wywołanie 2: web_search — plShow, spotifyUrl ──
@@ -1214,8 +1216,8 @@ Odpowiedz TYLKO tym JSON (bez markdown):
     const [d1,d2]=await Promise.all([r1.json(),r2.json()]);
 
     const p1=parseJson(extractText(d1));
-    if(p1 && p1.error){
-      notify('Nie znaleziono danych: '+p1.error,'err');
+    if(p1 && p1.error && !p1.genre && !p1.listeners && !p1.similar){
+      notify('Nie znaleziono danych dla "'+requestedName+'" — artysta nieznany lub zbyt niszowy','err');
       return;
     }
 
