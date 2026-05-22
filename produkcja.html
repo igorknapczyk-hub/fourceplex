@@ -393,7 +393,6 @@ onSnapshot(showsCol,snap=>{
   allShows.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   renderList();
   if(selectedShowId){const s=allShows.find(x=>x.id===selectedShowId);if(s)renderDetail(s);}
-  if(allShows.length===0&&!window._prodSeeded){window._prodSeeded=true;seedData();}
 },err=>{
   console.error('shows:',err);
   document.getElementById('show-list').innerHTML='<div class="empty-list" style="color:var(--red)">Błąd: '+err.code+'</div>';
@@ -406,16 +405,6 @@ onSnapshot(expsCol,snap=>{
     if(s)rerenderExpenses(s);
   }
 },err=>console.error('exps:',err));
-
-/* seed */
-async function seedData(){
-  const t=new Date();
-  function addD(n){const d=new Date(t);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
-  await addShow({artistName:'Dakhabrakha',date:addD(12),venue:'Progresja, Warszawa',checkpoints:{dosContact:true,advancingArtist:true,advancingVenue:true,fohEngineer:true,timetable:true,frisco:true,backline:true,ebilet:true,setLength:true},cpNotes:{dosContact:'Dmitri Zinchenko',fohEngineer:'Własny inżynier artysty'},timetableText:'',notesText:'',createdBy:'system'});
-  await addShow({artistName:'INJI',date:addD(5),venue:'Piekło nad Niebem, Kraków',checkpoints:{dosContact:true,advancingArtist:true,advancingVenue:true,advancingSupport:true,fohEngineer:true,fohDesk:true,ldEngineer:true,ldDesk:true,timetable:true,parking:true,frisco:true,dinner:true,backline:true,stagehands:true,ebilet:true,vipMg:true,setLength:true,curfews:true},cpNotes:{dosContact:'Anna Nowak'},timetableText:'',notesText:'',createdBy:'system'});
-  await addShow({artistName:'Hannah Bahng',date:addD(21),venue:'Niebo, Warszawa',checkpoints:{},cpNotes:{},timetableText:'',notesText:'',createdBy:'system'});
-  await addShow({artistName:'Heilung',date:addD(-30),venue:'Torwar, Warszawa',checkpoints:{dosContact:true,advancingArtist:true,advancingSupport:true,advancingVenue:true,fohEngineer:true,fohDesk:true,ldEngineer:true,ldDesk:true,timetable:true,setLength:true,curfews:true,parking:true,frisco:true,dinner:true,backline:true,stagehands:true,firstAid:true,security:true,ebilet:true,vipMg:true,merch:true},cpNotes:{dosContact:'Katarzyna Kowalska'},timetableText:'',notesText:'',createdBy:'system'});
-}
 
 /* tabs */
 document.getElementById('tab-active').addEventListener('click',()=>switchTab('active'));

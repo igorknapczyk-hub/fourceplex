@@ -762,15 +762,6 @@ async function initFirebase(){
   _fbInitialized=true;
   setRefreshStatus('pending','Łączę z bazą...');
   try{
-    const snap=await window._getDocs(window._artistsCol);
-    if(snap.empty){
-      notify('Pierwsze uruchomienie — ładuję dane startowe...','info');
-      const sample=buildSample();
-      for(const a of sample){
-        await window._setDoc(window._doc(window._artistsCol,String(a.id)),a);
-        await new Promise(r=>setTimeout(r,60));
-      }
-    }
     _unsubscribe=window._onSnapshot(window._artistsCol,(snapshot)=>{
       artists=snapshot.docs.map(d=>d.data());
       promoterIds=new Set(artists.filter(a=>a.hot).map(a=>a.id));

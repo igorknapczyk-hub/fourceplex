@@ -616,62 +616,6 @@ let curUser='',editId=null,_sCol='date',_sDir=1;
 window._events=window._events||[];
 window._snaps=window._snaps||{};
 
-/* ── SEED EVENTS ── */
-const SEED=[
-  // PRZESZŁE
-  {name:'Schur',         date:'2026-03-26',venue:'Hydrozagadka',     price:'99',     cap:370,  onSale:'2025-11-07',tm:105, eb:178, other:0,  remains:87,  wraps:23,vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Killowen',      date:'2026-03-26',venue:'BARdzo Bardzo',    price:'99',     cap:200,  onSale:'2025-10-31',tm:23,  eb:45,  other:0,  remains:132, wraps:10,vip:'',       notes:'',addedBy:'Monika'},
-  {name:'vgtbl.pl',      date:'2026-03-26',venue:'Drizzly Grizzly',  price:'89',     cap:370,  onSale:'2025-09-22',tm:23,  eb:65,  other:0,  remains:282, wraps:12,vip:'',       notes:'',addedBy:'Monika'},
-  {name:'vgtbl.pl',      date:'2026-03-27',venue:'Schron',           price:'89',     cap:150,  onSale:'2025-09-22',tm:30,  eb:105, other:0,  remains:15,  wraps:11,vip:'',       notes:'',addedBy:'Monika'},
-  {name:'vgtbl.pl',      date:'2026-03-28',venue:'Niebo',            price:'89',     cap:700,  onSale:'2025-09-22',tm:21,  eb:180, other:0,  remains:499, wraps:28,vip:'',       notes:'',addedBy:'Monika'},
-  {name:'INJI',          date:'2026-04-11',venue:'Piekło nad Niebem',price:'109',    cap:250,  onSale:'2025-11-21',tm:125, eb:124, other:0,  remains:1,   wraps:12,vip:'',       notes:'prawie sold out!',addedBy:'Igor'},
-  // AKTYWNE — istniejące
-  {name:'Pentatonix',    date:'2026-04-14',venue:'COS Torwar',       price:'219-279',cap:6651, onSale:'2025-10-10',tm:2020,eb:3003,other:0,  remains:1628,wraps:37,vip:'notatka',notes:'kilka kategorii cen',addedBy:'Mariusz'},
-  {name:'Dakhabrakha',   date:'2026-04-17',venue:'Progresja',        price:'149',    cap:1800, onSale:'2025-10-12',tm:153, eb:446, other:245,remains:956, wraps:77,vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Hannah Bahng',  date:'2026-04-20',venue:'Niebo',            price:'159-677',cap:800,  onSale:'2026-02-20',tm:112, eb:688, other:0,  remains:0,   wraps:0, vip:'notatka',notes:'sold out',addedBy:'Monika'},
-  {name:'Kiki Rockwell', date:'2026-04-21',venue:'Niebo',            price:'105',    cap:750,  onSale:'2025-04-28',tm:142, eb:581, other:0,  remains:27,  wraps:23,vip:'',       notes:'',addedBy:'Igor'},
-  // NOWE ze screena
-  {name:'Asgeir',        date:'2026-04-28',venue:'Proxima',          price:'99-119', cap:850,  onSale:'2025-12-01',tm:312, eb:198, other:0,  remains:340, wraps:18,vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Tinariwen',     date:'2026-04-28',venue:'Studio',           price:'169-189',cap:1622, onSale:'2025-11-15',tm:680, eb:490, other:32, remains:420, wraps:44,vip:'',       notes:'2 koncerty',addedBy:'Monika'},
-  {name:'Tinariwen',     date:'2026-04-29',venue:'Progresja',        price:'179',    cap:1750, onSale:'2025-11-15',tm:520, eb:743, other:0,  remains:487, wraps:51,vip:'',       notes:'dzień 2',addedBy:'Monika'},
-  {name:'Yellow Days',   date:'2026-04-29',venue:'Hydrozagadka',     price:'99',     cap:370,  onSale:'2026-01-10',tm:89,  eb:142, other:0,  remains:139, wraps:9, vip:'',       notes:'wschodzący hype',addedBy:'Mariusz'},
-  {name:'Anatole Muster',date:'2026-05-17',venue:'Jassmine',         price:'110',    cap:200,  onSale:'2026-02-01',tm:44,  eb:61,  other:0,  remains:95,  wraps:5, vip:'',       notes:'nowy artysta',addedBy:'Igor'},
-  {name:'Alok',          date:'2026-05-24',venue:'Niebo',            price:'119',    cap:250,  onSale:'2026-01-20',tm:98,  eb:82,  other:15, remains:55,  wraps:12,vip:'',       notes:'EDM, mocna kampania',addedBy:'Mariusz'},
-  {name:'Pacifica',      date:'2026-05-27',venue:'BARdzo Bardzo',    price:'99',     cap:200,  onSale:'2026-02-14',tm:31,  eb:28,  other:0,  remains:141, wraps:3, vip:'',       notes:'słaba sprzedaż',addedBy:'Monika'},
-  {name:'Saint Stacy',   date:'2026-05-28',venue:'Hydrozagadka',     price:'89',     cap:370,  onSale:'',          tm:0,   eb:0,   other:0,  remains:370, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Conan Gray',    date:'2026-05-29',venue:'Atlas Arena',       price:'179-1350',cap:14698,onSale:'',         tm:0,   eb:0,   other:0,  remains:14698,wraps:0,vip:'',       notes:'',addedBy:'Igor'},
-  {name:'ivri',          date:'2026-06-11',venue:'BARdzo Bardzo',     price:'99',     cap:200,  onSale:'',          tm:0,   eb:0,   other:0,  remains:200, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Joost Klein',   date:'2026-06-15',venue:'Progresja',         price:'179',    cap:1800, onSale:'',          tm:0,   eb:0,   other:0,  remains:1800,wraps:0, vip:'',       notes:'dzień 1',addedBy:'Igor'},
-  {name:'Joost Klein',   date:'2026-06-16',venue:'Progresja',         price:'179',    cap:1800, onSale:'',          tm:0,   eb:0,   other:0,  remains:1800,wraps:0, vip:'',       notes:'dzień 2',addedBy:'Igor'},
-  {name:'Dream, Ivory',  date:'2026-06-20',venue:'BARdzo Bardzo',     price:'119',    cap:200,  onSale:'',          tm:0,   eb:0,   other:0,  remains:200, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Men I Trust',   date:'2026-06-22',venue:'Progresja',         price:'169',    cap:1800, onSale:'',          tm:0,   eb:0,   other:0,  remains:1800,wraps:0, vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Thaiboy Digital',date:'2026-06-25',venue:'Niebo',            price:'119',    cap:620,  onSale:'',          tm:0,   eb:0,   other:0,  remains:620, wraps:0, vip:'',       notes:'dzień 1',addedBy:'Igor'},
-  {name:'Thaiboy Digital',date:'2026-06-26',venue:'Niebo',            price:'129',    cap:750,  onSale:'',          tm:0,   eb:0,   other:0,  remains:750, wraps:0, vip:'',       notes:'dzień 2',addedBy:'Igor'},
-  {name:'Charlie Puth',  date:'2026-07-30',venue:'Progresja',         price:'249-1389',cap:7800, onSale:'',         tm:0,   eb:0,   other:0,  remains:7800,wraps:0, vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Eivor',         date:'2026-08-02',venue:'Proxima',           price:'130',    cap:900,  onSale:'',          tm:0,   eb:0,   other:0,  remains:900, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
-  {name:'OMD',           date:'2026-08-24',venue:'Progresja',         price:'239',    cap:5000, onSale:'',          tm:0,   eb:0,   other:0,  remains:5000,wraps:0, vip:'',       notes:'',addedBy:'Igor'},
-  {name:'New Constellations',date:'2026-09-08',venue:'Hydrozagadka',  price:'99',     cap:370,  onSale:'',          tm:0,   eb:0,   other:0,  remains:370, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
-  {name:'WITCHZ',        date:'2026-09-19',venue:'Niebo',             price:'119-149',cap:610,  onSale:'',          tm:0,   eb:0,   other:0,  remains:610, wraps:0, vip:'',       notes:'dzień 1',addedBy:'Igor'},
-  {name:'WITCHZ',        date:'2026-09-20',venue:'Niebo',             price:'119-149',cap:700,  onSale:'',          tm:0,   eb:0,   other:0,  remains:700, wraps:0, vip:'',       notes:'dzień 2',addedBy:'Igor'},
-  {name:'Stu Larsen',    date:'2026-09-26',venue:'Chmury',            price:'89',     cap:120,  onSale:'',          tm:0,   eb:0,   other:0,  remains:120, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Tender',        date:'2026-10-07',venue:'Hydrozagadka',      price:'99',     cap:370,  onSale:'',          tm:0,   eb:0,   other:0,  remains:370, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Digitalism',    date:'2026-10-24',venue:'Niebo',             price:'119',    cap:700,  onSale:'',          tm:0,   eb:0,   other:0,  remains:700, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
-  {name:'Temples',       date:'2026-10-27',venue:'Niebo',             price:'109',    cap:700,  onSale:'',          tm:0,   eb:0,   other:0,  remains:700, wraps:0, vip:'',       notes:'',addedBy:'Igor'},
-];
-
-window.addEventListener('fb-ready',async()=>{
-  const s=await window._getDocs(window._evCol);
-  if(s.empty){
-    for(const ev of SEED){
-      const id='ev_'+Math.random().toString(36).slice(2,9);
-      await window._setDoc(window._doc(window._db,'ticketing_events',id),{...ev,breakEven:0,internalBuys:0,addedAt:Date.now()});
-    }
-    notify('Załadowano '+SEED.length+' eventów testowych');
-    // Historyczne snapshoty wtorkowe zostaną uzupełniane przez doCountOne/doCountAll
-    // wyłącznie na podstawie prawdziwych danych z API. Nie generujemy fikcyjnych liczb.
-  }
-});
-
 /* ── USERS — auth handled by fourceplex-auth.js ── */
 
 /* ── HELPERS ── */
