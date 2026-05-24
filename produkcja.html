@@ -209,6 +209,9 @@ input.etbl-inp:not([type="checkbox"]):not([type="radio"]):not([type="color"]):no
 .dot{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:dotP 1.2s ease-in-out infinite}
 .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
 @keyframes dotP{0%,80%,100%{opacity:.3;transform:scale(.85)}40%{opacity:1;transform:scale(1)}}
+/* Copy-to-clipboard toast */
+.fp-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:#111;color:#fff;font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:8px 16px;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:9999;opacity:0;pointer-events:none;transition:opacity .15s ease,transform .15s ease}
+.fp-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 <link rel="stylesheet" href="fourceplex-theme.css">
 <script src="fourceplex-confirm.js"></script>
@@ -392,7 +395,11 @@ onSnapshot(showsCol,snap=>{
   allShows=snap.docs.map(d=>({id:d.id,...d.data()}));
   allShows.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   renderList();
-  if(selectedShowId){const s=allShows.find(x=>x.id===selectedShowId);if(s)renderDetail(s);}
+  if(selectedShowId){
+    const s=allShows.find(x=>x.id===selectedShowId);
+    /* Don't rebuild detail while user is mid-edit on expenses — would steal focus and could wipe local state */
+    if(s && !(_expDirty && _expShowId===s.id)) renderDetail(s);
+  }
 },err=>{
   console.error('shows:',err);
   document.getElementById('show-list').innerHTML='<div class="empty-list" style="color:var(--red)">Błąd: '+err.code+'</div>';
@@ -522,6 +529,8 @@ function selectShow(id){
 function _expRowId(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 
 function initExpLocal(showId){
+  /* Preserve unsaved edits when re-opening / re-rendering same show */
+  if(_expShowId===showId && _expDirty) return;
   _expShowId=showId; _expDirty=false;
   clearInterval(_expAutoSave); _expAutoSave=null;
   ['production','hospitality'].forEach(cat=>{
@@ -838,7 +847,17 @@ function renderDetail(show){
   function copyExpenses(cat){
     const rows=(_expLocal[cat]||[]).filter(r=>r.name||r.amount);
     const text=rows.map(r=>`${r.name}\t${parseFloat(r.amount)||0}`).join('\n');
-    navigator.clipboard.writeText(text).catch(()=>{});
+    navigator.clipboard.writeText(text)
+      .then(()=>fpToast('Skopiowano do schowka'))
+      .catch(()=>fpToast('Błąd kopiowania'));
+  }
+  function fpToast(msg){
+    let t=document.getElementById('fp-toast');
+    if(!t){t=document.createElement('div');t.id='fp-toast';t.className='fp-toast';document.body.appendChild(t);}
+    t.textContent=msg;
+    requestAnimationFrame(()=>t.classList.add('show'));
+    clearTimeout(window._fpToastT);
+    window._fpToastT=setTimeout(()=>t.classList.remove('show'),1800);
   }
   const cpBtn=document.getElementById('copy-prod-btn');
   if(cpBtn)cpBtn.addEventListener('click',()=>copyExpenses('production'));
