@@ -1149,19 +1149,24 @@ async function autoFill(){
   // ── Jedno wywołanie z web_search — wszystkie dane naraz ──
   const prompt=`Jesteś bookerem agencji koncertowej. Twoje zadanie: zebrać kluczowe sygnały o artyście "${name}" i ocenić jego potencjał sprzedaży biletów na solo headliner w Warszawie.
 
-Wykonaj maksymalnie 3 wyszukiwania (priorytetyzuj według tego co najważniejsze dla tego konkretnego artysty):
+Wykonaj maksymalnie 3 wyszukiwania w tej kolejności:
 
-PRIORYTET 1 — KONCERTY ZAGRANICZNE (ostatnie 36 miesięcy):
-"${name}" tour 2023 2024 2025 venue sold out
-Szukaj: największa sala w UK/DE/NL/FR/BE/USA w której zagrał sold-out lub blisko sold-out. Capacity sali to najsilniejszy sygnał.
+WYSZUKIWANIE 1 — IDENTYFIKACJA (zawsze wykonaj jako pierwsze):
+"${name}" artist
+To wyszukiwanie ma potwierdzić kim jest artysta: gatunek, kraj, Spotify, social media. Dla KAŻDEGO realnego artysty to coś zwróci — profil Spotify, Instagram, Wikipedia, prasa muzyczna, Bandcamp, Last.fm. Jeśli artysta ma popularne imię/nazwę — doprecyzuj: "${name}" band OR singer OR musician.
 
-PRIORYTET 2 — SPOTIFY + MOMENTUM:
-"${name}" Spotify monthly listeners 2025 release
-Szukaj: aktualne monthly listeners, świeży release (album/single 2024-2025), trasa w trakcie, viral hit.
+WYSZUKIWANIE 2 — SPOTIFY + MOMENTUM:
+"${name}" Spotify monthly listeners
+Szukaj: monthly listeners (sprawdź open.spotify.com i serwisy typu chartmasters, songstats), świeży release 2024-2025, czy liczby rosną.
 
-PRIORYTET 3 — SOCIAL MEDIA (jeśli pierwsze dwa nie dały jasnego obrazu):
-"${name}" Instagram followers TikTok
-Szukaj: followers IG, TikTok, YouTube subs. Duża dysproporcja (np. 50k IG ale 2M TikTok) zmienia profil.
+WYSZUKIWANIE 3 — KONCERTY (jeśli artysta jest na tyle duży że mógł koncertować):
+"${name}" concert tour live venue
+Szukaj: największa sala w której zagrał headliner w ostatnich 36 miesiącach, czy grał w Polsce. Capacity sali to silny sygnał dla predykcji.
+
+KLUCZOWA ZASADA WYSZUKIWANIA:
+- Brak wyników o koncertach NIE oznacza że artysta nie istnieje. Wielu artystów z 50k-200k słuchaczy Spotify nie ma jeszcze historii dużych tras — to normalne, nie powód do błędu.
+- Artysta "istnieje" jeśli ma profil na Spotify, Instagramie, Bandcamp, w prasie muzycznej LUB jakiekolwiek wyniki w wyszukiwaniu 1.
+- Zwróć {"error":"..."} WYŁĄCZNIE gdy wyszukiwanie 1 nie zwróciło absolutnie nic wskazującego na muzyka o tej nazwie. To skrajna rzadkość.
 
 JAK MYŚLEĆ O PREDYKCJI:
 
@@ -1200,7 +1205,7 @@ Venue ref tylko orientacyjnie: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, 
 
     const p=parseJson(extractText(d));
     if(p && p.error && !p.genre && !p.listeners && !p.similar){
-      notify('Nie znaleziono danych dla "'+requestedName+'" — artysta nieznany lub zbyt niszowy','err');
+      notify('Nie znaleziono danych dla "'+requestedName+'" — sprawdź pisownię nazwy','err');
       return;
     }
 
