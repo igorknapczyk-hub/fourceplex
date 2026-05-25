@@ -1631,7 +1631,7 @@ Pisz inspirująco i skrótowo — daj marketingowcom pomysły do rozwinięcia, n
   try{
     const res=await fetch('/api/claude',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYSTEM,messages:aiHistory})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:SYSTEM,messages:aiHistory})
     });
     if(!res.ok)throw new Error(`HTTP ${res.status}`);
     const data=await res.json();
