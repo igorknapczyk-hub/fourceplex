@@ -1188,9 +1188,9 @@ ZASADY:
 - Zwróć {"error":"..."} TYLKO jeśli artysta dosłownie nie istnieje w internecie
 
 KRYTYCZNE: Nie pisz żadnej syntezy, analizy ani podsumowania przed JSON-em. Nie opisuj zebranych danych. Twoja odpowiedź ma zaczynać się od znaku { i być WYŁĄCZNIE czystym JSON-em, bez markdown, bez tekstu przed ani po:
-{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M","predMin":N,"predMax":N,"predictReasoning":"konkretne uzasadnienie wskazujące na największą salę + listeners + momentum","notes":"1-2 zdania o momencie artysty","plShow":"NIE lub np. Open'er Festival 2024","spotifyUrl":"https://open.spotify.com/artist/... lub pusty string"}
+{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M","predMin":N,"predMax":N,"predictReasoning":"2-3 zwięzłe zdania, konkrety bez lania wody","notes":"DOKŁADNIE 1 zdanie o momencie artysty","plShow":"NIE lub np. Open'er Festival 2024","spotifyUrl":"https://open.spotify.com/artist/... lub pusty string"}
 
-predictReasoning MUSI zawierać: największą salę zagraniczną z ostatnich 36 miesięcy (jeśli znalazłeś), listeners, kluczowy sygnał (nowy release/viral/trasa).
+predictReasoning MUSI zawierać te dane: największą salę zagraniczną z ostatnich 36 miesięcy (jeśli znalazłeś), listeners, kluczowy sygnał (nowy release/viral/trasa). Podaj je zwięźle, maksymalnie 2-3 zdania, bez wstępów, bez powtarzania danych z innych pól, bez ogólników. Sama esencja uzasadnienia.
 
 predMin/predMax — przedział nie szerszy niż 30% (np. 800-1100, nie 500-1500). Jeśli nie masz pewności — bądź ostrożniejszy w dół.
 
