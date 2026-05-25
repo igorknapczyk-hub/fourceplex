@@ -770,6 +770,8 @@ async function initFirebase(){
       const _tc=document.getElementById('topCount');if(_tc)_tc.textContent=artists.length;
       const banner=document.getElementById('fbConnecting');if(banner)banner.style.display='none';
     });
+    // Ukryj banner łączenia gdy tylko onSnapshot jest podpięty
+    setTimeout(()=>{const b=document.getElementById('fbConnecting');if(b)b.style.display='none';},1500);
     scheduleWeeklyRefresh();
   }catch(e){
     console.error('Firebase error:',e);fallbackLoad();
