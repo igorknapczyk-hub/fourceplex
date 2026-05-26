@@ -557,6 +557,32 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
 </div>
 </div>
 
+<div class="mobile-only" id="mWatchlist" style="padding:56px 12px 80px">
+  <div style="display:flex;gap:7px;margin-bottom:12px">
+    <input id="mNewArtist" type="text" placeholder="Nazwa nowego artysty"
+      style="flex:1;padding:10px 12px;border:1px solid var(--border2);border-radius:var(--r-sm);background:#fff;font-family:var(--sans);font-size:13px;color:var(--text)">
+    <button onclick="addArtistMobile()"
+      style="padding:10px 16px;border:none;border-radius:var(--r-sm);background:var(--accent);color:#fff;font-family:var(--mono);font-size:12px;cursor:pointer">+ Dodaj</button>
+  </div>
+  <div id="mArtistList"></div>
+</div>
+
+<style>
+@media (max-width:768px){
+  html,body{height:auto !important;overflow:auto !important;}
+  .layout{display:none !important;}
+  #mWatchlist .ma-row{
+    background:#fff;border:1px solid var(--border2);border-radius:var(--r-sm);
+    padding:11px 14px;margin-bottom:7px;font-size:14px;color:var(--text);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  #mWatchlist .ma-status{
+    font-family:var(--mono);font-size:9px;letter-spacing:.06em;
+    color:var(--text3);text-transform:uppercase;
+  }
+}
+</style>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -954,6 +980,36 @@ function addedByCell(a){
 }
 function formatDate(iso){if(!iso)return'—';const d=new Date(iso);return d.toLocaleDateString('pl',{day:'2-digit',month:'2-digit',year:'numeric'});}
 
+function renderMobileList(){
+  const host=document.getElementById('mArtistList');
+  if(!host)return;
+  const rows=(artists||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(!rows.length){
+    host.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:30px">Brak artystów</div>';
+    return;
+  }
+  const statusLbl={check:'Do sprawdzenia',sent:'Napisano',reminder:'Reminder'};
+  host.innerHTML=rows.map(a=>
+    `<div class="ma-row"><span>${a.name||''}</span><span class="ma-status">${statusLbl[a.status]||''}</span></div>`
+  ).join('');
+}
+
+function addArtistMobile(){
+  const inp=document.getElementById('mNewArtist');
+  const name=(inp?.value||'').trim();
+  if(!name){return;}
+  if(!currentUser){alert('Wybierz użytkownika');return;}
+  const now=new Date().toISOString();
+  const a={id:Date.now(),name,genre:'',similar:'',listeners:'',spotifyUrl:'',
+    plShow:'NIE',plChecked:false,notes:'',predMin:0,predMax:0,sourceTip:'',
+    status:'check',sentDate:null,source:'manual',addedBy:currentUser,
+    dateAdded:now,ts:Date.now(),trend:'flat',predHistory:[]};
+  artists.push(a);
+  saveArtistToDb(a);
+  inp.value='';
+  renderMobileList();
+}
+
 function renderTable(){
   populateByFilter();
   updateSortHeaders();
@@ -981,6 +1037,7 @@ function renderTable(){
       <td style="display:flex;gap:4px;align-items:center"><button class="btn-del" style="border-color:rgba(255,255,255,.1);background:transparent;color:var(--text3)" onclick="editArtist(${a.id})" title="Edytuj artystę"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11 2l3 3L5 14H2v-3L11 2z"/></svg></button><button class="btn-del" onclick="deleteArtist(${a.id})" title="Usuń artystę"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h12M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4"/></svg></button></td>
     </tr>`;
   }).join('');
+  renderMobileList();
 }
 
 function sortBy(col){sortDir=(sortCol===col)?-sortDir:1;sortCol=col;renderTable();}
@@ -1401,5 +1458,11 @@ loadData();
   }
 })();
 </script>
+<nav class="mobile-bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="mbn-label">Terrarium</span></a>
+  <a href="ticketing.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18v4a2 2 0 0 0 0 4v2H3v-2a2 2 0 0 0 0-4z"/></svg><span class="mbn-label">Ticketing</span></a>
+  <a href="watchlist.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span class="mbn-label">Watchlist</span></a>
+  <a href="listy-gosci.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg><span class="mbn-label">Listy Gości</span></a>
+</nav>
 </body>
 </html>
