@@ -172,19 +172,30 @@ export async function fetchTm(sessionId, eventName, eventDate, onSaleDate, altNa
 
 export async function saveToFirebase(evId, ev, tm, eb, remains, ebCap) {
   const db = getDb();
-  const tot = Math.max(0, tm + eb + (ev.other || 0) - (ev.comps || 0));
+  const evRef = db.collection('ticketing_events').doc(evId);
+
+  // Fallback: jeśli nowo odczytana wartość jest pusta/zerowa, a poprzednia
+  // w Firestore była > 0 — to prawdopodobnie awaria API, zostaw poprzednią.
+  const prevSnap = await evRef.get();
+  const prev = prevSnap.exists ? prevSnap.data() : {};
+  const safeTm = (!tm || tm <= 0) && (prev.tm || 0) > 0 ? prev.tm : tm;
+  const safeEb = (!eb || eb <= 0) && (prev.eb || 0) > 0 ? prev.eb : eb;
+
+  const tot = Math.max(0, safeTm + safeEb + (ev.other || 0) - (ev.comps || 0));
   const pct = ev.cap ? Math.round(tot / ev.cap * 100) : 0;
   const now = Date.now();
-  await db.collection('ticketing_events').doc(evId).update({
-    tm, eb, remains, ebCap: ebCap || 0, updatedAt: now, updatedBy: 'auto', lastCountedAt: now,
+  await evRef.update({
+    tm: safeTm, eb: safeEb, remains, ebCap: ebCap || 0,
+    updatedAt: now, updatedBy: 'auto', lastCountedAt: now,
   });
   const d = new Date();
   const dateStr = `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
   const sid = `snap_${evId}_${dateStr.replace(/\./g,'_')}`;
   await db.collection('ticketing_snapshots').doc(sid).set({
     eventId: evId, eventName: ev.name, date: dateStr,
-    tm, eb, other: ev.other||0, comps: ev.comps||0, total: tot,
+    tm: safeTm, eb: safeEb, other: ev.other||0, comps: ev.comps||0, total: tot,
     remains, wraps: ev.wraps||0, pct,
     createdBy: 'auto', createdAt: now,
   });
 }
+
