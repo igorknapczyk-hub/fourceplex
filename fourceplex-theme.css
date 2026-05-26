@@ -899,3 +899,70 @@ select {
 }
 .notif-wtoku.active .notif-count,
 .notif-wtoku.active .notif-lbl { color: #ffffff !important; }
+
+/* ═══════════════════════════════════
+   MOBILE — wspólny layout (≤768px)
+   Desktop nietknięty. Bottom nav + ukrycie sidebara.
+═══════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Sidebar chowamy — zastępuje go bottom nav */
+  .sidebar { display: none !important; }
+
+  /* Module header — mniejszy, nie wjeżdża na sidebar */
+  .module-header {
+    left: 16px !important;
+    top: 14px !important;
+    font-size: 20px !important;
+  }
+
+  /* Floating controls — kompaktowe */
+  .floating-controls {
+    top: 8px !important;
+    right: 10px !important;
+  }
+
+  /* Główny scroll/content — pełna szerokość, miejsce na bottom nav */
+  .main-scroll {
+    padding: 60px 12px 80px !important;
+  }
+
+  /* Bottom navigation bar */
+  .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 62px;
+    background: #F6F4EC;
+    border-top: 1px solid var(--border2);
+    z-index: 500;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .mobile-bottom-nav a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-decoration: none;
+    color: var(--text3);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .mobile-bottom-nav a.active { color: var(--accent); }
+  .mobile-bottom-nav a svg { width: 20px; height: 20px; }
+  .mobile-bottom-nav .mbn-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.02em;
+  }
+
+  /* Mobilne kontenery kart — domyślnie widoczne tylko na mobile */
+  .mobile-only { display: block !important; }
+}
+
+/* Bottom nav i mobile-only — ukryte na desktopie */
+.mobile-bottom-nav { display: none; }
+.mobile-only { display: none; }
