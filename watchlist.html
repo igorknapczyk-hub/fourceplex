@@ -564,6 +564,8 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
     <button onclick="addArtistMobile()"
       style="padding:10px 16px;border:none;border-radius:var(--r-sm);background:var(--accent);color:#fff;font-family:var(--mono);font-size:12px;cursor:pointer">+ Dodaj</button>
   </div>
+  <input id="mSearchArtist" type="text" placeholder="Szukaj artysty…" oninput="renderMobileList()"
+    style="width:100%;padding:9px 12px;margin-bottom:10px;border:1px solid var(--border2);border-radius:var(--r-sm);background:#fff;font-family:var(--sans);font-size:13px;color:var(--text);box-sizing:border-box">
   <div id="mArtistList"></div>
 </div>
 
@@ -983,9 +985,11 @@ function formatDate(iso){if(!iso)return'—';const d=new Date(iso);return d.toLo
 function renderMobileList(){
   const host=document.getElementById('mArtistList');
   if(!host)return;
-  const rows=(artists||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const q=(document.getElementById('mSearchArtist')?.value||'').trim().toLowerCase();
+  let rows=(artists||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(q)rows=rows.filter(a=>(a.name||'').toLowerCase().includes(q));
   if(!rows.length){
-    host.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:30px">Brak artystów</div>';
+    host.innerHTML=`<div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:30px">${q?'Brak wyników':'Brak artystów'}</div>`;
     return;
   }
   const statusLbl={check:'Do sprawdzenia',sent:'Napisano',reminder:'Reminder'};
