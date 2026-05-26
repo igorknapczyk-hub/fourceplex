@@ -561,6 +561,34 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
 </div>
 </div>
 
+<div class="mobile-only" id="mobileCards" style="padding:56px 12px 80px">
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button class="btn btn-tab active" id="mTabActive" onclick="switchTab('active')" style="flex:1">Aktywne</button>
+    <button class="btn btn-tab" id="mTabPast" onclick="switchTab('past')" style="flex:1">Przeszłe</button>
+  </div>
+  <div id="mCardList"></div>
+</div>
+
+<style>
+@media (max-width:768px){
+  .layout{display:none !important;}
+  .mobile-only .mc-card{
+    background:#fff;border:1px solid var(--border2);border-radius:var(--r-md);
+    padding:13px 15px;margin-bottom:9px;
+  }
+  .mobile-only .mc-name{font-size:14px;font-weight:600;color:var(--text);}
+  .mobile-only .mc-date{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;}
+  .mobile-only .mc-stats{display:flex;gap:14px;margin-top:9px;align-items:baseline;}
+  .mobile-only .mc-stat-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--text3);display:block;}
+  .mobile-only .mc-stat-val{font-family:var(--mono);font-size:15px;color:var(--text);}
+  .mobile-only .mc-count-btn{
+    margin-top:11px;width:100%;padding:9px;border-radius:var(--r-sm);
+    border:1px solid var(--border2);background:var(--bg2);
+    font-family:var(--mono);font-size:11px;color:var(--text);cursor:pointer;
+  }
+}
+</style>
+
 <!-- FIREBASE -->
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -685,6 +713,52 @@ function getGuestComps(evName, evDate){
 }
 
 /* ── RENDER TABLE ── */
+function renderMobileCards(){
+  const host=document.getElementById('mCardList');
+  if(!host)return;
+  document.getElementById('mTabActive')?.classList.toggle('active',_activeTab==='active');
+  document.getElementById('mTabPast')?.classList.toggle('active',_activeTab==='past');
+  const evs=window._events||[];
+  const cutoff=new Date();cutoff.setHours(0,0,0,0);
+  const rows=evs.filter(e=>{
+    const isPast=new Date(e.date)<cutoff;
+    return _activeTab==='past'?isPast:!isPast;
+  }).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const parseSnapDate=s=>{const p=s.split('.');return new Date(+p[2],+p[1]-1,+p[0]);};
+  let html='';
+  rows.forEach(ev=>{
+    const _gc=getGuestComps(ev.name,ev.date);
+    const eb2=Math.max(0,(ev.eb||0)-_gc);
+    const tot2=Math.max(0,(ev.tm||0)+eb2+(ev.other||0));
+    const pct2=ev.cap?Math.round(tot2/ev.cap*100):0;
+    const evRealTue=(window._snaps?.[ev.id]||[])
+      .filter(s=>s.createdBy!=='seed'&&parseSnapDate(s.date).getDay()===2)
+      .sort((a,b)=>parseSnapDate(b.date)-parseSnapDate(a.date));
+    const lastRS=evRealTue[0];
+    const wDiff=lastRS!=null?tot2-(lastRS.total||0):null;
+    const wHtml=wDiff!=null?`${wDiff>0?'+':''}${wDiff}`:'—';
+    const wCol=wDiff>0?'var(--teal)':wDiff<0?'var(--red)':'var(--text2)';
+    let arrow='';
+    if(evRealTue.length>=4){
+      const rd=(evRealTue[0].total||0)-(evRealTue[1].total||0);
+      const pd=(evRealTue[2].total||0)-(evRealTue[3].total||0);
+      const tr=rd-pd;
+      arrow=tr>0?' <span style="color:var(--teal)">↑</span>':tr<0?' <span style="color:var(--red)">↓</span>':' <span style="color:var(--text2)">→</span>';
+    }
+    html+=`<div class="mc-card">
+      <div class="mc-name">${ev.name||''}</div>
+      <div class="mc-date">${ev.date||''}${ev.venue?' · '+ev.venue:''}</div>
+      <div class="mc-stats">
+        <div><span class="mc-stat-lbl">TOTAL</span><span class="mc-stat-val">${tot2}${arrow}</span></div>
+        <div><span class="mc-stat-lbl">WRAPS</span><span class="mc-stat-val" style="color:${wCol}">${wHtml}</span></div>
+        <div><span class="mc-stat-lbl">% CAP</span><span class="mc-stat-val" style="color:${pctColor(pct2)}">${ev.cap?pct2+'%':'—'}</span></div>
+      </div>
+      <button class="mc-count-btn" onclick="doCountOne('${ev.id}')">⊞ Zlicz sprzedaż</button>
+    </div>`;
+  });
+  host.innerHTML=html||'<div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:30px">Brak eventów</div>';
+}
+
 function renderTable(){
   const evs=window._events||[];
   const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
@@ -944,6 +1018,7 @@ function renderTable(){
     pm._firstRender=false;
     setTimeout(()=>{pm.scrollLeft=0;},50);
   }
+  renderMobileCards();
 }
 
 /* ── SCROLL SYNC — left + mid + right ── */
@@ -1367,5 +1442,11 @@ Object.assign(window,{togglePanel,closePanel,closeAllPanels,sortBy,switchTab,con
   Ticketing
 </div>
 -->
+<nav class="mobile-bottom-nav">
+  <a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="mbn-label">Terrarium</span></a>
+  <a href="ticketing.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18v4a2 2 0 0 0 0 4v2H3v-2a2 2 0 0 0 0-4z"/></svg><span class="mbn-label">Ticketing</span></a>
+  <a href="watchlist.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span class="mbn-label">Watchlist</span></a>
+  <a href="listy-gosci.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg><span class="mbn-label">Listy Gości</span></a>
+</nav>
 </body>
 </html>
