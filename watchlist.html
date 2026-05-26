@@ -1149,54 +1149,43 @@ async function autoFill(){
   document.getElementById('autoFillBtn').disabled=true;
 
   // ── Jedno wywołanie z web_search — wszystkie dane naraz ──
-  const prompt=`Jesteś bookerem agencji koncertowej. Twoje zadanie: zebrać kluczowe sygnały o artyście "${name}" i ocenić jego potencjał sprzedaży biletów na solo headliner w Warszawie.
+  const prompt=`Jesteś bookerem agencji koncertowej. Oceń potencjał sprzedaży biletów artysty "${name}" na solo headliner w Warszawie.
 
-Wykonaj maksymalnie 3 wyszukiwania w tej kolejności:
+Wykonaj maksymalnie 3 wyszukiwania:
 
-WYSZUKIWANIE 1 — IDENTYFIKACJA (zawsze wykonaj jako pierwsze):
+WYSZUKIWANIE 1 — IDENTYFIKACJA:
 "${name}" artist
-To wyszukiwanie ma potwierdzić kim jest artysta: gatunek, kraj, Spotify, social media. Dla KAŻDEGO realnego artysty to coś zwróci — profil Spotify, Instagram, Wikipedia, prasa muzyczna, Bandcamp, Last.fm. Jeśli artysta ma popularne imię/nazwę — doprecyzuj: "${name}" band OR singer OR musician.
+Potwierdź: gatunek, kraj, Spotify, social media. Jeśli popularne imię — dodaj: band OR singer OR musician.
 
-WYSZUKIWANIE 2 — SPOTIFY + MOMENTUM:
+WYSZUKIWANIE 2 — MOMENTUM:
 "${name}" Spotify monthly listeners
-Szukaj: monthly listeners (sprawdź open.spotify.com i serwisy typu chartmasters, songstats), świeży release 2024-2025, czy liczby rosną.
+Szukaj: monthly listeners (chartmasters, songstats), świeży release 2024-2025, trend rosnący/malejący.
 
-WYSZUKIWANIE 3 — KONCERTY (jeśli artysta jest na tyle duży że mógł koncertować):
+WYSZUKIWANIE 3 — KONCERTY:
 "${name}" concert tour live venue
-Szukaj: największa sala w której zagrał headliner w ostatnich 36 miesiącach, czy grał w Polsce. Capacity sali to silny sygnał dla predykcji.
+Szukaj: największa sala headliner w ostatnich 36 miesiącach, czy grał w Polsce.
 
-KLUCZOWA ZASADA WYSZUKIWANIA:
-- Brak wyników o koncertach NIE oznacza że artysta nie istnieje. Wielu artystów z 50k-200k słuchaczy Spotify nie ma jeszcze historii dużych tras — to normalne, nie powód do błędu.
-- Artysta "istnieje" jeśli ma profil na Spotify, Instagramie, Bandcamp, w prasie muzycznej LUB jakiekolwiek wyniki w wyszukiwaniu 1.
-- Zwróć {"error":"..."} WYŁĄCZNIE gdy wyszukiwanie 1 nie zwróciło absolutnie nic wskazującego na muzyka o tej nazwie. To skrajna rzadkość.
+ZASADY WYSZUKIWANIA:
+- Brak historii koncertowej NIE oznacza że artysta nie istnieje — normalne przy 50k-200k listeners.
+- Zwróć {"error":"..."} TYLKO gdy wyszukiwanie 1 nie zwróciło absolutnie nic o muzyku. To skrajna rzadkość.
+- Sprawdź warianty pisowni jeśli pierwsze wyszukiwanie słabe.
 
-JAK MYŚLEĆ O PREDYKCJI:
+PREDYKCJA — hierarchia sygnałów:
+1. Największa sala sold-out za granicą (36 mies.) — Warszawa to zazwyczaj 30-60% tej sali.
+2. Historia w Polsce — poprzedni koncert/festiwal to twardy benchmark.
+3. Monthly listeners — orientacyjny; gatunek ma znaczenie (hip-hop sprzedaje lepiej niż jazz).
+4. Social media — TikTok traction u młodszych artystów > listeners. Mała IG przy dużych MEL = słaba konwersja.
+5. Momentum — świeży release podbija, brak muzyki 3+ lat obniża.
+Bądź ostrożny w dół. Łatwiej skorygować w górę niż przepalić budżet.
 
-Twoja intuicja powinna bazować na hierarchii sygnałów:
-1. **Największa sala sold-out za granicą (36 miesięcy)** — to twardy benchmark. Warszawa jako pierwszy koncert solo zazwyczaj sprzedaje 30-60% tego co największa sala europejska. Jeśli artysta wyprzedaje Roundhouse (3300) w Londynie i Den Atelier (1200) w Luxemburgu — Warszawa prawdopodobnie 800-1500.
-2. **Czy grał już w Polsce** — silny benchmark. Jeśli sprzedał Stodołę 2 lata temu — drugi koncert często sprzedaje 1.2-1.5x więcej. Jeśli zagrał festiwal (Open'er, OFF) z dobrymi reakcjami — to też sygnał.
-3. **Monthly listeners** — orientacyjny, ALE: 1M MEL nie znaczy automatycznie 1000 biletów. Gatunki różnią się drastycznie (hip-hop sprzedaje, jazz mniej). Sprawdź czy listeners rosną czy spadają w ciągu roku.
-4. **Social media** — duża obecność na TikTok dla młodszych artystów może być silniejszym sygnałem niż listeners. Mała IG przy dużych MEL = słabsze konwersje na bilety.
-5. **Momentum** — świeży release zawsze podbija predykcję. Brak nowej muzyki od 3+ lat obniża.
+NIE wymyślaj nazw koncertów ani dat bez źródła.
 
-Bądź realistyczny, nie optymistyczny. Łatwiej skorygować w górę niż przepalić budżet promocyjny.
-
-ZASADY:
-- Szukaj wytrwale — sprawdź warianty pisowni jeśli pierwsze wyszukiwanie nie dało wyników
-- Możesz oszacować listeners jeśli nie znalazłeś dokładnej liczby (na podstawie followersów lub salach)
-- NIE wymyślaj konkretnych nazw koncertów ani dat bez źródła
-- Zwróć {"error":"..."} TYLKO jeśli artysta dosłownie nie istnieje w internecie
-
-KRYTYCZNE: Nie pisz żadnej syntezy, analizy ani podsumowania przed JSON-em. Nie opisuj zebranych danych. Twoja odpowiedź ma zaczynać się od znaku { i być WYŁĄCZNIE czystym JSON-em, bez markdown, bez tekstu przed ani po:
+KRYTYCZNE: Odpowiedź zaczyna się od { i jest WYŁĄCZNIE czystym JSON-em:
 {"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M","predMin":N,"predMax":N,"predictReasoning":"2-3 zwięzłe zdania, konkrety bez lania wody","notes":"DOKŁADNIE 1 zdanie o momencie artysty","plShow":"NIE lub np. Open'er Festival 2024","spotifyUrl":"https://open.spotify.com/artist/... lub pusty string"}
 
-predictReasoning MUSI zawierać te dane: największą salę zagraniczną z ostatnich 36 miesięcy (jeśli znalazłeś), listeners, kluczowy sygnał (nowy release/viral/trasa). Podaj je zwięźle, maksymalnie 2-3 zdania, bez wstępów, bez powtarzania danych z innych pól, bez ogólników. Sama esencja uzasadnienia.
-
-predMin/predMax — przedział nie szerszy niż 30% (np. 800-1100, nie 500-1500). Jeśli nie masz pewności — bądź ostrożniejszy w dół.
-
-Zakresy: co 100 poniżej 1800 biletów, co 500 powyżej 1800, co 1000 powyżej 5000. NIE dopasowuj do konkretnych venue.
-
-Venue ref tylko orientacyjnie: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000`;
+predictReasoning: sala zagraniczna + listeners + kluczowy sygnał. Max 2-3 zdania, zero ogólników.
+predMin/predMax: przedział max 30% (np. 800-1100). Zakresy: co 100 poniżej 1800, co 500 powyżej 1800, co 1000 powyżej 5000. NIE dopasowuj do venue.
+Venue ref: Chmury<200, Hydrozagadka 200-400, Niebo 401-700, Proxima 701-1000, Progresja 1001-1800, COS Torwar 1801-7000, Duża Arena 7001-15000, Stadion 15001-50000`;
 
   const call=fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_beta:'web-search-2025-03-05',model:'claude-sonnet-4-6',max_tokens:1500,tools:[{type:'web_search_20250305',name:'web_search',max_uses:3}],messages:[{role:'user',content:prompt}]})});
 
