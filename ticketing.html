@@ -571,7 +571,9 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
 
 <style>
 @media (max-width:768px){
+  html,body{height:auto !important;overflow:auto !important;}
   .layout{display:none !important;}
+  #mobileCards{min-height:100vh;}
   .mobile-only .mc-card{
     background:#fff;border:1px solid var(--border2);border-radius:var(--r-md);
     padding:13px 15px;margin-bottom:9px;
