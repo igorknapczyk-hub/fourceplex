@@ -982,23 +982,127 @@ async function handleCallbackQuery(cb) {
   }
 }
 
+// ── Google Chat (Faza 1a — read-only, synchroniczny) ───────────────
+
+// Toole tylko do odczytu — write toole odfiltrowane (WRITE_TOOLS, linia 23)
+const READ_ONLY_TOOLS = tools.filter(t => !WRITE_TOOLS.has(t.name));
+
+async function handleChatMessage(event) {
+  const text = event.message?.text || '';
+  const senderName = event.message?.sender?.displayName || 'Użytkownik';
+  const senderEmail = event.message?.sender?.email || '';
+  const spaceName = event.space?.name || 'dm';
+
+  // Autoryzacja — tylko konta @fource.com
+  if (!senderEmail.endsWith('@fource.com')) {
+    return 'Dostęp tylko dla zespołu FOURCE.';
+  }
+  if (!text) return 'Napisz, w czym mogę pomóc.';
+
+  if (!conversations[spaceName]) conversations[spaceName] = [];
+
+  let messages = [
+    ...conversations[spaceName],
+    { role: 'user', content: `[Wiadomość od: ${senderName}]\n\n${text}` },
+  ];
+  let finalText = '';
+  const MAX_ITERATIONS = 6;
+  const systemPrompt = getSystemPrompt();
+
+  try {
+    for (let i = 0; i < MAX_ITERATIONS; i++) {
+      const response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2048,
+        system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
+        tools: [
+          ...READ_ONLY_TOOLS,
+          { type: 'web_search_20250305', name: 'web_search', max_uses: 5 },
+        ],
+        messages,
+      });
+
+      if (response.usage) {
+        const webSearchCount = response.usage.server_tool_use?.web_search_requests || 0;
+        logUsage({
+          chatId: spaceName, userName: senderName, model: response.model,
+          inputTokens: response.usage.input_tokens || 0,
+          outputTokens: response.usage.output_tokens || 0,
+          cacheCreationTokens: response.usage.cache_creation_input_tokens || 0,
+          cacheReadTokens: response.usage.cache_read_input_tokens || 0,
+          webSearchCount, stopReason: response.stop_reason,
+        }).catch(err => console.error('logUsage failed:', err));
+      }
+
+      const textBlocks = response.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+      if (textBlocks) finalText = textBlocks;
+
+      if (response.stop_reason !== 'tool_use') break;
+
+      const toolUses = response.content.filter(b => b.type === 'tool_use');
+      const toolResults = [];
+      for (const toolUse of toolUses) {
+        console.log(`[beata-chat] tool_use: ${toolUse.name}`, JSON.stringify(toolUse.input));
+        // Bezpiecznik read-only — write tool nigdy nie powinien tu trafić
+        if (WRITE_TOOLS.has(toolUse.name)) {
+          toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id,
+            content: 'Zapis niedostępny w tej wersji Beaty (tryb tylko do odczytu).', is_error: true });
+          continue;
+        }
+        try {
+          const result = await executeTool(toolUse.name, toolUse.input, spaceName, senderEmail, senderName);
+          toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id,
+            content: typeof result === 'string' ? result : JSON.stringify(result) });
+        } catch (err) {
+          console.error(`[beata-chat] tool error (${toolUse.name}):`, err.message);
+          toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id,
+            content: `Error: ${err.message}`, is_error: true });
+        }
+      }
+      messages.push({ role: 'assistant', content: response.content });
+      messages.push({ role: 'user', content: toolResults });
+    }
+
+    if (!finalText) finalText = '...';
+    conversations[spaceName].push(
+      { role: 'user', content: `[Wiadomość od: ${senderName}]\n\n${text}` },
+      { role: 'assistant', content: finalText }
+    );
+    if (conversations[spaceName].length > MAX_HISTORY) {
+      conversations[spaceName] = conversations[spaceName].slice(-MAX_HISTORY);
+    }
+    return finalText;
+  } catch (error) {
+    console.error('[beata-chat] Claude API error:', error);
+    return 'Przepraszam, mam chwilowy problem techniczny. Spróbuj ponownie za chwilę.';
+  }
+}
+
 // ── Vercel handler ──────────────────────────────────────────────────
 
 export default async function handler(req, res) {
-  return res.status(200).send('ok'); // tymczasowo wyłączona
   if (req.method !== 'POST') {
     return res.status(200).send('Beata bot działa.');
   }
-  let update;
-  try {
-    update = req.body;
-  } catch {
-    return res.status(400).send('Invalid JSON');
+  const body = req.body || {};
+
+  // Google Chat event — ma pole "type" (MESSAGE / ADDED_TO_SPACE itd.)
+  if (body.type) {
+    if (body.type === 'ADDED_TO_SPACE') {
+      return res.status(200).json({ text: 'Cześć! Jestem Beata — asystentka AI FOURCE. Zapytaj mnie o dane z Plexa.' });
+    }
+    if (body.type === 'MESSAGE') {
+      const reply = await handleChatMessage(body);
+      return res.status(200).json({ text: reply });
+    }
+    return res.status(200).json({});
   }
-  if (update.callback_query) {
-    await handleCallbackQuery(update.callback_query);
-  } else if (update.message) {
-    await handleMessage(update.message);
+
+  // Telegram update — stara ścieżka, zostaje
+  if (body.callback_query) {
+    await handleCallbackQuery(body.callback_query);
+  } else if (body.message) {
+    await handleMessage(body.message);
   }
   return res.status(200).send('ok');
 }
