@@ -1165,8 +1165,24 @@ renderAssigneeButtons();
 </nav>
 <style>
 @media (max-width:768px){
+  /* Scroll na mobile */
+  html,body{width:100% !important;height:auto !important;overflow-x:hidden !important;overflow-y:auto !important;}
+  /* Layout bez kolumny sidebara */
+  .layout{display:block !important;width:100vw !important;height:auto !important;overflow:visible !important;}
+  .main{width:100vw !important;overflow:visible !important;}
+  .module-header{display:none !important;}
+  .main-scroll{
+    width:100vw !important;
+    overflow:visible !important;
+    padding:14px 14px calc(78px + env(safe-area-inset-bottom,0px)) !important;
+  }
+  /* Pills bar (powiadomienia) — niepotrzebny na mobile */
+  .floating-controls{display:none !important;}
   /* Grid → jedna kolumna, lista zadań pełna szerokość */
-  .widgets-grid{grid-template-columns:1fr !important;}
+  .widgets-grid{display:block !important;width:100% !important;height:auto !important;}
+  .widgets-grid > .widget{width:100% !important;max-width:none !important;}
+  .widget[style*="grid-column:1"]{grid-column:1 !important;width:100% !important;}
+  .todo-list{overflow:visible !important;width:100% !important;}
   /* Panel szczegółów — domyślnie ukryty, pojawia się jako overlay */
   #task-detail-panel{display:none !important;}
   #task-detail-panel.mobile-open{
