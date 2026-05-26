@@ -1173,15 +1173,17 @@ ZASADY WYSZUKIWANIA:
 PREDYKCJA — hierarchia sygnałów:
 1. Największa sala sold-out za granicą (36 mies.) — Warszawa to zazwyczaj 30-60% tej sali.
 2. Historia w Polsce — poprzedni koncert/festiwal to twardy benchmark.
-3. Monthly listeners — orientacyjny; gatunek ma znaczenie (hip-hop sprzedaje lepiej niż jazz).
+3. Monthly listeners — orientacyjny; gatunek ma znaczenie (hip-hop sprzedaje lepiej niż jazz). W polu listeners podaj TYLKO jedną liczbę z ~, np. "~6.8M" lub "~340k". Zero wyjaśnień skąd pochodzi, zero przedziałów, zero źródeł.
 4. Social media — TikTok traction u młodszych artystów > listeners. Mała IG przy dużych MEL = słaba konwersja.
 5. Momentum — świeży release podbija, brak muzyki 3+ lat obniża.
-Bądź ostrożny w dół. Łatwiej skorygować w górę niż przepalić budżet.
+Bądź ostrożny w dół — ale tylko gdy brakuje twardych danych. Jeśli masz sold-out z sali zagranicznej lub historię w Polsce — ufaj benchmarkowi, nie zaniżaj. Jeśli artysta ma już potwierdzoną datę w Polsce (w plShow) — użyj venue tej daty jako głównego benchmarku predykcji.
 
 NIE wymyślaj nazw koncertów ani dat bez źródła.
 
 KRYTYCZNE: Odpowiedź zaczyna się od { i jest WYŁĄCZNIE czystym JSON-em:
-{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. 3.2M","predMin":N,"predMax":N,"predictReasoning":"2-3 zwięzłe zdania, konkrety bez lania wody","notes":"DOKŁADNIE 1 zdanie o momencie artysty","plShow":"NIE lub np. Open'er Festival 2024","spotifyUrl":"https://open.spotify.com/artist/... lub pusty string"}
+{"genre":"gatunek po polsku","similar":"Artysta1, Artysta2, Artysta3","listeners":"np. ~3.2M","predMin":N,"predMax":N,"predictReasoning":"2-3 zwięzłe zdania, konkrety bez lania wody","notes":"DOKŁADNIE 1 zdanie o momencie artysty","plShow":"NIE lub np. Open'er Festival 2024 lub COS Torwar 20.06.2026","spotifyUrl":"https://open.spotify.com/artist/... lub pusty string"}
+
+plShow: wpisz każdy potwierdzony występ w Polsce — przeszły LUB przyszły. Koncert zaplanowany w przyszłości = potwierdzony, wpisz venue + datę. Nie pisz disclaimerów ("brak potwierdzenia", "możliwe", "wg źródła X"). Jeśli znalazłeś datę — wpisz ją.
 
 predictReasoning: sala zagraniczna + listeners + kluczowy sygnał. Max 2-3 zdania, zero ogólników.
 predMin/predMax: przedział max 30% (np. 800-1100). Zakresy: co 100 poniżej 1800, co 500 powyżej 1800, co 1000 powyżej 5000. NIE dopasowuj do venue.
