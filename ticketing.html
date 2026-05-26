@@ -769,7 +769,7 @@ function renderTable(){
   document.getElementById('tblMid').style.minWidth=midW+'px';
 
   // RIGHT PANEL — LIVE cols
-  const RL={t:54,w:54,tm:54,eb:54,oth:54,pct:54,c:54,act:54};
+  const RL={t:68,w:54,tm:54,eb:54,oth:54,pct:54,c:54,act:54};
   const RL_W=Object.values(RL).reduce((s,v)=>s+v,0);
   document.getElementById('panRight').style.width=RL_W+'px';
   document.getElementById('panRight').style.display='';
@@ -905,6 +905,7 @@ function renderTable(){
       ?`<span style="color:${liveWDiff>0?'var(--teal)':liveWDiff<0?'var(--red)':'var(--text2)'}">${liveWDiff>0?'+':''}${liveWDiff}</span>`
       :'—';
     const trendArrow=(()=>{
+      if(pct2>=100)return'';
       if(evRealTue.length<4)return'';
       const recentDelta=(evRealTue[0].total||0)-(evRealTue[1].total||0);
       const prevDelta=(evRealTue[2].total||0)-(evRealTue[3].total||0);
