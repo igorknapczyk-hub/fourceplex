@@ -99,3 +99,9 @@
 - Skrócenie tekstowej odpowiedzi autoFill (notes 1 zd., predictReasoning 2-3 zd.)
 - Przekierowanie webhooka Telegrama Beaty na Vercel
 - Reprojekt pillsów zadań w Terrarium
+
+## Plan na przyszłość
+- **Exa.ai** jako zamiennik web_search w autoFill — neural search, zwraca wyciągnięty
+  tekst zamiast pełnego HTML, potencjalnie mniej input tokenów. Wymaga: kalkulacji
+  kosztu Exa vs oszczędności na tokenach (najpierw zmierz usage), nowego endpointu
+  `api/exa.js`, sprawdzenia jakości dla polskich źródeł (eBilet, Going, Ticketmaster.pl).
