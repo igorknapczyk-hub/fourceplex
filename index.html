@@ -967,6 +967,7 @@ function openTaskDetail(id){
   _selectedTaskId=id;
   const t=_latestTodos.find(x=>x.id===id);if(!t)return;
   renderTaskDetail(t);
+  document.getElementById('task-detail-panel')?.classList.add('mobile-open');
   /* zaznacz wybrany element */
   document.querySelectorAll('.todo-item').forEach(el=>{
     el.classList.toggle('selected',el.dataset.id===id);
@@ -975,6 +976,7 @@ function openTaskDetail(id){
 
 function closeTaskDetail(){
   _selectedTaskId=null;
+  document.getElementById('task-detail-panel')?.classList.remove('mobile-open');
   document.querySelectorAll('.todo-item').forEach(el=>el.classList.remove('selected'));
   const content=document.getElementById('detail-content');
   const empty=document.getElementById('detail-empty');
@@ -1155,5 +1157,33 @@ renderAssigneeButtons();
   if(_np&&!['Radek','Igor'].includes(localStorage.getItem('fourceplex_current_user')||'')){_np.classList.add('disabled');_np.title='Dostępne tylko dla Promotora';}
 })();
 </script>
+<nav class="mobile-bottom-nav">
+  <a href="index.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="mbn-label">Terrarium</span></a>
+  <a href="ticketing.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18v4a2 2 0 0 0 0 4v2H3v-2a2 2 0 0 0 0-4z"/></svg><span class="mbn-label">Ticketing</span></a>
+  <a href="watchlist.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span class="mbn-label">Watchlist</span></a>
+  <a href="listy-gosci.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg><span class="mbn-label">Listy Gości</span></a>
+</nav>
+<style>
+@media (max-width:768px){
+  /* Grid → jedna kolumna, lista zadań pełna szerokość */
+  .widgets-grid{grid-template-columns:1fr !important;}
+  /* Panel szczegółów — domyślnie ukryty, pojawia się jako overlay */
+  #task-detail-panel{display:none !important;}
+  #task-detail-panel.mobile-open{
+    display:flex !important;
+    position:fixed !important;
+    inset:0;
+    z-index:600;
+    background:var(--bg);
+    padding:14px 14px 78px;
+    overflow-y:auto;
+  }
+  #task-detail-panel.mobile-open #detail-close-btn{
+    display:inline-block !important;
+    font-size:15px !important;
+    padding:6px 12px !important;
+  }
+}
+</style>
 </body>
 </html>
