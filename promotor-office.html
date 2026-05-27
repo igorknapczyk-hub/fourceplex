@@ -340,7 +340,7 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
 <!-- ── FIREBASE ── -->
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getFirestore,collection,doc,onSnapshot,setDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,collection,doc,onSnapshot,setDoc,query,where}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 const cfg={apiKey:"AIzaSyCUsvjkzYG3AVROysZh9BtN2_vagSSyMww",authDomain:"fourceplex-market.firebaseapp.com",projectId:"fourceplex-market",storageBucket:"fourceplex-market.firebasestorage.app",messagingSenderId:"300062366060",appId:"1:300062366060:web:0cf7bd4128bea35cc63b49"};
 const app=initializeApp(cfg);
 const db=getFirestore(app);
@@ -350,7 +350,7 @@ window._poArtistsCol=artistsCol;
 window._poSetDoc=setDoc;
 window._poDoc=doc;
 window._poReady=true;
-onSnapshot(artistsCol,snap=>{
+onSnapshot(query(artistsCol,where('inPromotor','==',true)),snap=>{
   window._poArtists=snap.docs.map(d=>d.data()).filter(a=>a.inPromotor);
   window._poLoaded=true;
   if(window.renderList)window.renderList();
@@ -366,7 +366,7 @@ window.dispatchEvent(new Event('po-firebase-ready'));
   function getS(t){return t.status||(t.done?'zrobione':'todo');}
   function skip(t){if(getS(t)!=='zrobione')return false;const d=t.doneAt;if(!d)return false;const ms=d.toMillis?d.toMillis():d;return Date.now()-ms>172800000;}
   function seenTs(){const k=`fp_notes_seen_map_${localStorage.getItem(SK)||'anon'}`;const v=localStorage.getItem(k);if(v){try{const m=JSON.parse(v);let max=0;for(const id in m){if(m[id]>max)max=m[id];}return max||Date.now();}catch(e){return Date.now();}}return Date.now();}
-  onSnapshot(collection(db,'todos'),snap=>{
+  onSnapshot(query(collection(db,'todos'),where('done','==',false)),snap=>{
     const cu=localStorage.getItem(SK)||'';
     const todos=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>!skip(t));
     const isP=PROMOTOR.includes(cu);
