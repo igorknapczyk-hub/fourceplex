@@ -553,8 +553,8 @@ onSnapshot(query(costsCol,orderBy('createdAt','asc')),snap=>{
   if(window._selectedShowId)renderDetail(window._selectedShowId);
 });
 
-// Load ticketing events for chart cross-reference
-onSnapshot(tkEvCol,snap=>{
+// Load ticketing events for chart cross-reference — jednorazowo (cudza kolekcja)
+getDocs(tkEvCol).then(snap=>{
   window._tkEvents=snap.docs.map(d=>({id:d.id,...d.data()}));
 });
 
@@ -570,7 +570,7 @@ window.dispatchEvent(new Event('fb-ready'));
   function getS(t){return t.status||(t.done?'zrobione':'todo');}
   function skip(t){if(getS(t)!=='zrobione')return false;const d=t.doneAt;if(!d)return false;const ms=d.toMillis?d.toMillis():d;return Date.now()-ms>172800000;}
   function seenTs(){const k=`fp_notes_seen_map_${localStorage.getItem(SK)||'anon'}`;const v=localStorage.getItem(k);if(v){try{const m=JSON.parse(v);let max=0;for(const id in m){if(m[id]>max)max=m[id];}return max||Date.now();}catch(e){return Date.now();}}return Date.now();}
-  onSnapshot(collection(db,'todos'),snap=>{
+  onSnapshot(query(collection(db,'todos'),where('done','==',false)),snap=>{
     const cu=localStorage.getItem(SK)||'';
     const todos=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>!skip(t));
     const isP=PROMOTOR.includes(cu);
