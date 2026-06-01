@@ -944,7 +944,7 @@ function jumpToNewNotes(){
 }
 
 let _latestTodos=[];
-if(db){db.collection('todos').where('done','==',false).onSnapshot(snap=>{
+if(db){db.collection('todos').onSnapshot(snap=>{
   _latestTodos=snap.docs.map(d=>({id:d.id,...d.data()}));
   renderTodos(_latestTodos);
   /* jeśli jest otwarte zadanie, odśwież panel szczegółów */
