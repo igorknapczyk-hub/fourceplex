@@ -811,7 +811,7 @@ function renderDetail(id){
             if(_editingCostId===c.id){
               return`<tr>
               <td><select class="cost-edit-input" id="ce-cat-${c.id}">${optsList.map(o=>`<option value="${esc(o)}" ${o===curCat?'selected':''}>${esc(o)}</option>`).join('')}</select></td>
-              ${show.isTour?`<td style="font-family:var(--mono);font-size:9px;color:var(--text3);white-space:nowrap">${c.tourDate&&c.tourDate!=='all'?esc(show.tourDates?.find(d=>d.date===c.tourDate)?.venue||'–'):'Trasa'}</td>`:''}
+              ${show.isTour?`<td><select class="cost-edit-input" id="ce-tour-${c.id}"><option value="all" ${(!c.tourDate||c.tourDate==='all')?'selected':''}>Cała trasa</option>${(show.tourDates||[]).map(d=>`<option value="${esc(d.date)}" ${c.tourDate===d.date?'selected':''}>${esc(d.venue||d.date||'–')}</option>`).join('')}</select></td>`:''}
               <td><input class="cost-edit-input" type="text" id="ce-desc-${c.id}" value="${esc(c.description||'')}"></td>
               <td><input class="cost-edit-input" type="date" id="ce-date-${c.id}" value="${esc(dateVal)}"></td>
               <td><input class="cost-edit-input" type="number" id="ce-amt-${c.id}" value="${c.amount||0}" min="0" style="text-align:right"></td>
@@ -1088,9 +1088,12 @@ async function saveCostEdit(costId){
   const costDate=document.getElementById(`ce-date-${costId}`)?.value||'';
   const amt=parseFloat(document.getElementById(`ce-amt-${costId}`)?.value)||0;
   if(!cat||!desc||!amt||!costDate){alert('Uzupełnij wszystkie pola.');return;}
+  const tourEl=document.getElementById(`ce-tour-${costId}`);
+  const upd={category:cat,description:desc,costDate,amount:amt};
+  if(tourEl)upd.tourDate=tourEl.value||'all';
   const {doc,updateDoc}=window._fs;
   try{
-    await updateDoc(doc(window._db,'marketing_costs',costId),{category:cat,description:desc,costDate,amount:amt});
+    await updateDoc(doc(window._db,'marketing_costs',costId),upd);
     _editingCostId=null;
     if(window._selectedShowId)renderDetail(window._selectedShowId);
   }catch(e){console.error(e);alert('Błąd zapisu: '+e.message);}
