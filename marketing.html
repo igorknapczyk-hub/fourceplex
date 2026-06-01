@@ -206,6 +206,9 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .cost-amount{font-family:var(--mono);color:var(--text);white-space:nowrap}
 .cost-delete{color:var(--text3);cursor:pointer;font-size:14px;transition:color .15s;padding:2px 4px;border-radius:3px}
 .cost-delete:hover{color:var(--red);background:rgba(248,113,113,.1)}
+.cost-edit{color:var(--text3);cursor:pointer;font-size:12px;transition:color .15s;padding:2px 4px;border-radius:3px;margin-right:2px}
+.cost-edit:hover{color:var(--teal);background:rgba(45,212,191,.1)}
+.cost-edit-input{font-family:var(--mono);font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--text);width:100%;box-sizing:border-box}
 .cost-sum-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg3);border-radius:6px;margin-top:8px}
 .cost-sum-label{font-family:var(--mono);font-size:10px;color:var(--text3)}
 .cost-sum-val{font-family:var(--mono);font-size:13px;color:var(--text);font-weight:500}
@@ -606,6 +609,7 @@ window._shows=window._shows||[];
 window._costs=window._costs||[];
 window._selectedShowId=null;
 let aiHistory=[], aiCurrentShow=null;
+let _editingCostId=null;
 
 /* ────────────────────────────────────────────────
    SHOW LIST
@@ -799,16 +803,31 @@ function renderDetail(id){
         <table class="cost-table">
           <thead><tr><th>Kategoria</th>${show.isTour?'<th>Koncert</th>':''}<th>Opis</th><th>Data</th><th>Kwota</th><th>Dodał</th><th></th></tr></thead>
           <tbody>
-          ${costs.map(c=>`
-            <tr>
+          ${costs.map(c=>{
+            const catOpts=['Meta','TikTok','Google','Buyouts','Media','OOH','Inne'];
+            const curCat=c.category||'';
+            const optsList=catOpts.includes(curCat)?catOpts:[curCat,...catOpts].filter(Boolean);
+            const dateVal=c.costDate||(c.createdAt?fmtCostDate(c.createdAt):new Date().toISOString().slice(0,10));
+            if(_editingCostId===c.id){
+              return`<tr>
+              <td><select class="cost-edit-input" id="ce-cat-${c.id}">${optsList.map(o=>`<option value="${esc(o)}" ${o===curCat?'selected':''}>${esc(o)}</option>`).join('')}</select></td>
+              ${show.isTour?`<td style="font-family:var(--mono);font-size:9px;color:var(--text3);white-space:nowrap">${c.tourDate&&c.tourDate!=='all'?esc(show.tourDates?.find(d=>d.date===c.tourDate)?.venue||'–'):'Trasa'}</td>`:''}
+              <td><input class="cost-edit-input" type="text" id="ce-desc-${c.id}" value="${esc(c.description||'')}"></td>
+              <td><input class="cost-edit-input" type="date" id="ce-date-${c.id}" value="${esc(dateVal)}"></td>
+              <td><input class="cost-edit-input" type="number" id="ce-amt-${c.id}" value="${c.amount||0}" min="0" style="text-align:right"></td>
+              <td>${esc(c.addedBy||'–')}</td>
+              <td style="white-space:nowrap"><span class="cost-edit" onclick="saveCostEdit('${c.id}')" title="Zapisz" style="color:var(--teal)">✓</span><span class="cost-edit" onclick="cancelCostEdit()" title="Anuluj">✕</span></td>
+            </tr>`;
+            }
+            return`<tr>
               <td><span class="cost-cat">${esc(c.category||'–')}</span></td>
               ${show.isTour?`<td style="font-family:var(--mono);font-size:9px;color:var(--text3);white-space:nowrap">${c.tourDate&&c.tourDate!=='all'?esc(show.tourDates?.find(d=>d.date===c.tourDate)?.venue||'–'):'Trasa'}</td>`:''}
               <td style="color:var(--text)">${esc(c.description||'–')}</td>
               <td style="font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap">${c.costDate||fmtCostDate(c.createdAt)}</td>
               <td class="cost-amount">${fmtPLN(c.amount)} zł</td>
               <td>${esc(c.addedBy||'–')}</td>
-              <td><span class="cost-delete" onclick="deleteCost('${c.id}')" title="Usuń">×</span></td>
-            </tr>`).join('')}
+              <td style="white-space:nowrap"><span class="cost-edit" onclick="startEditCost('${c.id}')" title="Edytuj">✎</span><span class="cost-delete" onclick="deleteCost('${c.id}')" title="Usuń">×</span></td>
+            </tr>`;}).join('')}
           </tbody>
         </table>`:
         '<div style="font-size:12px;color:var(--text3);font-family:var(--mono);text-align:center;padding:8px 0">Brak wydatków</div>'}
@@ -1051,6 +1070,30 @@ async function deleteCost(costId){
   if(!window._db||!window._fs)return;
   const {doc,deleteDoc}=window._fs;
   try{await deleteDoc(doc(window._db,'marketing_costs',costId));}catch(e){console.error(e);}
+}
+
+function startEditCost(costId){
+  _editingCostId=costId;
+  if(window._selectedShowId)renderDetail(window._selectedShowId);
+  setTimeout(()=>{const el=document.getElementById(`ce-amt-${costId}`);if(el){el.focus();el.select();}},0);
+}
+function cancelCostEdit(){
+  _editingCostId=null;
+  if(window._selectedShowId)renderDetail(window._selectedShowId);
+}
+async function saveCostEdit(costId){
+  if(!window._db||!window._fs){_editingCostId=null;return;}
+  const cat=document.getElementById(`ce-cat-${costId}`)?.value?.trim();
+  const desc=document.getElementById(`ce-desc-${costId}`)?.value?.trim();
+  const costDate=document.getElementById(`ce-date-${costId}`)?.value||'';
+  const amt=parseFloat(document.getElementById(`ce-amt-${costId}`)?.value)||0;
+  if(!cat||!desc||!amt||!costDate){alert('Uzupełnij wszystkie pola.');return;}
+  const {doc,updateDoc}=window._fs;
+  try{
+    await updateDoc(doc(window._db,'marketing_costs',costId),{category:cat,description:desc,costDate,amount:amt});
+    _editingCostId=null;
+    if(window._selectedShowId)renderDetail(window._selectedShowId);
+  }catch(e){console.error(e);alert('Błąd zapisu: '+e.message);}
 }
 
 function openAddPanel(){
