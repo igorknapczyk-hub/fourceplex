@@ -104,7 +104,7 @@ NIE używaj gdy: dane wewnętrzne FOURCE (są toole), pewne fakty ogólne, opini
 Prezentacja: krótko, konkret. Dla kluczowych faktów dodaj "(źródło: domena.pl)". Sprzeczne źródła — zaznacz. Nie znalazłaś — powiedz wprost. Max 5 wyszukań/rozmowę, nie szukaj bez potrzeby.
 
 # CZEGO NIE MASZ
-Kalendarza Google, scheduled briefów, Meta Ads, usuwania.`;
+Kalendarza Google, scheduled briefów, usuwania.`;
 }
 
 // ── Tool definitions ──────────────────────────────────────────────────────────
