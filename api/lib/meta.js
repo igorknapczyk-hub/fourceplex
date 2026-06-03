@@ -2,70 +2,45 @@
 // Odczyt danych z Meta Ads API dla Beaty i scheduled briefów.
 // Używa META_ACCESS_TOKEN i META_AD_ACCOUNT_ID z env vars.
 
-const META_API = 'https://graph.facebook.com/v21.0';
 const TOKEN = () => process.env.META_ACCESS_TOKEN;
-const ACCOUNT = () => process.env.META_AD_ACCOUNT_ID; // format: act_XXXXXXXXX
-
-// ── Pomocnicze ────────────────────────────────────────────────────────────────
-
-async function metaGet(path, params = {}) {
-  const url = new URL(`${META_API}${path}`);
-  url.searchParams.set('access_token', TOKEN());
-  for (const [k, v] of Object.entries(params)) {
-    url.searchParams.set(k, v);
-  }
-  const res = await fetch(url.toString());
-  const data = await res.json();
-  if (data.error) throw new Error(`Meta API error: ${data.error.message}`);
-  return data;
-}
+const ACCOUNT = () => {
+  const id = process.env.META_AD_ACCOUNT_ID || '';
+  return id.startsWith('act_') ? id : `act_${id}`;
+};
 
 // ── Eksportowane funkcje ──────────────────────────────────────────────────────
 
 /**
- * Pobiera aktywne kampanie z ostatnich 30 dni z podstawowymi metrykami.
- * Zwraca tablicę kampanii z: id, name, status, spend, impressions, reach, clicks, ctr, cpm.
+ * Pobiera kampanie z Meta Ads API.
+ * Używa tego samego podejścia co meta-campaigns.js (zagnieżdżone insights, v20.0).
  */
 export async function getActiveCampaigns({ days = 30 } = {}) {
-  const datePreset = days <= 7 ? 'last_7d' : days <= 30 ? 'last_30d' : 'this_month';
+  const datePreset = days <= 7 ? 'last_7d' : days <= 30 ? 'last_30d' : 'last_year';
+  const fields = [
+    'id', 'name', 'status', 'objective',
+    `insights.date_preset(${datePreset}){spend,reach,impressions,clicks,cpm,ctr,frequency}`,
+  ].join(',');
 
-  const data = await metaGet(`/${ACCOUNT()}/campaigns`, {
-    fields: 'id,name,status,objective',
-    filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED'] }]),
-    limit: 50,
-  });
+  const url = `https://graph.facebook.com/v20.0/${ACCOUNT()}/campaigns?fields=${encodeURIComponent(fields)}&limit=100&access_token=${TOKEN()}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.error) throw new Error(`Meta API error: ${data.error.message}`);
 
-  const campaigns = data.data || [];
-  if (!campaigns.length) return [];
-
-  // Pobierz insights dla wszystkich kampanii naraz
-  const insights = await metaGet(`/${ACCOUNT()}/insights`, {
-    fields: 'campaign_id,campaign_name,spend,impressions,reach,clicks,ctr,cpm,actions',
-    date_preset: datePreset,
-    level: 'campaign',
-    limit: 50,
-  });
-
-  const insightsMap = {};
-  for (const i of (insights.data || [])) {
-    insightsMap[i.campaign_id] = i;
-  }
-
-  return campaigns.map(c => {
-    const ins = insightsMap[c.id] || {};
-    const purchases = (ins.actions || []).find(a => a.action_type === 'purchase');
+  return (data.data || []).map(c => {
+    const ins = c.insights?.data?.[0] || {};
     return {
       id: c.id,
       name: c.name,
       status: c.status,
-      objective: c.objective,
-      spend: parseFloat(ins.spend || 0),
-      impressions: parseInt(ins.impressions || 0),
-      reach: parseInt(ins.reach || 0),
-      clicks: parseInt(ins.clicks || 0),
-      ctr: parseFloat(ins.ctr || 0),
-      cpm: parseFloat(ins.cpm || 0),
-      purchases: purchases ? parseInt(purchases.value) : null,
+      objective: c.objective || null,
+      spend: ins.spend ? parseFloat(ins.spend) : 0,
+      impressions: ins.impressions ? parseInt(ins.impressions) : 0,
+      reach: ins.reach ? parseInt(ins.reach) : 0,
+      clicks: ins.clicks ? parseInt(ins.clicks) : 0,
+      ctr: ins.ctr ? parseFloat(ins.ctr) : 0,
+      cpm: ins.cpm ? parseFloat(ins.cpm) : 0,
+      frequency: ins.frequency ? parseFloat(ins.frequency) : null,
+      purchases: null,
     };
   });
 }
