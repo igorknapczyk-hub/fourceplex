@@ -7,7 +7,8 @@ import { getTodos, getTicketingEvents, getTicketingEvent, getArtists, getMarketi
   addTodo, updateTodoStatus, addTodoNote, updateTodo, addGuestToShow,
   updateProductionChecklist, updateMarketingCheckpoint, addTicketingSnapshot,
   addArtistToWatchlist, updateArtistFlags, addMarketingCost, updateMarketingCost,
-  updateProductionChecklistItem, updateProductionNotes, updateMarketingNotes, logUsage
+  updateProductionChecklistItem, updateProductionNotes, updateMarketingNotes, logUsage,
+  getDb,
 } from './lib/firestore.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { getActiveCampaigns, groupCampaignsByShow } from './lib/meta.js';
@@ -898,6 +899,34 @@ async function handleCallbackQuery(cb) {
 // Toole tylko do odczytu — write toole odfiltrowane (WRITE_TOOLS, linia 23)
 const READ_ONLY_TOOLS = tools.filter(t => !WRITE_TOOLS.has(t.name));
 
+// ── Persystentna historia rozmów (Firestore) ──────────────────────────────────
+
+async function loadHistory(spaceId) {
+  try {
+    const db = getDb();
+    const doc = await db.collection('beata_convos').doc(spaceId).get();
+    if (!doc.exists) return [];
+    const data = doc.data();
+    return Array.isArray(data.history) ? data.history : [];
+  } catch (err) {
+    console.error('[beata] loadHistory error:', err.message);
+    return [];
+  }
+}
+
+async function saveHistory(spaceId, history) {
+  try {
+    const db = getDb();
+    const trimmed = history.slice(-MAX_HISTORY);
+    await db.collection('beata_convos').doc(spaceId).set({
+      history: trimmed,
+      updatedAt: Date.now(),
+    });
+  } catch (err) {
+    console.error('[beata] saveHistory error:', err.message);
+  }
+}
+
 async function handleChatMessage(event) {
   const text = event.message?.text || '';
   const senderName = event.message?.sender?.displayName || 'Użytkownik';
@@ -910,10 +939,10 @@ async function handleChatMessage(event) {
   }
   if (!text) return 'Napisz, w czym mogę pomóc.';
 
-  if (!conversations[spaceName]) conversations[spaceName] = [];
+  const history = await loadHistory(spaceName);
 
   let messages = [
-    ...conversations[spaceName],
+    ...history,
     { role: 'user', content: `[Wiadomość od: ${senderName}]\n\n${text}` },
   ];
   let finalText = '';
@@ -975,13 +1004,12 @@ async function handleChatMessage(event) {
     }
 
     if (!finalText) finalText = '...';
-    conversations[spaceName].push(
+    const updatedHistory = [
+      ...history,
       { role: 'user', content: `[Wiadomość od: ${senderName}]\n\n${text}` },
-      { role: 'assistant', content: finalText }
-    );
-    if (conversations[spaceName].length > MAX_HISTORY) {
-      conversations[spaceName] = conversations[spaceName].slice(-MAX_HISTORY);
-    }
+      { role: 'assistant', content: finalText },
+    ];
+    await saveHistory(spaceName, updatedHistory);
     return finalText;
   } catch (error) {
     console.error('[beata-chat] Claude API error:', error);
