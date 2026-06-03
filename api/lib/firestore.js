@@ -429,15 +429,41 @@ async function getArtist(nameQuery) {
 /**
  * A3: Koszty marketingowe dla konkretnego showId (+ suma total).
  */
-async function getMarketingCostsForShow(showId) {
+async function getMarketingCostsForShow(showIdOrName) {
   try {
+    let showId = showIdOrName;
+    let showName = showIdOrName;
+
+    // Jeśli wygląda jak nazwa (nie jak doc ID) — fuzzy match przez marketing_shows
+    const looksLikeId = /^[a-zA-Z0-9]{15,}$/.test(showIdOrName);
+    if (!looksLikeId) {
+      const matches = await findByArtistName('marketing_shows', showIdOrName);
+      if (matches.length === 0) {
+        // Fallback: spróbuj przez ticketing_events
+        const tkMatches = await findByArtistName('ticketing_events', showIdOrName);
+        if (tkMatches.length === 0) {
+          return { showId: null, showName: showIdOrName, costs: [], total: 0,
+            _notFound: true, message: `Nie znaleziono show marketingowego dla "${showIdOrName}"` };
+        }
+        showId = tkMatches[0].doc.id;
+        showName = tkMatches[0].data.name || showIdOrName;
+      } else if (matches.length > 1) {
+        const names = matches.map(m => m.data.artistName || m.data.name || m.doc.id).join(', ');
+        return { showId: null, showName: showIdOrName, costs: [], total: 0,
+          _multipleMatches: true, matches: names };
+      } else {
+        showId = matches[0].doc.id;
+        showName = matches[0].data.artistName || matches[0].data.name || showIdOrName;
+      }
+    }
+
     const snap = await db.collection('marketing_costs').where('showId', '==', showId).get();
     const docs = snap.docs.map(convertDoc).filter(Boolean);
     const total = docs.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
-    return { showId, costs: docs, total };
+    return { showId, showName, costs: docs, total };
   } catch (err) {
     console.error('getMarketingCostsForShow error:', err.message);
-    return { showId, costs: [], total: 0 };
+    return { showId: showIdOrName, costs: [], total: 0 };
   }
 }
 
