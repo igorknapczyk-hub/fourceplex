@@ -10,6 +10,7 @@ import { getTodos, getTicketingEvents, getTicketingEvent, getArtists, getMarketi
   updateProductionChecklistItem, updateProductionNotes, updateMarketingNotes, logUsage
 } from './lib/firestore.js';
 import Anthropic from '@anthropic-ai/sdk';
+import { getActiveCampaigns, groupCampaignsByShow } from './lib/meta.js';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -459,6 +460,17 @@ const tools = [
     },
     cache_control: { type: 'ephemeral' },
   },
+  {
+    name: 'get_meta_campaigns',
+    description: 'Pobiera aktywne kampanie Meta Ads z ostatnich 7 lub 30 dni. Zwraca spend, impressions, reach, CTR, CPM per kampania oraz alerty (niski CTR, wysoki CPM, wstrzymane kampanie). Używaj gdy pytają o Meta, Facebook Ads, kampanie, budżet reklamowy.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        days: { type: 'number', description: 'Liczba dni wstecz: 7 lub 30. Default: 7.' },
+        show_name: { type: 'string', description: 'Opcjonalnie: nazwa artysty/show do filtrowania kampanii.' },
+      },
+    },
+  },
 ];
 
 // ── Telegram helpers ──────────────────────────────────────────────────────────
@@ -691,6 +703,33 @@ async function executeTool(name, input, chatId, userId, senderName) {
       return getAllMarketingCosts({ limit: input.limit });
     case 'get_ticketing_snapshots':
       return getTicketingSnapshots(input.event_id, { limit: input.limit });
+    case 'get_meta_campaigns': {
+      const campaigns = await getActiveCampaigns({ days: input.days || 7 });
+      if (!campaigns.length) return 'Brak aktywnych kampanii lub błąd tokenu Meta.';
+      if (input.show_name) {
+        const filtered = campaigns.filter(c =>
+          c.name.toLowerCase().includes(input.show_name.toLowerCase())
+        );
+        if (!filtered.length) return `Brak kampanii dla "${input.show_name}".`;
+        return JSON.stringify(filtered, null, 2);
+      }
+      const total = campaigns.reduce((s, c) => s + c.spend, 0);
+      const alerts = campaigns.filter(c =>
+        (c.ctr < 0.5 && c.impressions > 5000) || c.cpm > 50 || c.status === 'PAUSED'
+      );
+      return JSON.stringify({
+        summary: { total_campaigns: campaigns.length, total_spend: Math.round(total), alerts_count: alerts.length },
+        campaigns: campaigns.map(c => ({
+          name: c.name, status: c.status, spend: c.spend,
+          impressions: c.impressions, ctr: c.ctr, cpm: c.cpm,
+        })),
+        alerts: alerts.map(c => ({
+          name: c.name,
+          issue: c.ctr < 0.5 && c.impressions > 5000 ? `CTR ${c.ctr.toFixed(2)}% — niski` :
+                 c.cpm > 50 ? `CPM ${c.cpm.toFixed(0)} — wysoki` : 'wstrzymana',
+        })),
+      }, null, 2);
+    }
     case 'get_usage_stats':
       return getUsageStats({ days: input.days });
     default:
