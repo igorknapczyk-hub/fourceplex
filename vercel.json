@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/count",
       "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/cron/beata-brief",
+      "schedule": "0 8 * * 1,2,3,5"
     }
   ]
 }
