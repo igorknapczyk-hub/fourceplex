@@ -8,6 +8,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { getTicketingEvents, getMarketingShows, getAllMarketingCosts } from '../lib/firestore.js';
+import { getActiveCampaigns, groupCampaignsByShow } from '../lib/meta.js';
 import { sendToSpace } from '../lib/google-chat.js';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -68,21 +69,52 @@ async function briefTicketing() {
 }
 
 async function briefMarketing() {
-  const shows = await getMarketingShows();
-  const costs = await getAllMarketingCosts({ limit: 50 });
+  const [shows, costs, campaigns] = await Promise.all([
+    getMarketingShows(),
+    getAllMarketingCosts({ limit: 50 }),
+    getActiveCampaigns({ days: 7 }).catch(err => {
+      console.error('[beata-brief] Meta API error:', err.message);
+      return [];
+    }),
+  ]);
+
   const active = (shows || []).filter(s => s.status !== 'archived').slice(0, 10);
 
-  const showSummary = active.map(s => {
+  // Koszty z Firestore per show
+  const firestoreSection = active.map(s => {
     const showCosts = (costs || []).filter(c => c.showId === s.id);
     const totalSpend = showCosts.reduce((sum, c) => sum + (c.amount || 0), 0);
-    return `• *${s.name}* — budżet: ${s.budget ?? '—'} PLN, wydano: ${totalSpend} PLN`;
-  }).join('\n') || 'Brak aktywnych showów marketingowych.';
+    return `• *${s.name}* — budżet: ${s.budget ?? '—'} PLN, wydano (Plex): ${totalSpend} PLN`;
+  }).join('\n') || 'Brak aktywnych showów.';
+
+  // Dane Meta per show
+  let metaSection = '';
+  if (campaigns.length) {
+    const groups = groupCampaignsByShow(campaigns, active);
+    if (groups.length) {
+      metaSection = '\n\n*Meta Ads — ostatnie 7 dni:*\n' + groups.map(g => {
+        const lines = [`• *${g.showName}* — wydano: ${g.totalSpend} PLN, CTR: ${g.avgCtr}%`];
+        if (g.alerts.length) lines.push(...g.alerts.map(a => `  ${a}`));
+        return lines.join('\n');
+      }).join('\n');
+    }
+  } else {
+    metaSection = '\n\n_Meta Ads: brak danych (sprawdź token)_';
+  }
+
+  const allAlerts = campaigns.length
+    ? groupCampaignsByShow(campaigns, active).flatMap(g => g.alerts)
+    : [];
 
   const systemPrompt = `Jesteś Beatą — asystentką agencji FOURCE. Piszesz zwięzły brief marketingowy. Konkretna, po polsku, max 3 zdania. Kończ 🦎`;
-  const userPrompt = `Napisz krótki brief marketingowy na ${getWarsawDate()}. Dane:\n${showSummary}\n\nCo wymaga uwagi? Gdzie budżet się kończy lub przekracza? 1-2 zdania obserwacji.`;
+  const userPrompt = `Napisz krótki brief marketingowy na ${getWarsawDate()}.
+Dane z Plexa:\n${firestoreSection}
+Dane Meta Ads (7 dni):\n${metaSection}
+Alerty: ${allAlerts.length ? allAlerts.join(', ') : 'brak'}
+Co wymaga uwagi? Gdzie budżet się kończy lub kampania odstaje? 1-2 zdania obserwacji.`;
 
   const komentarz = await generateBrief(systemPrompt, userPrompt);
-  return `📢 *Brief marketingowy — ${getWarsawDate()}*\n\n${showSummary}\n\n${komentarz}`;
+  return `📢 *Brief marketingowy — ${getWarsawDate()}*\n\n${firestoreSection}${metaSection}\n\n${komentarz}`;
 }
 
 async function briefBranżowy() {
