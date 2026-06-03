@@ -948,4 +948,6 @@ export {
   // Usage logger
   logUsage,
   getUsageStats,
+  // DB access dla innych modułów
+  getDb: () => db,
 };
