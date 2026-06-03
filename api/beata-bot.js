@@ -104,7 +104,7 @@ NIE używaj gdy: dane wewnętrzne FOURCE (są toole), pewne fakty ogólne, opini
 Prezentacja: krótko, konkret. Dla kluczowych faktów dodaj "(źródło: domena.pl)". Sprzeczne źródła — zaznacz. Nie znalazłaś — powiedz wprost. Max 5 wyszukań/rozmowę, nie szukaj bez potrzeby.
 
 # CZEGO NIE MASZ
-Kalendarza Google, scheduled briefów, usuwania.`;
+Kalendarza Google, scheduled briefów, Meta Ads, usuwania.`;
 }
 
 // ── Tool definitions ──────────────────────────────────────────────────────────
@@ -210,11 +210,11 @@ const tools = [
   },
   {
     name: 'get_marketing_costs_for_show',
-    description: 'Koszty marketingowe + total dla koncertu (po showId).',
+    description: 'Koszty marketingowe + total dla koncertu. Podaj nazwę artysty lub show — tool sam znajdzie właściwy show przez fuzzy match. Nie trzeba najpierw pobierać show_id.',
     input_schema: {
       type: 'object',
       properties: {
-        show_id: { type: 'string', description: 'Doc ID z get_ticketing_event' },
+        show_id: { type: 'string', description: 'Nazwa artysty/show (np. "Muna") lub doc ID — oba formaty działają.' },
       },
       required: ['show_id'],
     },
