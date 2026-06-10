@@ -821,7 +821,7 @@ async function deleteArtistFromDb(id){
 function saveData(){
   if(!window._fbReady){try{localStorage.setItem(SK,JSON.stringify(artists));}catch(e){}}
 }
-function checkReminders(){artists.forEach(a=>{if(a.status==='sent'&&a.sentDate&&Date.now()-new Date(a.sentDate).getTime()>THREE_M)a.status='reminder';});}
+function checkReminders(){artists.forEach(a=>{if(a.status==='sent'&&a.sentDate&&Date.now()-new Date(a.sentDate).getTime()>THREE_M){a.status='reminder';saveArtistToDb(a);}});}
 
 /* ── WEEKLY TREND REFRESH ── */
 let refreshQueue=[],refreshing=false;
