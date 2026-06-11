@@ -466,7 +466,7 @@ function bindGuestEvents(showId){
 
 /* ══ HELPERS ══ */
 function fmtDate(s){if(!s)return'–';try{const d=new Date(s);return`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;}catch{return s;}}
-function isActive(show){if(!show.date)return true;const c=new Date();c.setDate(c.getDate()-0);return new Date(show.date)>=c;}
+function isActive(show){if(!show.date)return true;const c=new Date();c.setHours(0,0,0,0);return new Date(show.date)>=c;}
 function daysInfo(dateStr){
   if(!dateStr)return{text:'',cls:''};
   const now=new Date();now.setHours(0,0,0,0);
