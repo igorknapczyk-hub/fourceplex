@@ -1,13 +1,12 @@
 // api/cron/beata-brief.js
 // Scheduled briefy Beaty do pokoju PL Brief Room na Google Chat.
-// Harmonogram (zarządzany przez vercel.json):
-//   Poniedziałek 08:00 → branżowo-newsowy + placeholder kalendarza
-//   Wtorek 08:00       → marketingowy
-//   Środa 08:00        → ticketingowy
-//   Piątek 08:00       → marketingowy
+// Harmonogram (vercel.json, UTC):
+//   Poniedziałek 08:00 UTC (10:00 PL) → marketingowo-sprzedażowy
+//   Środa 08:00 UTC (10:00 PL)        → sprzedażowy
+//   Piątek 08:00 UTC (10:00 PL)       → marketingowy (lekki)
 
 import Anthropic from '@anthropic-ai/sdk';
-import { getTicketingEvents, getMarketingShows, getAllMarketingCosts } from '../lib/firestore.js';
+import { getTicketingEvents, getTicketingSnapshots, getMarketingShows, getAllMarketingCosts } from '../lib/firestore.js';
 import { getActiveCampaigns, groupCampaignsByShow } from '../lib/meta.js';
 import { sendToSpace } from '../lib/google-chat.js';
 
@@ -19,112 +18,188 @@ const BRIEF_SPACE = 'AAQA68DAqsM';
 function getWarsawDay() {
   const now = new Date();
   const warsaw = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
-  return warsaw.getDay(); // 0=nd, 1=pn, 2=wt, 3=sr, 4=cz, 5=pt, 6=sb
+  return warsaw.getDay();
 }
 
 function getWarsawDate() {
   const now = new Date();
   const warsaw = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
-  const dniTygodnia = ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota'];
-  const miesiace = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca',
-    'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
-  return `${dniTygodnia[warsaw.getDay()]}, ${warsaw.getDate()} ${miesiace[warsaw.getMonth()]} ${warsaw.getFullYear()}`;
+  const dni = ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
+  const mies = ['stycznia','lutego','marca','kwietnia','maja','czerwca',
+    'lipca','sierpnia','września','października','listopada','grudnia'];
+  return `${dni[warsaw.getDay()]}, ${warsaw.getDate()} ${mies[warsaw.getMonth()]} ${warsaw.getFullYear()}`;
 }
 
-async function generateBrief(systemPrompt, userPrompt) {
+async function callClaude(systemPrompt, userPrompt, useWebSearch = false) {
+  const tools = useWebSearch
+    ? [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }]
+    : [];
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5',
-    max_tokens: 1024,
+    max_tokens: 1500,
     system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
+    ...(tools.length ? { tools } : {}),
     messages: [{ role: 'user', content: userPrompt }],
   });
   return response.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
 }
 
-// ── Typy briefów ──────────────────────────────────────────────────────────────
+// ── Poniedziałek: raport marketingowo-sprzedażowy ────────────────────────────
 
-async function briefTicketing() {
-  const events = await getTicketingEvents();
-  const cutoff = new Date(); cutoff.setHours(0, 0, 0, 0);
-  const active = (events || [])
-    .filter(e => new Date(e.date) >= cutoff)
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
-    .slice(0, 15);
+async function briefPoniedzialek() {
+  const cutoff = new Date(); cutoff.setHours(0,0,0,0);
 
-  if (!active.length) return '🎫 *Brief ticketingowy*\nBrak aktywnych eventów.';
-
-  const lines = active.map(e => {
-    const pct = e.cap ? Math.round(e.total / e.cap * 100) : null;
-    const pctStr = pct !== null ? ` (${pct}%)` : '';
-    const daysLeft = Math.ceil((new Date(e.date) - new Date()) / 86400000);
-    return `• *${e.name}* ${e.date} — ${e.total ?? '—'} biletów${pctStr}, ${daysLeft}d`;
-  }).join('\n');
-
-  const systemPrompt = `Jesteś Beatą — asystentką agencji FOURCE. Piszesz zwięzły brief ticketingowy. Bądź konkretna, po polsku, max 3 zdania komentarza. Kończ 🦎`;
-  const userPrompt = `Napisz krótki brief ticketingowy na ${getWarsawDate()}. Dane sprzedaży:\n${lines}\n\nPodaj 1-2 zdania obserwacji (co idzie dobrze, co słabo, czy coś niepokojącego). Nie przepisuj całej tabeli — ona już będzie widoczna.`;
-
-  const komentarz = await generateBrief(systemPrompt, userPrompt);
-  return `🎫 *Brief ticketingowy — ${getWarsawDate()}*\n\n${lines}\n\n${komentarz}`;
-}
-
-async function briefMarketing() {
-  const [shows, costs, campaigns] = await Promise.all([
-    getMarketingShows(),
-    getAllMarketingCosts({ limit: 50 }),
-    getActiveCampaigns({ days: 7 }).catch(err => {
-      console.error('[beata-brief] Meta API error:', err.message);
+  const [events, campaigns] = await Promise.all([
+    getTicketingEvents({ upcomingOnly: true }),
+    getActiveCampaigns({ days: 30 }).catch(err => {
+      console.error('[beata-brief] Meta error:', err.message);
       return [];
     }),
   ]);
 
-  const active = (shows || []).filter(s => s.status !== 'archived').slice(0, 10);
+  const active = (events || [])
+    .filter(e => new Date(e.date) >= cutoff)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  // Koszty z Firestore per show
-  const firestoreSection = active.map(s => {
-    const showCosts = (costs || []).filter(c => c.showId === s.id);
-    const totalSpend = showCosts.reduce((sum, c) => sum + (c.amount || 0), 0);
-    return `• *${s.name}* — budżet: ${s.budget ?? '—'} PLN, wydano (Plex): ${totalSpend} PLN`;
-  }).join('\n') || 'Brak aktywnych showów.';
+  // Dane sprzedaży per event
+  const salesLines = active.map(e => {
+    const pct = e.cap ? Math.round((e.total||0) / e.cap * 100) : null;
+    const daysLeft = Math.ceil((new Date(e.date) - new Date()) / 86400000);
+    const pctStr = pct !== null ? ` (${pct}% cap)` : '';
+    return `• ${e.name} | ${e.date} | ${e.total||0} biletów${pctStr} | ${daysLeft}d do koncertu | cap: ${e.cap||'?'}`;
+  }).join('\n') || 'Brak aktywnych eventów.';
 
-  // Dane Meta per show
-  let metaSection = '';
-  if (campaigns.length) {
-    const groups = groupCampaignsByShow(campaigns, active);
-    if (groups.length) {
-      metaSection = '\n\n*Meta Ads — ostatnie 7 dni:*\n' + groups.map(g => {
-        const lines = [`• *${g.showName}* — wydano: ${g.totalSpend} PLN, CTR: ${g.avgCtr}%`];
-        if (g.alerts.length) lines.push(...g.alerts.map(a => `  ${a}`));
-        return lines.join('\n');
-      }).join('\n');
-    }
-  } else {
-    metaSection = '\n\n_Meta Ads: brak danych (sprawdź token)_';
-  }
+  // Kampanie Meta
+  const campaignLines = campaigns.length
+    ? campaigns.map(c =>
+        `• ${c.name} [${c.status}] — spend: ${c.spend} PLN, CTR: ${c.ctr?.toFixed(2)}%, CPM: ${c.cpm?.toFixed(0)} PLN, reach: ${c.reach}`
+      ).join('\n')
+    : 'Brak danych z Meta (sprawdź token).';
 
-  const allAlerts = campaigns.length
-    ? groupCampaignsByShow(campaigns, active).flatMap(g => g.alerts)
-    : [];
+  // Eventy bez kampanii
+  const eventNames = active.map(e => e.name.toLowerCase());
+  const eventsWithCampaign = new Set(
+    campaigns.flatMap(c =>
+      eventNames.filter(n => c.name.toLowerCase().includes(n.split(' ')[0]))
+    )
+  );
+  const eventsNoCampaign = active.filter(e =>
+    !campaigns.some(c => c.name.toLowerCase().includes(e.name.toLowerCase().split(' ')[0]))
+  );
+  const noCampaignLines = eventsNoCampaign.length
+    ? eventsNoCampaign.map(e => `• ${e.name} (${e.date})`).join('\n')
+    : 'Wszystkie aktywne eventy mają kampanie.';
 
-  const systemPrompt = `Jesteś Beatą — asystentką agencji FOURCE. Piszesz zwięzły brief marketingowy. Konkretna, po polsku, max 3 zdania. Kończ 🦎`;
-  const userPrompt = `Napisz krótki brief marketingowy na ${getWarsawDate()}.
-Dane z Plexa:\n${firestoreSection}
-Dane Meta Ads (7 dni):\n${metaSection}
-Alerty: ${allAlerts.length ? allAlerts.join(', ') : 'brak'}
-Co wymaga uwagi? Gdzie budżet się kończy lub kampania odstaje? 1-2 zdania obserwacji.`;
+  // Wybierz jeden concert do szczegółowej analizy (najniższy % sprzedaży)
+  const toAnalyze = active
+    .filter(e => e.cap && e.total !== undefined)
+    .sort((a, b) => (a.total/a.cap) - (b.total/b.cap))[0];
 
-  const komentarz = await generateBrief(systemPrompt, userPrompt);
-  return `📢 *Brief marketingowy — ${getWarsawDate()}*\n\n${firestoreSection}${metaSection}\n\n${komentarz}`;
+  const system = `Jesteś Beatą — asystentką agencji koncertowej FOURCE. Piszesz tygodniowy raport marketingowo-sprzedażowy. Konkretna, operacyjna, po polsku. Kończ 🦎`;
+
+  const user = `Napisz raport marketingowo-sprzedażowy na ${getWarsawDate()}.
+
+WYNIKI SPRZEDAŻY (aktywne eventy):
+${salesLines}
+
+KAMPANIE META ADS (ostatnie 30 dni):
+${campaignLines}
+
+EVENTY BEZ KAMPANII:
+${noCampaignLines}
+
+CONCERT DO ANALIZY TARGETOWANIA: ${toAnalyze ? `${toAnalyze.name} (${toAnalyze.date}, ${toAnalyze.total||0}/${toAnalyze.cap||'?'} biletów)` : 'brak'}
+
+Zrób raport w tej strukturze:
+1. 🚨 ALERTY — kampanie z niepokojącymi sygnałami (niski CTR <0.8%, wysoki CPM >40 PLN, wstrzymane z budżetem)
+2. 📊 SPRZEDAŻ vs KAMPANIE — które concerty trzeba przycisnąć z marketingiem, które można zwolnić (porównaj % sprzedaży z aktywnością kampanii)
+3. ⚠️ BEZ KAMPANII — skomentuj eventy bez kampanii Meta, czy to problem
+4. 🎯 TARGETOWANIE — dla ${toAnalyze?.name || 'wybranego concertu'} zaproponuj konkretnie: grupy docelowe, zainteresowania, wiek, zachowania jakie warto ustawić w Meta Ads
+5. Dopisz na końcu kursywą: _Raport zostanie poszerzony o dane budżetowe Fource.Plex, gdy te zostaną wprowadzone._
+
+Bądź konkretna, nie lej wody. Max 400 słów.`;
+
+  const analiza = await callClaude(system, user, false);
+  return `📊 *Raport marketingowo-sprzedażowy — ${getWarsawDate()}*\n\n${analiza}`;
 }
 
-async function briefBranżowy() {
-  const systemPrompt = `Jesteś Beatą — asystentką polskiej agencji koncertowej FOURCE. Piszesz tygodniowy brief branżowy. Szukasz aktualnych newsów ze świata muzyki i koncertów (Polska + świat). Konkretna, po polsku, max 5 punktów. Kończ 🦎`;
-  const userPrompt = `Napisz tygodniowy brief branżowy na ${getWarsawDate()} dla agencji koncertowej. Szukaj: nowe trasy koncertowe ogłoszone w ostatnich 7 dniach, ważne newsy z rynku muzycznego (Polska i świat), ciekawostki sprzedażowe lub trendowe. Max 5 punktów, każdy 1 zdanie z datą/źródłem.`;
+// ── Środa: raport sprzedażowy ────────────────────────────────────────────────
 
-  const brief = await generateBrief(systemPrompt, userPrompt);
+async function briefSroda() {
+  const cutoff = new Date(); cutoff.setHours(0,0,0,0);
+  const events = await getTicketingEvents({ upcomingOnly: true });
+  const active = (events || [])
+    .filter(e => new Date(e.date) >= cutoff)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  const kalendarz = `📅 *Kalendarz:* brak dostępu, wkrótce`;
-  return `🗞️ *Brief branżowy — ${getWarsawDate()}*\n\n${brief}\n\n${kalendarz}`;
+  // Pobierz ostatni snapshot (wtorek) dla każdego eventu
+  const snapshotsData = await Promise.all(
+    active.slice(0, 15).map(async e => {
+      const snaps = await getTicketingSnapshots(e.id, { limit: 4 });
+      const lastSnap = snaps[0]; // najnowszy (wtorek)
+      const prevSnap = snaps[1]; // tydzień temu
+      const weekDiff = (lastSnap && prevSnap)
+        ? (lastSnap.total||0) - (prevSnap.total||0)
+        : null;
+      return { event: e, lastSnap, weekDiff };
+    })
+  );
+
+  const lines = snapshotsData.map(({ event: e, lastSnap, weekDiff }) => {
+    const pct = e.cap ? Math.round((e.total||0) / e.cap * 100) : null;
+    const daysLeft = Math.ceil((new Date(e.date) - new Date()) / 86400000);
+    const snapInfo = lastSnap
+      ? ` | snapshot ${lastSnap.date}: ${lastSnap.total||0} biletów`
+      : '';
+    const diffInfo = weekDiff !== null
+      ? ` | tydzień: ${weekDiff > 0 ? '+' : ''}${weekDiff}`
+      : '';
+    return `• ${e.name} | ${e.date} | ${e.total||0} bil. | ${pct !== null ? pct+'% cap' : '—'} | ${daysLeft}d${snapInfo}${diffInfo}`;
+  }).join('\n') || 'Brak danych.';
+
+  const system = `Jesteś Beatą — asystentką agencji koncertowej FOURCE. Piszesz tygodniowy raport sprzedażowy. Konkretna, po polsku. Kończ 🦎`;
+
+  const user = `Napisz raport sprzedażowy na ${getWarsawDate()} (dane ze snapshotu wtorkowego).
+
+DANE SPRZEDAŻY:
+${lines}
+
+Zrób raport w tej strukturze:
+1. ✅ DOBRZE IDĄCE — concerty z wysoką sprzedażą lub pozytywnym trendem tygodniowym
+2. ⚠️ WYMAGAJĄCE UWAGI — concerty z niską sprzedażą lub słabym trendem
+3. 📈 PROGNOZY — na podstawie tempa sprzedaży (tygodniowy diff) oszacuj finalną sprzedaż dla 3 najbliższych concertów
+
+Bądź konkretna, max 300 słów.`;
+
+  const analiza = await callClaude(system, user, false);
+  return `🎫 *Raport sprzedażowy — ${getWarsawDate()}*\n\n${analiza}`;
+}
+
+// ── Piątek: raport marketingowy (lekki) ─────────────────────────────────────
+
+async function briefPiatek() {
+  const campaigns = await getActiveCampaigns({ days: 7 }).catch(err => {
+    console.error('[beata-brief] Meta error:', err.message);
+    return [];
+  });
+
+  const campaignLines = campaigns.length
+    ? campaigns.map(c =>
+        `• ${c.name} [${c.status}] — spend: ${c.spend} PLN, CTR: ${c.ctr?.toFixed(2)}%, CPM: ${c.cpm?.toFixed(0)} PLN`
+      ).join('\n')
+    : 'Brak danych z Meta.';
+
+  const system = `Jesteś Beatą — asystentką agencji koncertowej FOURCE. Piszesz krótki piątkowy raport marketingowy. Zwięzła, po polsku. Kończ życzeniem dobrego weekendu i 🦎`;
+
+  const user = `Napisz krótki raport marketingowy na ${getWarsawDate()} (dane z ostatnich 7 dni).
+
+KAMPANIE META:
+${campaignLines}
+
+Podaj max 3 zdania: co warto poprawić lub zwrócić uwagę przed weekendem. Żadnych długich analiz — to piątek. Na końcu życz dobrego weekendu zespołowi.`;
+
+  const analiza = await callClaude(system, user, false);
+  return `📢 *Raport marketingowy — ${getWarsawDate()}*\n\n${analiza}`;
 }
 
 // ── Handler ───────────────────────────────────────────────────────────────────
@@ -135,16 +210,15 @@ export default async function handler(req, res) {
   }
   try {
     const day = getWarsawDay();
-    // 1=pn, 2=wt, 3=sr, 5=pt
-    if (![1, 2, 3, 5].includes(day)) {
+    // 1=pn, 3=sr, 5=pt
+    if (![1, 3, 5].includes(day)) {
       return res.status(200).json({ skipped: true, day });
     }
 
     let text;
-    if (day === 1) text = await briefBranżowy();       // poniedziałek
-    else if (day === 2) text = await briefMarketing();  // wtorek
-    else if (day === 3) text = await briefTicketing();  // środa
-    else if (day === 5) text = await briefMarketing();  // piątek
+    if (day === 1) text = await briefPoniedzialek();
+    else if (day === 3) text = await briefSroda();
+    else if (day === 5) text = await briefPiatek();
 
     await sendToSpace(BRIEF_SPACE, text);
     console.log(`[beata-brief] Wysłano brief (dzień ${day}) do spaces/${BRIEF_SPACE}`);
