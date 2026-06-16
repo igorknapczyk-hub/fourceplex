@@ -55,12 +55,7 @@ function updateBadge(email) {
 function applyRoleUI(email) {
   const promotor = isPromotor(email);
   const pn = document.getElementById('promotor-nav');
-  const np = document.getElementById('nav-produkcja');
   if (pn) pn.style.display = promotor ? 'flex' : 'none';
-  if (np) {
-    if (promotor) { np.classList.remove('disabled'); np.title = ''; }
-    else { np.classList.add('disabled'); np.title = 'Dostępne tylko dla Promotora'; }
-  }
 }
 
 // Inicjalizacja autoryzacji — wywołaj na początku każdej strony
