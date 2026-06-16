@@ -1440,8 +1440,6 @@ Object.assign(window,{togglePanel,closePanel,closeAllPanels,sortBy,switchTab,con
   applyTheme(localStorage.getItem(TK)||'dark');
   const _pn=document.getElementById('promotor-nav');
   if(_pn&&['Radek','Igor'].includes(localStorage.getItem('fourceplex_current_user')||''))_pn.style.display='flex';
-  const _np=document.getElementById('nav-produkcja');
-  if(_np&&!['Radek','Igor'].includes(localStorage.getItem('fourceplex_current_user')||'')){_np.classList.add('disabled');_np.title='Dostępne tylko dla Promotora';}
 })();
 </script>
 

@@ -686,12 +686,6 @@ function applyPromotorRestrictions(){
       btn.style.opacity=nameVal.trim()?'1':'.5';
     }
   });
-  // Produkcja w nav
-  const navProd=document.getElementById('nav-produkcja');
-  if(navProd){
-    navProd.classList.toggle('disabled',!isPromotor);
-    navProd.title=isPromotor?'':tip;
-  }
 }
 
 let artists=[],sortCol='dateAdded',sortDir=1,selected=[],editId=null,promoterIds=new Set(),promotorOfficeIds=new Set();
