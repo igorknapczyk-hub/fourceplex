@@ -1,26 +1,53 @@
 // api/lib/google-chat.js
 // Wysyłanie wiadomości do Google Chat przez service account (asynchronicznie).
-// Używane przez scheduled briefy i inne proaktywne wiadomości Beaty.
+// Używa natywnego modułu crypto Node.js — zero zewnętrznych zależności,
+// żeby uniknąć problemów z instalacją pakietów (jose) na Vercelu.
 
-import { SignJWT, importPKCS8 } from 'jose';
+import crypto from 'crypto';
 
 const CHAT_API = 'https://chat.googleapis.com/v1';
 const SCOPES = 'https://www.googleapis.com/auth/chat.bot';
 
-async function getAccessToken() {
-  const sa = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-  const privateKey = await importPKCS8(sa.private_key, 'RS256');
+function base64url(input) {
+  return Buffer.from(input)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function signJwt(sa) {
   const now = Math.floor(Date.now() / 1000);
-  const jwt = await new SignJWT({
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const payload = {
     iss: sa.client_email,
     sub: sa.client_email,
     aud: 'https://oauth2.googleapis.com/token',
     scope: SCOPES,
     iat: now,
     exp: now + 3600,
-  })
-    .setProtectedHeader({ alg: 'RS256' })
-    .sign(privateKey);
+  };
+
+  const headerB64 = base64url(JSON.stringify(header));
+  const payloadB64 = base64url(JSON.stringify(payload));
+  const unsigned = `${headerB64}.${payloadB64}`;
+
+  const signer = crypto.createSign('RSA-SHA256');
+  signer.update(unsigned);
+  signer.end();
+  const signature = signer.sign(sa.private_key);
+  const signatureB64 = signature
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+  return `${unsigned}.${signatureB64}`;
+}
+
+async function getAccessToken() {
+  const sa = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+  const jwt = signJwt(sa);
 
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
