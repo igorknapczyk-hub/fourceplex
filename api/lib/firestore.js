@@ -907,6 +907,10 @@ async function getUsageStats({ days = 7 } = {}) {
   };
 }
 
+function getDb() {
+  return db;
+}
+
 // ── Exports ───────────────────────────────────────────────────────────────────
 
 export {
@@ -949,5 +953,5 @@ export {
   logUsage,
   getUsageStats,
   // DB access dla innych modułów
-  getDb: () => db,
+  getDb,
 };
