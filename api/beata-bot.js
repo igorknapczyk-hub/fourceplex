@@ -25,6 +25,7 @@ function describeActionTitle(toolName) {
   const titles = {
     add_artist_to_watchlist: 'Dodanie artysty do Watchlisty',
     add_todo: 'Nowe zadanie w Terrarium',
+    update_todo_status: 'Zmiana statusu zadania',
     add_guest_to_show: 'Dodanie gościa do listy',
     update_marketing_checkpoint: 'Zmiana checkpointu marketingowego',
     update_production_checklist_item: 'Zmiana checklisty produkcji',
@@ -40,6 +41,20 @@ function describeActionDetails(toolName, input) {
     if (input.genre) parts.push(`Gatunek: ${input.genre}`);
     if (input.listeners) parts.push(`Listeners: ${input.listeners}`);
     if (input.notes) parts.push(`Notatki: ${input.notes}`);
+    return parts.join('\n');
+  }
+  if (toolName === 'add_todo') {
+    const parts = [`Zadanie: ${input.text}`, `Dla: ${input.assignee}`];
+    if (input.due_date) parts.push(`Termin: ${input.due_date}`);
+    if (input.pilne) parts.push('⚠️ Pilne');
+    if (input.note) parts.push(`Notatka: ${input.note}`);
+    return parts.join('\n');
+  }
+  if (toolName === 'update_todo_status') {
+    const statusLabels = { todo: 'Do zrobienia', doing: 'W toku', done: 'Zrobione ✅' };
+    const parts = [];
+    if (input.todo_text_hint) parts.push(`Zadanie: ${input.todo_text_hint}`);
+    parts.push(`Nowy status: ${statusLabels[input.new_status] || input.new_status}`);
     return parts.join('\n');
   }
   return JSON.stringify(input, null, 1).slice(0, 500);
@@ -688,7 +703,7 @@ async function handleChatMessage(event) {
         system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         tools: [
           ...READ_ONLY_TOOLS,
-          ...tools.filter(t => t.name === 'add_artist_to_watchlist'),
+          ...tools.filter(t => ['add_artist_to_watchlist', 'add_todo', 'update_todo_status'].includes(t.name)),
           { type: 'web_search_20250305', name: 'web_search', max_uses: 5 },
         ],
         messages,
@@ -715,8 +730,9 @@ async function handleChatMessage(event) {
       const toolResults = [];
       for (const toolUse of toolUses) {
         console.log(`[beata-chat] tool_use: ${toolUse.name}`, JSON.stringify(toolUse.input));
-        // Bezpiecznik read-only — tylko add_artist_to_watchlist dopuszczony (Faza 1b krok 1)
-        if (WRITE_TOOLS.has(toolUse.name) && toolUse.name !== 'add_artist_to_watchlist') {
+        // Bezpiecznik read-only — dopuszczone write toole (Faza 1b, rozszerzane krok po kroku)
+        const ALLOWED_WRITE_TOOLS = new Set(['add_artist_to_watchlist', 'add_todo', 'update_todo_status']);
+        if (WRITE_TOOLS.has(toolUse.name) && !ALLOWED_WRITE_TOOLS.has(toolUse.name)) {
           toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id,
             content: 'Ten typ zapisu jeszcze nie jest dostępny w tej wersji Beaty.', is_error: true });
           continue;
