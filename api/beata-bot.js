@@ -9,15 +9,42 @@ import { getTodos, getTicketingEvents, getTicketingEvent, getArtists, getMarketi
   addArtistToWatchlist, updateArtistFlags, addMarketingCost, updateMarketingCost,
   updateProductionChecklistItem, updateProductionNotes, updateMarketingNotes, logUsage,
   getDb,
+  savePendingAction,
+  getPendingAction,
+  deletePendingAction,
 } from './lib/firestore.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { getActiveCampaigns, groupCampaignsByShow } from './lib/meta.js';
+import { sendToSpace, sendConfirmCard, updateCardMessage } from './lib/google-chat.js';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 
 // ── Pending actions (in-memory, TTL 10 min) ──────────────────────────────────
-const pendingActions = new Map();
+function describeActionTitle(toolName) {
+  const titles = {
+    add_artist_to_watchlist: 'Dodanie artysty do Watchlisty',
+    add_todo: 'Nowe zadanie w Terrarium',
+    add_guest_to_show: 'Dodanie gościa do listy',
+    update_marketing_checkpoint: 'Zmiana checkpointu marketingowego',
+    update_production_checklist_item: 'Zmiana checklisty produkcji',
+    update_production_notes: 'Zmiana notatek produkcji',
+    update_marketing_notes: 'Zmiana notatek marketingowych',
+  };
+  return titles[toolName] || `Akcja: ${toolName}`;
+}
+
+function describeActionDetails(toolName, input) {
+  if (toolName === 'add_artist_to_watchlist') {
+    const parts = [`Artysta: ${input.name}`];
+    if (input.genre) parts.push(`Gatunek: ${input.genre}`);
+    if (input.listeners) parts.push(`Listeners: ${input.listeners}`);
+    if (input.notes) parts.push(`Notatki: ${input.notes}`);
+    return parts.join('\n');
+  }
+  return JSON.stringify(input, null, 1).slice(0, 500);
+}
+
 const PENDING_TTL_MS = 10 * 60 * 1000;
 
 const WRITE_TOOLS = new Set([
@@ -525,9 +552,9 @@ async function executeWriteTool(toolName, input, authorName) {
 async function executeTool(name, input, chatId, userId, senderName) {
   if (WRITE_TOOLS.has(name)) {
     const actionId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    pendingActions.set(actionId, { chatId, userId, senderName: senderName || 'Użytkownik', toolName: name, input, createdAt: Date.now() });
-    await sendConfirmMessage(chatId, buildConfirmText(name, input), actionId);
-    return 'Pending user confirmation. Poinformuj użytkownika że czeka na jego decyzję i przestań (zakończ turę).';
+    await savePendingAction(actionId, { chatId, userId, senderName: senderName || 'Użytkownik', toolName: name, input });
+    await sendConfirmCard(chatId, actionId, describeActionTitle(name), describeActionDetails(name, input));
+    return 'Pending user confirmation. Poinformuj użytkownika że wysłałaś kartę z potwierdzeniem i przestań (zakończ turę).';
   }
 
   switch (name) {
@@ -661,6 +688,7 @@ async function handleChatMessage(event) {
         system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         tools: [
           ...READ_ONLY_TOOLS,
+          ...tools.filter(t => t.name === 'add_artist_to_watchlist'),
           { type: 'web_search_20250305', name: 'web_search', max_uses: 5 },
         ],
         messages,
@@ -687,10 +715,10 @@ async function handleChatMessage(event) {
       const toolResults = [];
       for (const toolUse of toolUses) {
         console.log(`[beata-chat] tool_use: ${toolUse.name}`, JSON.stringify(toolUse.input));
-        // Bezpiecznik read-only — write tool nigdy nie powinien tu trafić
-        if (WRITE_TOOLS.has(toolUse.name)) {
+        // Bezpiecznik read-only — tylko add_artist_to_watchlist dopuszczony (Faza 1b krok 1)
+        if (WRITE_TOOLS.has(toolUse.name) && toolUse.name !== 'add_artist_to_watchlist') {
           toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id,
-            content: 'Zapis niedostępny w tej wersji Beaty (tryb tylko do odczytu).', is_error: true });
+            content: 'Ten typ zapisu jeszcze nie jest dostępny w tej wersji Beaty.', is_error: true });
           continue;
         }
         try {
@@ -723,6 +751,42 @@ async function handleChatMessage(event) {
 
 // ── Vercel handler ──────────────────────────────────────────────────
 
+async function handleCardClick(body) {
+  const action = body.common?.invokedFunction || body.action?.actionMethodName;
+  const params = body.common?.parameters || {};
+  const actionId = params.actionId;
+  const messageName = body.message?.name;
+
+  if (!actionId) return { text: 'Błąd: brak ID akcji.' };
+
+  const pending = await getPendingAction(actionId);
+  if (!pending) {
+    if (messageName) await updateCardMessage(messageName, '⏱️ Ta akcja już wygasła lub została obsłużona.');
+    return {};
+  }
+
+  if (action === 'confirm_no') {
+    await deletePendingAction(actionId);
+    if (messageName) await updateCardMessage(messageName, '❌ Odrzucono — nic nie zapisano.');
+    return {};
+  }
+
+  if (action === 'confirm_yes') {
+    try {
+      const result = await executeWriteTool(pending.toolName, pending.input, pending.senderName);
+      await deletePendingAction(actionId);
+      const summary = typeof result === 'string' ? result : JSON.stringify(result);
+      if (messageName) await updateCardMessage(messageName, `✅ Zapisano.\n${summary}`.slice(0, 800));
+    } catch (err) {
+      console.error('[beata] confirm_yes error:', err.message);
+      if (messageName) await updateCardMessage(messageName, `❌ Błąd zapisu: ${err.message}`);
+    }
+    return {};
+  }
+
+  return {};
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(200).send('Beata bot działa.');
@@ -737,6 +801,10 @@ export default async function handler(req, res) {
     if (body.type === 'MESSAGE') {
       const reply = await handleChatMessage(body);
       return res.status(200).json({ text: reply });
+    }
+    if (body.type === 'CARD_CLICKED') {
+      const result = await handleCardClick(body);
+      return res.status(200).json(result);
     }
     return res.status(200).json({});
   }
