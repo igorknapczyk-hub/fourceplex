@@ -62,7 +62,12 @@ async function getAccessToken() {
   return data.access_token;
 }
 
+function normalizeSpaceId(spaceId) {
+  return String(spaceId).startsWith('spaces/') ? spaceId.slice(7) : spaceId;
+}
+
 export async function sendConfirmCard(spaceId, actionId, title, description) {
+  const cleanSpaceId = normalizeSpaceId(spaceId);
   const token = await getAccessToken();
   const card = {
     cardsV2: [{
@@ -93,7 +98,7 @@ export async function sendConfirmCard(spaceId, actionId, title, description) {
     }],
   };
 
-  const res = await fetch(`${CHAT_API}/spaces/${spaceId}/messages`, {
+  const res = await fetch(`${CHAT_API}/spaces/${cleanSpaceId}/messages`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify(card),
@@ -116,8 +121,9 @@ export async function updateCardMessage(messageName, text) {
 }
 
 export async function sendToSpace(spaceId, text) {
+  const cleanSpaceId = normalizeSpaceId(spaceId);
   const token = await getAccessToken();
-  const res = await fetch(`${CHAT_API}/spaces/${spaceId}/messages`, {
+  const res = await fetch(`${CHAT_API}/spaces/${cleanSpaceId}/messages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
