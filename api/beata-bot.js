@@ -601,10 +601,14 @@ const READ_ONLY_TOOLS = tools.filter(t => !WRITE_TOOLS.has(t.name));
 
 // ── Persystentna historia rozmów (Firestore) ──────────────────────────────────
 
+function safeDocId(spaceId) {
+  return String(spaceId).replace(/\//g, '_');
+}
+
 async function loadHistory(spaceId) {
   try {
     const db = getDb();
-    const doc = await db.collection('beata_convos').doc(spaceId).get();
+    const doc = await db.collection('beata_convos').doc(safeDocId(spaceId)).get();
     if (!doc.exists) return [];
     const data = doc.data();
     return Array.isArray(data.history) ? data.history : [];
@@ -618,7 +622,7 @@ async function saveHistory(spaceId, history) {
   try {
     const db = getDb();
     const trimmed = history.slice(-MAX_HISTORY);
-    await db.collection('beata_convos').doc(spaceId).set({
+    await db.collection('beata_convos').doc(safeDocId(spaceId)).set({
       history: trimmed,
       updatedAt: Date.now(),
     });
