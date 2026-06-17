@@ -62,6 +62,59 @@ async function getAccessToken() {
   return data.access_token;
 }
 
+export async function sendConfirmCard(spaceId, actionId, title, description) {
+  const token = await getAccessToken();
+  const card = {
+    cardsV2: [{
+      cardId: actionId,
+      card: {
+        header: { title: '🦎 Beata — potwierdzenie' },
+        sections: [{
+          widgets: [
+            { textParagraph: { text: `<b>${title}</b>` } },
+            { textParagraph: { text: description } },
+            {
+              buttonList: {
+                buttons: [
+                  {
+                    text: 'Tak, zapisz',
+                    onClick: { action: { function: 'confirm_yes', parameters: [{ key: 'actionId', value: actionId }] } },
+                  },
+                  {
+                    text: 'Nie, odrzuć',
+                    onClick: { action: { function: 'confirm_no', parameters: [{ key: 'actionId', value: actionId }] } },
+                  },
+                ],
+              },
+            },
+          ],
+        }],
+      },
+    }],
+  };
+
+  const res = await fetch(`${CHAT_API}/spaces/${spaceId}/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(card),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`Chat card send failed: ${JSON.stringify(data)}`);
+  return data;
+}
+
+export async function updateCardMessage(messageName, text) {
+  const token = await getAccessToken();
+  const res = await fetch(`${CHAT_API}/${messageName}?updateMask=text,cardsV2`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ text, cardsV2: [] }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`Chat card update failed: ${JSON.stringify(data)}`);
+  return data;
+}
+
 export async function sendToSpace(spaceId, text) {
   const token = await getAccessToken();
   const res = await fetch(`${CHAT_API}/spaces/${spaceId}/messages`, {

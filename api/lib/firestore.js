@@ -911,6 +911,25 @@ function getDb() {
   return db;
 }
 
+// ── Pending actions (Faza 1b — confirm flow) ────────────────────────────────
+
+async function savePendingAction(actionId, data) {
+  await db.collection('beata_pending_actions').doc(actionId).set({
+    ...data,
+    createdAt: Date.now(),
+  });
+}
+
+async function getPendingAction(actionId) {
+  const doc = await db.collection('beata_pending_actions').doc(actionId).get();
+  if (!doc.exists) return null;
+  return doc.data();
+}
+
+async function deletePendingAction(actionId) {
+  await db.collection('beata_pending_actions').doc(actionId).delete();
+}
+
 // ── Exports ───────────────────────────────────────────────────────────────────
 
 export {
@@ -954,4 +973,8 @@ export {
   getUsageStats,
   // DB access dla innych modułów
   getDb,
+  // Pending actions — Faza 1b
+  savePendingAction,
+  getPendingAction,
+  deletePendingAction,
 };
