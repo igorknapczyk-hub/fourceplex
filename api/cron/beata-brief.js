@@ -125,54 +125,122 @@ Bądź konkretna, nie lej wody. Max 400 słów.`;
 
 // ── Środa: raport sprzedażowy ────────────────────────────────────────────────
 
-async function briefSroda() {
-  const cutoff = new Date(); cutoff.setHours(0,0,0,0);
+async function briefTicketing() {
+  const cutoff = new Date(); cutoff.setHours(0, 0, 0, 0);
   const events = await getTicketingEvents({ upcomingOnly: true });
   const active = (events || [])
     .filter(e => new Date(e.date) >= cutoff)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  // Pobierz ostatni snapshot (wtorek) dla każdego eventu
-  const snapshotsData = await Promise.all(
-    active.slice(0, 15).map(async e => {
-      const snaps = await getTicketingSnapshots(e.id, { limit: 4 });
-      const lastSnap = snaps[0]; // najnowszy (wtorek)
-      const prevSnap = snaps[1]; // tydzień temu
-      const weekDiff = (lastSnap && prevSnap)
-        ? (lastSnap.total||0) - (prevSnap.total||0)
+  if (!active.length) return '🎫 *Raport sprzedażowy*\nBrak aktywnych eventów.';
+
+  // Pobierz snapshoty wtorkowe dla każdego eventu (max 2 ostatnie)
+  const withSnaps = await Promise.all(
+    active.slice(0, 20).map(async e => {
+      const snaps = await getTicketingSnapshots(e.id, { limit: 2 });
+      const last = snaps[0] || null;
+      const prev = snaps[1] || null;
+      const weekDiff = (last && prev && last.total != null && prev.total != null)
+        ? last.total - prev.total
         : null;
-      return { event: e, lastSnap, weekDiff };
+      return { e, last, weekDiff };
     })
   );
 
-  const lines = snapshotsData.map(({ event: e, lastSnap, weekDiff }) => {
-    const pct = e.cap ? Math.round((e.total||0) / e.cap * 100) : null;
+  // Formatowanie linii per event
+  const lines = withSnaps.map(({ e, last, weekDiff }) => {
+    const total = e.total ?? 0;
+    const cap = e.cap || null;
+    const pct = cap ? Math.round(total / cap * 100) : null;
     const daysLeft = Math.ceil((new Date(e.date) - new Date()) / 86400000);
-    const snapInfo = lastSnap
-      ? ` | snapshot ${lastSnap.date}: ${lastSnap.total||0} biletów`
-      : '';
-    const diffInfo = weekDiff !== null
-      ? ` | tydzień: ${weekDiff > 0 ? '+' : ''}${weekDiff}`
-      : '';
-    return `• ${e.name} | ${e.date} | ${e.total||0} bil. | ${pct !== null ? pct+'% cap' : '—'} | ${daysLeft}d${snapInfo}${diffInfo}`;
-  }).join('\n') || 'Brak danych.';
+    const snapDate = last?.date || null;
 
-  const system = `Jesteś Beatą — asystentką agencji koncertowej FOURCE. Piszesz tygodniowy raport sprzedażowy. Konkretna, po polsku. Kończ 🦎`;
+    // Ikona statusu
+    let icon = '⬜';
+    if (pct !== null) {
+      if (pct >= 100) icon = '🟢';
+      else if (pct >= 60) icon = '🟡';
+      else if (pct < 20 && daysLeft <= 14) icon = '🔴';
+      else icon = '⬜';
+    }
 
-  const user = `Napisz raport sprzedażowy na ${getWarsawDate()} (dane ze snapshotu wtorkowego).
+    // Trend tygodniowy
+    let trendStr = '';
+    if (weekDiff !== null) {
+      const sign = weekDiff >= 0 ? '+' : '';
+      trendStr = ` (${sign}${weekDiff}/tydz)`;
+    } else if (last) {
+      trendStr = ' (brak poprzedniego snapshotu)';
+    } else {
+      trendStr = ' (brak snapshotu)';
+    }
 
-DANE SPRZEDAŻY:
-${lines}
+    // Sold out?
+    if (pct !== null && pct >= 100) {
+      return `${icon} *${e.name}* — ${e.date} — *SOLD OUT* 🎉`;
+    }
 
-Zrób raport w tej strukturze:
-1. ✅ DOBRZE IDĄCE — concerty z wysoką sprzedażą lub pozytywnym trendem tygodniowym
-2. ⚠️ WYMAGAJĄCE UWAGI — concerty z niską sprzedażą lub słabym trendem
-3. 📈 PROGNOZY — na podstawie tempa sprzedaży (tygodniowy diff) oszacuj finalną sprzedaż dla 3 najbliższych concertów
+    const pctStr = pct !== null ? ` (${pct}% cap)` : '';
+    const capStr = cap ? `/${cap}` : '';
+    const daysStr = daysLeft === 1 ? '⚠️ *JUTRO*' : daysLeft <= 7 ? `⚠️ *${daysLeft}d*` : `${daysLeft}d`;
 
-Bądź konkretna, max 300 słów.`;
+    return `${icon} *${e.name}* — ${e.date} — ${total}${capStr} bil.${pctStr}${trendStr} — ${daysStr}`;
+  }).join('\n');
 
-  const analiza = await callClaude(system, user, false);
-  return `🎫 *Raport sprzedażowy — ${getWarsawDate()}*\n\n${analiza}`;
+  // Alerty — eventy wymagające uwagi
+  const alerts = withSnaps
+    .filter(({ e, weekDiff }) => {
+      const total = e.total ?? 0;
+      const cap = e.cap || null;
+      const pct = cap ? total / cap : null;
+      const daysLeft = Math.ceil((new Date(e.date) - new Date()) / 86400000);
+      const slowTrend = weekDiff !== null && weekDiff < 10 && pct !== null && pct < 0.5;
+      const urgentLow = daysLeft <= 7 && pct !== null && pct < 0.5;
+      return slowTrend || urgentLow;
+    })
+    .map(({ e, weekDiff }) => {
+      const total = e.total ?? 0;
+      const cap = e.cap || null;
+      const pct = cap ? Math.round(total / cap * 100) : null;
+      const daysLeft = Math.ceil((new Date(e.date) - new Date()) / 86400000);
+      const pctStr = pct !== null ? `${pct}% cap` : '—';
+      const trendStr = weekDiff !== null ? `+${weekDiff}/tydz` : 'brak danych';
+      return `⚠️ *${e.name}* — ${daysLeft}d, ${pctStr}, tempo: ${trendStr}`;
+    });
+
+  // Prognoza — 3 najbliższe niesprzedane eventy z wystarczającym trendem
+  const forecasts = withSnaps
+    .filter(({ e, weekDiff }) => {
+      const pct = e.cap ? (e.total ?? 0) / e.cap : null;
+      return weekDiff !== null && weekDiff > 0 && pct !== null && pct < 1;
+    })
+    .slice(0, 3)
+    .map(({ e, weekDiff }) => {
+      const total = e.total ?? 0;
+      const cap = e.cap;
+      const remaining = cap - total;
+      const weeksToSell = weekDiff > 0 ? Math.round(remaining / weekDiff * 10) / 10 : '∞';
+      const daysLeft = Math.ceil((new Date(e.date) - new Date()) / 86400000);
+      const weeksLeft = Math.round(daysLeft / 7 * 10) / 10;
+      const projected = Math.min(cap, Math.round(total + weekDiff * weeksLeft));
+      const projectedPct = Math.round(projected / cap * 100);
+      return `📈 *${e.name}* — prognoza: ~${projected} bil. (${projectedPct}% cap) przy tempie +${weekDiff}/tydz`;
+    });
+
+  // Złożenie raportu
+  const header = `🎫 *Raport sprzedażowy — ${getWarsawDate()}*\n_(snapshot wtorek, dane live)_`;
+  const alertSection = alerts.length
+    ? `\n\n*ALERTY:*\n${alerts.join('\n')}`
+    : '\n\n*ALERTY:* brak';
+  const forecastSection = forecasts.length
+    ? `\n\n*PROGNOZA:*\n${forecasts.join('\n')}`
+    : '';
+
+  return `${header}\n\n${lines}${alertSection}${forecastSection}`;
+}
+
+async function briefSroda() {
+  return briefTicketing();
 }
 
 // ── Piątek: raport marketingowy (lekki) ─────────────────────────────────────
