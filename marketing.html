@@ -865,6 +865,10 @@ function renderDetail(id){
             <div class="form-label">Start kampanii</div>
             <input class="form-input" style="width:100%" type="date" id="cf-date-${id}" value="${new Date().toISOString().slice(0,10)}">
           </div>
+          <div style="width:110px">
+            <div class="form-label">Koniec (opcjonalnie)</div>
+            <input class="form-input" style="width:100%" type="date" id="cf-end-date-${id}">
+          </div>
           <div style="width:80px">
             <div class="form-label">Kwota (zł)</div>
             <input class="form-input" style="width:100%" type="number" id="cf-amt-${id}" placeholder="0" min="0">
@@ -1051,17 +1055,19 @@ async function addCost(showId){
   const cat=document.getElementById(`cf-cat-${showId}`)?.value;
   const desc=document.getElementById(`cf-desc-${showId}`)?.value?.trim();
   const costDate=document.getElementById(`cf-date-${showId}`)?.value||new Date().toISOString().slice(0,10);
+  const costEndDate=document.getElementById(`cf-end-date-${showId}`)?.value||null;
   const amt=parseFloat(document.getElementById(`cf-amt-${showId}`)?.value)||0;
   if(!cat||!desc||!amt)return;
   const show=(window._shows||[]).find(s=>s.id===showId);
   const tourDate=show?.isTour?(document.getElementById(`cf-tour-date-${showId}`)?.value||'all'):null;
   const {collection,addDoc,serverTimestamp}=window._fs;
   try{
-    const rec={showId,artistName:show?.artistName||'',category:cat,description:desc,amount:amt,costDate,addedBy:curUser||'–',createdAt:serverTimestamp()};
+    const rec={showId,artistName:show?.artistName||'',category:cat,description:desc,amount:amt,costDate,...(costEndDate?{costEndDate}:{}),addedBy:curUser||'–',createdAt:serverTimestamp()};
     if(tourDate!==null)rec.tourDate=tourDate;
     await addDoc(collection(window._db,'marketing_costs'),rec);
     document.getElementById(`cf-desc-${showId}`).value='';
     document.getElementById(`cf-amt-${showId}`).value='';
+    const endEl=document.getElementById(`cf-end-date-${showId}`);if(endEl)endEl.value='';
   }catch(e){console.error(e);}
 }
 
@@ -1376,20 +1382,54 @@ async function drawChart(uid,costs,concertDate,artistName){
     return`<text x="${xPos(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="7.5" ${weight} font-family="monospace">${lbl}</text>`;
   }).join('');
 
-  const weekCostItems=weeks.map(w=>{
-    const wE=new Date(w);wE.setDate(wE.getDate()+6);wE.setHours(23,59,59);
-    return costs.filter(c=>{const d=c.costDate?new Date(c.costDate):(c.createdAt?new Date(c.createdAt.seconds*1000):null);return d&&d>=w&&d<=wE;});
-  });
+  // Kolory per kategoria
+  const CAT_COLORS={
+    'Meta':'#1877f2','TikTok':'#ff0050','Google':'#fbbc04',
+    'Buyouts':'#a259ff','Media':'#ff6b35','OOH':'#00c9a7','Inne':'#888888'
+  };
 
-  const bars=weeklySpend.map((v,i)=>{
-    if(v<=0)return'';
-    const bh=(v/costYMax)*chartH;
-    const x=(xPos(i)-barW/2).toFixed(1),y=(PT+chartH-bh).toFixed(1);
-    const wLabel=`${weeks[i].getDate().toString().padStart(2,'0')}.${(weeks[i].getMonth()+1).toString().padStart(2,'0')}`;
-    const itemList=weekCostItems[i].map(c=>`${c.description||c.category}: ${fmtPLN(c.amount)} zł`).join('\n');
-    const tip=`Tydzień ${wLabel}: ${fmtPLN(v)} zł${itemList?'\n'+itemList:''}`;
-    return`<rect x="${x}" y="${y}" width="${barW}" height="${bh.toFixed(1)}" rx="2" fill="#0a7a4a" opacity="0.85" data-tip="${tip.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" style="cursor:default"/>`;
+  // Oś Y kosztów — używamy costYMax do mapowania
+  // xForDate: mapuje datę na pozycję X (interpolacja między weeks)
+  const msStart=weeks[0].getTime();
+  const msEnd=weeks[weeks.length-1].getTime();
+  const xForDate=d=>{
+    const ms=new Date(d).getTime();
+    if(msEnd===msStart)return PL+chartW/2;
+    return PL+((ms-msStart)/(msEnd-msStart))*chartW;
+  };
+  const yForCost=v=>PT+chartH-(Math.min(v,costYMax)/costYMax)*chartH;
+
+  // Renderuj każdy koszt jako linię (start→end) lub punkt (brak end)
+  const campaignLines=costs.map((c,ci)=>{
+    const startD=c.costDate?new Date(c.costDate):(c.createdAt?new Date(c.createdAt.seconds*1000):null);
+    if(!startD)return'';
+    const endD=c.costEndDate?new Date(c.costEndDate):null;
+    const color=CAT_COLORS[c.category]||'#888888';
+    const yVal=yForCost(c.amount||0);
+    const tip=`${c.category}: ${c.description||'–'}\n${fmtPLN(c.amount)} zł${endD?`\n${startD.toLocaleDateString('pl')}–${endD.toLocaleDateString('pl')}`:`\n${startD.toLocaleDateString('pl')}`}`;
+    const tipAttr=tip.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+
+    if(endD&&endD>startD){
+      // Pozioma linia od startu do końca
+      const x1=xForDate(startD).toFixed(1);
+      const x2=xForDate(endD).toFixed(1);
+      const y=yVal.toFixed(1);
+      return[
+        `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${color}" stroke-width="3" stroke-linecap="round" opacity="0.85" data-tip="${tipAttr}" style="cursor:default"/>`,
+        `<circle cx="${x1}" cy="${y}" r="4" fill="${color}" opacity="0.9" data-tip="${tipAttr}" style="cursor:default"/>`,
+        `<circle cx="${x2}" cy="${y}" r="4" fill="${color}" opacity="0.9" data-tip="${tipAttr}" style="cursor:default"/>`,
+      ].join('');
+    }else{
+      // Pojedynczy punkt (diamencik)
+      const cx=xForDate(startD).toFixed(1);
+      const cy=yVal.toFixed(1);
+      const s=6;
+      return`<polygon points="${cx},${(+cy-s).toFixed(1)} ${(+cx+s).toFixed(1)},${cy} ${cx},${(+cy+s).toFixed(1)} ${(+cx-s).toFixed(1)},${cy}" fill="${color}" opacity="0.9" data-tip="${tipAttr}" style="cursor:default"/>`;
+    }
   }).join('');
+
+  // Legenda kategorii (tylko te które faktycznie występują)
+  const usedCats=[...new Set(costs.map(c=>c.category).filter(Boolean))];
 
   const tickArea=tickPts.length>1
     ?`M${xPos(salesStartIdx).toFixed(1)},${PT+chartH} L${tickPts.map(([x,y])=>`${x.toFixed(1)},${y.toFixed(1)}`).join('L')} L${xPos(salesEndIdx).toFixed(1)},${PT+chartH}Z`
@@ -1405,7 +1445,7 @@ async function drawChart(uid,costs,concertDate,artistName){
   <stop offset="0%" stop-color="#555555" stop-opacity="0.18"/>
   <stop offset="100%" stop-color="#555555" stop-opacity="0.01"/>
 </linearGradient></defs>
-${gridLines}${capLines}${bars}
+${gridLines}${capLines}${campaignLines}
 ${tickPts.length?`<path d="${tickArea}" fill="url(#gT-${uid})" pointer-events="none"/>
 <path d="${pathLine(tickPts)}" fill="none" stroke="#111111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`:''}
 ${tickDots}${xLabels}${tickYLabels}
@@ -1413,7 +1453,7 @@ ${tickDots}${xLabels}${tickYLabels}
 <line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
 <line x1="${W-PR}" y1="${PT}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
 
-  svgEl.querySelectorAll('rect[data-tip]').forEach(r=>{
+  svgEl.querySelectorAll('[data-tip]').forEach(r=>{
     r.addEventListener('mouseenter',e=>showChartTip(e,r.dataset.tip));
     r.addEventListener('mousemove',moveChartTip);
     r.addEventListener('mouseleave',hideChartTip);
