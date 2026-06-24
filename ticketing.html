@@ -754,7 +754,10 @@ function renderMobileCards(){
       .filter(s=>s.createdBy!=='seed'&&parseSnapDate(s.date).getDay()===2)
       .sort((a,b)=>parseSnapDate(b.date)-parseSnapDate(a.date));
     const lastRS=evRealTue[0];
-    const wDiff=lastRS!=null?tot2-(lastRS.total||0):null;
+    // W = zmiana samej sprzedaży (tm+eb+other), bez comps po obu stronach
+    const liveRaw=(ev.tm||0)+(ev.eb||0)+(ev.other||0);
+    const snapRaw=lastRS!=null?((lastRS.tm||0)+(lastRS.eb||0)+(lastRS.other||0)):null;
+    const wDiff=snapRaw!=null?liveRaw-snapRaw:null;
     const wHtml=wDiff!=null?`${wDiff>0?'+':''}${wDiff}`:'—';
     const wCol=wDiff>0?'var(--teal)':wDiff<0?'var(--red)':'var(--text2)';
     let arrow='';
@@ -949,7 +952,8 @@ function renderTable(){
         const prevDt=di+1<snapDates.length?snapDates[di+1]:null;
         const sPrev=prevDt?(allSnaps[ev.id]||[]).find(x=>x.date===prevDt):null;
         const isPrevReal=sPrev&&sPrev.createdBy!=='seed';
-        const wDiff=isPrevReal?(s.total||0)-(sPrev.total||0):null;
+        // W w historii = zmiana samej sprzedaży między snapshotami (bez comps)
+        const wDiff=isPrevReal?((s.tm||0)+(s.eb||0)+(s.other||0))-((sPrev.tm||0)+(sPrev.eb||0)+(sPrev.other||0)):null;
         const wHtml=wDiff!=null?`<span style="color:${wDiff>0?'var(--teal)':wDiff<0?'var(--red)':'var(--text2)'}">${wDiff>0?'+':''}${wDiff}</span>`:'—';
         mr+=`<td class="num-b snap-sep" data-date="${dt}" style="width:${BW.t}px">${s.total||0}</td>`;
         mr+=`<td class="num" data-date="${dt}" style="width:${BW.w}px">${wHtml}</td>`;
@@ -993,7 +997,10 @@ function renderTable(){
       .filter(s=>s.createdBy!=='seed'&&parseSnapDate(s.date).getDay()===2)
       .sort((a,b)=>parseSnapDate(b.date)-parseSnapDate(a.date));
     const lastRS=evRealTue[0];
-    const liveWDiff=lastRS!=null?tot2-(lastRS.total||0):null;
+    // W = zmiana samej sprzedaży (tm+eb+other), bez comps po obu stronach
+    const liveRaw=(ev.tm||0)+(ev.eb||0)+(ev.other||0);
+    const snapRaw=lastRS!=null?((lastRS.tm||0)+(lastRS.eb||0)+(lastRS.other||0)):null;
+    const liveWDiff=snapRaw!=null?liveRaw-snapRaw:null;
     const liveWHtml=liveWDiff!=null
       ?`<span style="color:${liveWDiff>0?'var(--teal)':liveWDiff<0?'var(--red)':'var(--text2)'}">${liveWDiff>0?'+':''}${liveWDiff}</span>`
       :'—';
@@ -1342,7 +1349,8 @@ function generateBackup(){
       snaps.forEach((s,si)=>{
         // Wraps = diff vs poprzedni snapshot
         const prev=snaps[si+1];
-        const wDiff=(prev&&prev.total!=null)?((s.total||0)-(prev.total||0)):null;
+        // W w CSV = zmiana samej sprzedaży (bez comps)
+        const wDiff=(prev!=null)?((s.tm||0)+(s.eb||0)+(s.other||0))-((prev.tm||0)+(prev.eb||0)+(prev.other||0)):null;
         const wCell=wDiff!=null?(wDiff>0?`+${wDiff}`:String(wDiff)):'';
         R.push([
           '',
