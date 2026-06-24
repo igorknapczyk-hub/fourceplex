@@ -1420,11 +1420,10 @@ async function drawChart(uid,costs,concertDate,artistName){
         `<circle cx="${x2}" cy="${y}" r="4" fill="${color}" opacity="0.9" data-tip="${tipAttr}" style="cursor:default"/>`,
       ].join('');
     }else{
-      // Pojedynczy punkt (diamencik)
+      // Pojedynczy punkt (kółko)
       const cx=xForDate(startD).toFixed(1);
       const cy=yVal.toFixed(1);
-      const s=6;
-      return`<polygon points="${cx},${(+cy-s).toFixed(1)} ${(+cx+s).toFixed(1)},${cy} ${cx},${(+cy+s).toFixed(1)} ${(+cx-s).toFixed(1)},${cy}" fill="${color}" opacity="0.9" data-tip="${tipAttr}" style="cursor:default"/>`;
+      return`<circle cx="${cx}" cy="${cy}" r="5" fill="${color}" opacity="0.9" data-tip="${tipAttr}" style="cursor:default"/>`;
     }
   }).join('');
 
