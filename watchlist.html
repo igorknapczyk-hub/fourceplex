@@ -929,7 +929,7 @@ function statusSel(a){
 function changeStatus(id,val){
   const a=artists.find(x=>x.id===id);if(!a)return;
   const prev=a.status;a.status=val;
-  if(val==='sent'&&prev!=='sent'&&prev!=='reminder')a.sentDate=new Date().toISOString();
+  if(val==='sent'&&prev!=='sent')a.sentDate=new Date().toISOString();
   if(val==='check')a.sentDate=null;
   saveArtistToDb(a);render();
 }
@@ -1278,7 +1278,7 @@ function saveArtist(){
   if(editId){
     const a=artists.find(x=>x.id===editId),prev=a.status;
     Object.assign(a,{name,genre:document.getElementById('fGenre').value.trim(),similar:document.getElementById('fSimilar').value.trim(),listeners:document.getElementById('fListeners').value.trim(),spotifyUrl:document.getElementById('fSpotify').value.trim(),plShow:document.getElementById('fPlShow').value.trim()||'NIE',plChecked:true,notes:document.getElementById('fNotes').value.trim(),predMin:parseInt(document.getElementById('fPredMin').value)||0,predMax:parseInt(document.getElementById('fPredMax').value)||0,sourceTip:document.getElementById('fSourceTip').value.trim(),status});
-    if(status==='sent'&&prev!=='sent'&&prev!=='reminder')a.sentDate=new Date().toISOString();
+    if(status==='sent'&&prev!=='sent')a.sentDate=new Date().toISOString();
     if(status==='check')a.sentDate=null;
   }else{
     const now=new Date().toISOString();
