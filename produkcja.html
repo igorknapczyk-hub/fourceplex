@@ -575,15 +575,18 @@ async function flushExpToFirestore(showId){
   if(!_expDirty||_expShowId!==showId)return;
   _expDirty=false;
   clearInterval(_expAutoSave); _expAutoSave=null;
+  // Snapshot both arrays before any awaits — onSnapshot can reset _expLocal mid-loop
+  const snap={'production':[...(_expLocal['production']||[])],'hospitality':[...(_expLocal['hospitality']||[])]};
   for(const cat of['production','hospitality']){
-    for(const row of(_expLocal[cat]||[])){
+    const rows=snap[cat];
+    for(const row of rows){
       const name=(row.name||'').trim();
       const amount=parseFloat(row.amount)||0;
       if(!name&&!amount){
         if(row.fsId){await delExp(row.fsId);row.fsId='';}
         continue;
       }
-      const ord=(_expLocal[cat]||[]).filter(r=>r.name||r.amount).indexOf(row);
+      const ord=rows.filter(r=>r.name||r.amount).indexOf(row);
       const deduction=row.deduction||false;
       if(row.fsId){await updExp(row.fsId,{name,amount,_ord:ord,deduction});}
       else{const ref=await addExp({showId,category:cat,name,amount,_ord:ord,deduction,addedBy:currentUser||'?'});row.fsId=ref.id;}
