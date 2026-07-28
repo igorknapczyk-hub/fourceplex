@@ -56,6 +56,10 @@ function applyRoleUI(email) {
   const promotor = isPromotor(email);
   const pn = document.getElementById('promotor-nav');
   if (pn) pn.style.display = promotor ? 'flex' : 'none';
+  const wn = document.getElementById('watchlist-nav');
+  if (wn) wn.style.display = promotor ? 'flex' : 'none';
+  const wnm = document.getElementById('watchlist-nav-mobile');
+  if (wnm) wnm.style.display = promotor ? '' : 'none';
 }
 
 // Inicjalizacja autoryzacji — wywołaj na początku każdej strony
