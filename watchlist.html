@@ -430,7 +430,8 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
           <div><div class="form-label">PL Show</div><input class="form-input" type="text" id="fPlShow" placeholder="auto (NIE / miejsce + data)"></div>
           <div><div class="form-label">Market Predict — min</div><input class="form-input" type="number" id="fPredMin" placeholder="bilety"></div>
           <div><div class="form-label">Market Predict — max</div><input class="form-input" type="number" id="fPredMax" placeholder="bilety"></div>
-          <div><div class="form-label">Status</div><select class="form-input" id="fStatus"><option value="check">Do sprawdzenia</option><option value="sent">Napisano do agenta</option></select></div>
+          <div><div class="form-label">Status</div><select class="form-input" id="fStatus" onchange="onFStatusChange()"><option value="check">Do sprawdzenia</option><option value="sent">Napisano do agenta</option><option value="napisano_custom">Napisano — własna data</option></select></div>
+          <div id="fRemindAtWrap" style="display:none"><div class="form-label">Data reminder <span style="font-size:10px;color:var(--text3)">(puste = domyślne 3 mies.)</span></div><input class="form-input" type="date" id="fRemindAt"></div>
           <div><div class="form-label">Źródło tropu</div><input class="form-input" type="text" id="fSourceTip" placeholder="np. Spotify Radar"></div>
           <div class="form-full"><div class="form-label">Notatki</div><textarea class="form-input" id="fNotes" placeholder="Obserwacje, potencjał w Polsce..."></textarea></div>
         </div>
@@ -820,7 +821,17 @@ async function deleteArtistFromDb(id){
 function saveData(){
   if(!window._fbReady){try{localStorage.setItem(SK,JSON.stringify(artists));}catch(e){}}
 }
-function checkReminders(){artists.forEach(a=>{if(a.status==='sent'&&a.sentDate&&Date.now()-new Date(a.sentDate).getTime()>THREE_M){a.status='reminder';saveArtistToDb(a);}});}
+function checkReminders(){
+  const now=Date.now();
+  artists.forEach(a=>{
+    if(a.status!=='sent'||!a.sentDate)return;
+    if(a.remindAt){
+      if(new Date(a.remindAt).getTime()<=now){a.status='reminder';saveArtistToDb(a);}
+    }else if(now-new Date(a.sentDate).getTime()>THREE_M){
+      a.status='reminder';saveArtistToDb(a);
+    }
+  });
+}
 
 /* ── WEEKLY TREND REFRESH ── */
 let refreshQueue=[],refreshing=false;
@@ -926,20 +937,34 @@ function getFiltered(){
 function statusSel(a){
   const cls=a.status==='reminder'?'s-reminder':a.status==='sent'?'s-sent':'s-check';
   const _sd=a.sentDate?new Date(a.sentDate):null;
-  const sentLabel=_sd?` (${String(_sd.getDate()).padStart(2,'0')}.${String(_sd.getMonth()+1).padStart(2,'0')})`:'';
+  const _rd=a.remindAt?new Date(a.remindAt):null;
+  const sentLabel=_rd
+    ?` (remind ${String(_rd.getDate()).padStart(2,'0')}.${String(_rd.getMonth()+1).padStart(2,'0')})`
+    :_sd?` (${String(_sd.getDate()).padStart(2,'0')}.${String(_sd.getMonth()+1).padStart(2,'0')})`:''  ;
 
   const canEdit=PROMOTOR_USERS.includes(currentUser);
   return`<select class="status-select ${cls}" ${canEdit?'':'disabled title="Dostępne tylko dla Promotora"'} onchange="changeStatus(${a.id},this.value)" onclick="event.stopPropagation()">
     <option value="check" ${a.status==='check'?'selected':''}>Do sprawdzenia</option>
     <option value="sent" ${(a.status==='sent'||a.status==='reminder')?'selected':''}>Napisano${sentLabel}</option>
     <option value="reminder" ${a.status==='reminder'?'selected':''}>Reminder ⚠</option>
+    <option value="napisano_custom">Napisano — własna data</option>
   </select>`;
 }
 function changeStatus(id,val){
   const a=artists.find(x=>x.id===id);if(!a)return;
+  if(val==='napisano_custom'){
+    const tomorrow=new Date(Date.now()+86400000).toISOString().slice(0,10);
+    openRemindPicker(tomorrow,a.remindAt||tomorrow,function(d){
+      const prev=a.status;
+      a.status='sent';a.remindAt=d;
+      if(prev!=='sent')a.sentDate=new Date().toISOString();
+      saveArtistToDb(a);render();
+    });
+    return;
+  }
   const prev=a.status;a.status=val;
-  if(val==='sent'&&prev!=='sent')a.sentDate=new Date().toISOString();
-  if(val==='check')a.sentDate=null;
+  if(val==='sent'&&prev!=='sent'){a.sentDate=new Date().toISOString();a.remindAt=null;}
+  if(val==='check'){a.sentDate=null;a.remindAt=null;}
   saveArtistToDb(a);render();
 }
 
@@ -1120,7 +1145,10 @@ function editArtist(id){
   document.getElementById('fPredMin').value=a.predMin||'';
   document.getElementById('fPredMax').value=a.predMax||'';
   document.getElementById('fSourceTip').value=a.sourceTip||'';
-  document.getElementById('fStatus').value=a.status==='reminder'?'sent':a.status;
+  const _fsv=a.status==='reminder'?'sent':(a.status==='sent'&&a.remindAt?'napisano_custom':a.status);
+  document.getElementById('fStatus').value=_fsv;
+  document.getElementById('fRemindAt').value=a.remindAt||'';
+  onFStatusChange();
   document.getElementById('fillInd').style.display='none';
   document.getElementById('autoFillBtn').style.opacity='1';
   PANELS.forEach(p=>closePanel(p));
@@ -1283,15 +1311,20 @@ function saveArtist(){
   const name=document.getElementById('fName').value.trim();
   if(!name){alert('Nazwa artysty jest wymagana.');return;}
   if(!currentUser){return;}
-  const status=document.getElementById('fStatus').value;
+  let status=document.getElementById('fStatus').value;
+  const remindAtVal=document.getElementById('fRemindAt').value||null;
+  if(status==='napisano_custom'){
+    if(!remindAtVal){alert('Wybierz datę reminder.');return;}
+    status='sent';
+  }
   if(editId){
     const a=artists.find(x=>x.id===editId),prev=a.status;
     Object.assign(a,{name,genre:document.getElementById('fGenre').value.trim(),similar:document.getElementById('fSimilar').value.trim(),listeners:document.getElementById('fListeners').value.trim(),spotifyUrl:document.getElementById('fSpotify').value.trim(),plShow:document.getElementById('fPlShow').value.trim()||'NIE',plChecked:true,notes:document.getElementById('fNotes').value.trim(),predMin:parseInt(document.getElementById('fPredMin').value)||0,predMax:parseInt(document.getElementById('fPredMax').value)||0,sourceTip:document.getElementById('fSourceTip').value.trim(),status});
-    if(status==='sent'&&prev!=='sent')a.sentDate=new Date().toISOString();
-    if(status==='check')a.sentDate=null;
+    if(status==='sent'){if(prev!=='sent')a.sentDate=new Date().toISOString();a.remindAt=remindAtVal||null;}
+    if(status==='check'){a.sentDate=null;a.remindAt=null;}
   }else{
     const now=new Date().toISOString();
-    artists.push({id:Date.now(),name,genre:document.getElementById('fGenre').value.trim(),similar:document.getElementById('fSimilar').value.trim(),listeners:document.getElementById('fListeners').value.trim(),spotifyUrl:document.getElementById('fSpotify').value.trim(),plShow:document.getElementById('fPlShow').value.trim()||'NIE',plChecked:true,notes:document.getElementById('fNotes').value.trim(),predMin:parseInt(document.getElementById('fPredMin').value)||0,predMax:parseInt(document.getElementById('fPredMax').value)||0,sourceTip:document.getElementById('fSourceTip').value.trim(),status,sentDate:status==='sent'?now:null,source:'manual',addedBy:currentUser,dateAdded:now,ts:Date.now(),trend:'flat',predHistory:[]});
+    artists.push({id:Date.now(),name,genre:document.getElementById('fGenre').value.trim(),similar:document.getElementById('fSimilar').value.trim(),listeners:document.getElementById('fListeners').value.trim(),spotifyUrl:document.getElementById('fSpotify').value.trim(),plShow:document.getElementById('fPlShow').value.trim()||'NIE',plChecked:true,notes:document.getElementById('fNotes').value.trim(),predMin:parseInt(document.getElementById('fPredMin').value)||0,predMax:parseInt(document.getElementById('fPredMax').value)||0,sourceTip:document.getElementById('fSourceTip').value.trim(),status,sentDate:status==='sent'?now:null,remindAt:status==='sent'?remindAtVal:null,source:'manual',addedBy:currentUser,dateAdded:now,ts:Date.now(),trend:'flat',predHistory:[]});
   }
   const _saved=editId?artists.find(x=>x.id===editId):artists[artists.length-1];saveArtistToDb(_saved);closePanel('addPanel');editId=null;render();notify('Artysta zapisany ✓');
 }
@@ -1472,5 +1505,56 @@ loadData();
   <a href="watchlist.html" class="active" id="watchlist-nav-mobile" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span class="mbn-label">Watchlist</span></a>
   <a href="listy-gosci.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg><span class="mbn-label">Listy Gości</span></a>
 </nav>
+<!-- REMIND DATE PICKER MODAL -->
+<div id="remind-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:900;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:22px 24px;min-width:270px;display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+    <div style="font-size:14px;font-weight:600;color:var(--text)">Wybierz datę reminder</div>
+    <input type="date" id="remind-date-inp" class="form-input" style="font-size:13px">
+    <div style="font-size:11px;color:var(--text3)">Status zmieni się na Reminder w wybranym dniu.</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" id="remind-cancel-btn">Anuluj</button>
+      <button class="btn btn-accent" id="remind-ok-btn">Potwierdź</button>
+    </div>
+  </div>
+</div>
+<script>
+let _remindCb=null;
+function openRemindPicker(minDate,defaultDate,cb){
+  const modal=document.getElementById('remind-modal');
+  const inp=document.getElementById('remind-date-inp');
+  inp.min=minDate;
+  inp.value=defaultDate>=minDate?defaultDate:minDate;
+  _remindCb=cb;
+  modal.style.display='flex';
+}
+document.getElementById('remind-ok-btn').addEventListener('click',function(){
+  const d=document.getElementById('remind-date-inp').value;
+  document.getElementById('remind-modal').style.display='none';
+  if(d&&_remindCb)_remindCb(d);
+  _remindCb=null;
+});
+document.getElementById('remind-cancel-btn').addEventListener('click',function(){
+  document.getElementById('remind-modal').style.display='none';
+  _remindCb=null;
+  render();
+});
+function onFStatusChange(){
+  const v=document.getElementById('fStatus').value;
+  const wrap=document.getElementById('fRemindAtWrap');
+  const inp=document.getElementById('fRemindAt');
+  if(v==='sent'||v==='napisano_custom'){
+    wrap.style.display='';
+    if(v==='napisano_custom'){
+      const tomorrow=new Date(Date.now()+86400000).toISOString().slice(0,10);
+      inp.min=tomorrow;
+      if(!inp.value||inp.value<tomorrow)inp.value=tomorrow;
+    }else{
+      inp.min='';
+    }
+  }else{
+    wrap.style.display='none';
+  }
+}
+</script>
 </body>
 </html>
