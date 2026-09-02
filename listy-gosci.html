@@ -234,6 +234,16 @@ td.col-del{text-align:center}
 .m-inp::placeholder{color:var(--text3);font-size:12px}
 .m-foto-policy-wrap{margin:12px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px}
 .m-foto-policy-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+/* ── gwiazdka gościa specjalnego ── */
+.col-star{width:22px;text-align:center;padding:0 2px}
+.star-btn{background:none;border:none;color:var(--bg4);cursor:pointer;padding:1px 2px;line-height:0;transition:color .15s;vertical-align:middle}
+.star-btn:hover{color:var(--amber)}
+.star-btn.starred{color:#f59e0b}
+.itable tr.starred-row td{background:rgba(245,158,11,.06)}
+.itable tr.starred-row td:first-child{border-left:2px solid #f59e0b}
+.m-guest-star{background:none;border:none;cursor:pointer;padding:4px 4px 4px 0;line-height:0;color:var(--bg4);transition:color .15s;flex-shrink:0}
+.m-guest-star.starred{color:#f59e0b}
+.m-guest-row.starred-row{background:rgba(245,158,11,.07);border-left:2px solid #f59e0b}
 @media (max-width:768px){
   #mobile-listy{display:flex!important}
 }
@@ -444,10 +454,10 @@ function initGuestLocal(show){
   const srcMap={guests:srcGuests,foto:show.foto||[],media:srcMedia,comps:show.comps||show.rozdane||[]};
   ['guests','foto','media','comps'].forEach(type=>{
     const items=srcMap[type];
-    _guestLocal[type]=items.map(r=>({rowId:_gRowId(),name:r.name||'',email:r.email||'',from:r.from||'',tickets:r.tickets!=null?String(r.tickets):'',isMedia:false}));
-    while(_guestLocal[type].length<MIN_ROWS)_guestLocal[type].push({rowId:_gRowId(),name:'',email:'',from:'',tickets:'',isMedia:false});
+    _guestLocal[type]=items.map(r=>({rowId:_gRowId(),name:r.name||'',email:r.email||'',from:r.from||'',tickets:r.tickets!=null?String(r.tickets):'',isMedia:false,starred:r.starred||false}));
+    while(_guestLocal[type].length<MIN_ROWS)_guestLocal[type].push({rowId:_gRowId(),name:'',email:'',from:'',tickets:'',isMedia:false,starred:false});
     const last=_guestLocal[type][_guestLocal[type].length-1];
-    if(!_isEmptyRow(last))_guestLocal[type].push({rowId:_gRowId(),name:'',email:'',from:'',tickets:'',isMedia:false});
+    if(!_isEmptyRow(last))_guestLocal[type].push({rowId:_gRowId(),name:'',email:'',from:'',tickets:'',isMedia:false,starred:false});
   });
 }
 async function flushGuestToFirestore(showId){
@@ -457,7 +467,7 @@ async function flushGuestToFirestore(showId){
   ['guests','foto','media','comps'].forEach(type=>{
     const rows=_guestLocal[type]||[];
     let end=rows.length;while(end>0&&_isEmptyRow(rows[end-1]))end--;
-    patch[type]=rows.slice(0,end).map(r=>({name:r.name||'',email:r.email||'',from:r.from||'',tickets:parseInt(r.tickets)||1}));
+    patch[type]=rows.slice(0,end).map(r=>({name:r.name||'',email:r.email||'',from:r.from||'',tickets:parseInt(r.tickets)||1,starred:r.starred||false}));
   });
   try{await updShow(showId,patch);}catch(e){console.error('flush guest:',e);_guestDirty=true;}
 }
@@ -473,8 +483,10 @@ function _ensureTrailingEmpty(type){
 function _buildGuestTrHTML(type,row){
   const cfg=TYPE_CFG[type];const empty=_isEmptyRow(row);const cls=empty?'cell-input empty-row':'cell-input';
   const mediaCh=cfg.hasMedia?`<td class="col-media" style="text-align:center"><input type="checkbox" class="media-cb" data-row-id="${row.rowId}" data-type="${type}" ${row.isMedia?'checked':''} ${empty?'disabled':''}></td>`:'';
-  return `<tr data-row-id="${row.rowId}">
+  const starSvg=`<svg width="12" height="12" viewBox="0 0 16 16" fill="${row.starred?'#f59e0b':'none'}" stroke="${row.starred?'#f59e0b':'currentColor'}" stroke-width="1.4"><path d="M8 1l1.8 3.6L14 5.4l-3 2.9.7 4.1L8 10.4l-3.7 2 .7-4.1-3-2.9 4.2-.8z"/></svg>`;
+  return `<tr data-row-id="${row.rowId}" class="${row.starred?'starred-row':''}">
     <td class="col-cb"><input type="checkbox" class="row-cb" data-type="${type}" data-email="${esc(row.email||'')}" ${empty?'disabled':''}></td>
+    <td class="col-star"><button class="star-btn${row.starred?' starred':''}" data-type="${type}" data-row-id="${row.rowId}" ${empty?'style="visibility:hidden"':''}>${starSvg}</button></td>
     <td class="${cfg.hasFrom?'col-name':'col-name-r'}"><input class="${cls}" data-type="${type}" data-row-id="${row.rowId}" data-field="name" value="${esc(row.name||'')}" placeholder="Imię i nazwisko"></td>
     <td class="${cfg.hasFrom?'col-email':'col-email-r'}"><input class="${cls}" data-type="${type}" data-row-id="${row.rowId}" data-field="email" value="${esc(row.email||'')}" placeholder="email@domena.pl" style="color:${cfg.color}"></td>
     ${cfg.hasFrom?`<td class="col-from"><input class="${cls}" data-type="${type}" data-row-id="${row.rowId}" data-field="from" value="${esc(row.from||'')}" placeholder="Od kogo?"></td>`:''}
@@ -533,6 +545,23 @@ function _bindGuestRow(tr,showId){
       const type=mediaCb.dataset.type,rowId=mediaCb.dataset.rowId;
       const row=(_guestLocal[type]||[]).find(r=>r.rowId===rowId);
       if(row){row.isMedia=mediaCb.checked;_guestDirty=true;}
+      clearTimeout(_guestAutoSave);
+      _guestAutoSave=setTimeout(()=>flushGuestToFirestore(showId),30000);
+    });
+  }
+  const starBtn=tr.querySelector('.star-btn');
+  if(starBtn){
+    starBtn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const type=starBtn.dataset.type,rowId=starBtn.dataset.rowId;
+      const row=(_guestLocal[type]||[]).find(r=>r.rowId===rowId);if(!row)return;
+      row.starred=!row.starred;
+      starBtn.classList.toggle('starred',row.starred);
+      tr.classList.toggle('starred-row',row.starred);
+      const svgFill=row.starred?'#f59e0b':'none';
+      const svgStroke=row.starred?'#f59e0b':'currentColor';
+      starBtn.innerHTML=`<svg width="12" height="12" viewBox="0 0 16 16" fill="${svgFill}" stroke="${svgStroke}" stroke-width="1.4"><path d="M8 1l1.8 3.6L14 5.4l-3 2.9.7 4.1L8 10.4l-3.7 2 .7-4.1-3-2.9 4.2-.8z"/></svg>`;
+      _guestDirty=true;
       clearTimeout(_guestAutoSave);
       _guestAutoSave=setTimeout(()=>flushGuestToFirestore(showId),30000);
     });
@@ -750,6 +779,7 @@ function buildSection(type,label,accCls){
       <table class="itable" data-type="${type}">
         <thead><tr>
           <th class="col-cb"></th>
+          <th class="col-star"></th>
           <th class="${cfg.hasFrom?'col-name':'col-name-r'}">${nameLabel}</th>
           <th class="${cfg.hasFrom?'col-email':'col-email-r'}">Email</th>
           ${fromTh}
@@ -1016,16 +1046,23 @@ function mRenderTab(){
   const typeColor=TYPE_CFG[_mDetType]?.color||'var(--teal)';
   let html='';
   if(rows.length){
-    html=rows.map(r=>`<div class="m-guest-row">
-      <div class="m-guest-info">
-        <div class="m-guest-name">${esc(r.name||'–')}</div>
-        ${r.from?`<div class="m-guest-from">${esc(r.from)}</div>`:''}
-      </div>
-      <span class="m-guest-tix" style="color:${typeColor}">${parseInt(r.tickets)||1}&thinsp;bil.</span>
-      <button class="m-guest-del" data-row-id="${r.rowId}" data-type="${_mDetType}" title="Usuń">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h10M5 5V3h6v2M6 8v4M10 8v4"/><rect x="3" y="5" width="10" height="9" rx="1"/></svg>
-      </button>
-    </div>`).join('');
+    html=rows.map(r=>{
+      const starFill=r.starred?'#f59e0b':'none';
+      const starStroke=r.starred?'#f59e0b':'currentColor';
+      return `<div class="m-guest-row${r.starred?' starred-row':''}" data-row-id="${r.rowId}">
+        <button class="m-guest-star${r.starred?' starred':''}" data-row-id="${r.rowId}" data-type="${_mDetType}">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="${starFill}" stroke="${starStroke}" stroke-width="1.4"><path d="M8 1l1.8 3.6L14 5.4l-3 2.9.7 4.1L8 10.4l-3.7 2 .7-4.1-3-2.9 4.2-.8z"/></svg>
+        </button>
+        <div class="m-guest-info">
+          <div class="m-guest-name">${esc(r.name||'–')}</div>
+          ${r.from?`<div class="m-guest-from">${esc(r.from)}</div>`:''}
+        </div>
+        <span class="m-guest-tix" style="color:${typeColor}">${parseInt(r.tickets)||1}&thinsp;bil.</span>
+        <button class="m-guest-del" data-row-id="${r.rowId}" data-type="${_mDetType}" title="Usuń">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h10M5 5V3h6v2M6 8v4M10 8v4"/><rect x="3" y="5" width="10" height="9" rx="1"/></svg>
+        </button>
+      </div>`;
+    }).join('');
   } else {
     html='<div class="m-empty-section">Brak wpisów — dodaj pierwszego gościa poniżej</div>';
   }
@@ -1039,6 +1076,26 @@ function mRenderTab(){
     </div>`;
   }
   scroll.innerHTML=html;
+  // bind star
+  scroll.querySelectorAll('.m-guest-star').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const rowId=btn.dataset.rowId,type=btn.dataset.type;
+      const row=(_guestLocal[type]||[]).find(r=>r.rowId===rowId);if(!row)return;
+      row.starred=!row.starred;
+      _guestDirty=true;
+      clearTimeout(_guestAutoSave);
+      _guestAutoSave=setTimeout(()=>flushGuestToFirestore(_mDetailShowId),30000);
+      // live update without full re-render
+      const fill=row.starred?'#f59e0b':'none';
+      const stroke=row.starred?'#f59e0b':'currentColor';
+      btn.classList.toggle('starred',row.starred);
+      btn.querySelector('svg').setAttribute('fill',fill);
+      btn.querySelector('svg').setAttribute('stroke',stroke);
+      const rowEl=btn.closest('.m-guest-row');
+      if(rowEl)rowEl.classList.toggle('starred-row',row.starred);
+    });
+  });
   // bind delete
   scroll.querySelectorAll('.m-guest-del').forEach(btn=>{
     btn.addEventListener('click',async e=>{
