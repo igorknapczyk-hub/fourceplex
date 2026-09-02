@@ -918,8 +918,7 @@ select {
 
   /* Floating controls — kompaktowe */
   .floating-controls {
-    top: 8px !important;
-    right: 10px !important;
+    display: none !important;
   }
 
   /* Główny scroll/content — pełna szerokość, miejsce na bottom nav */
