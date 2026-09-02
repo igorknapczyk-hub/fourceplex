@@ -457,7 +457,7 @@ async function flushGuestToFirestore(showId){
   ['guests','foto','media','comps'].forEach(type=>{
     const rows=_guestLocal[type]||[];
     let end=rows.length;while(end>0&&_isEmptyRow(rows[end-1]))end--;
-    patch[type]=rows.slice(0,end).map(r=>({name:r.name||'',email:r.email||'',from:r.from||'',tickets:parseInt(r.tickets)||0}));
+    patch[type]=rows.slice(0,end).map(r=>({name:r.name||'',email:r.email||'',from:r.from||'',tickets:parseInt(r.tickets)||1}));
   });
   try{await updShow(showId,patch);}catch(e){console.error('flush guest:',e);_guestDirty=true;}
 }
@@ -1029,9 +1029,9 @@ function mRenderTab(){
   } else {
     html='<div class="m-empty-section">Brak wpisów — dodaj pierwszego gościa poniżej</div>';
   }
-  // fotoPolicy section visible in all tabs
+  // fotoPolicy section — tylko w zakładce Foto
   const show=allShows.find(s=>s.id===_mDetailShowId);
-  if(_mDetType==='guests'){
+  if(_mDetType==='foto'){
     const pol=show?.fotoPolicy||'';
     html+=`<div class="m-foto-policy-wrap">
       <div class="m-foto-policy-lbl">Polityka Foto / Uwagi</div>
