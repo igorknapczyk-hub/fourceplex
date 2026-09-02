@@ -188,6 +188,55 @@ td.col-del{text-align:center}
 .modal-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;outline:none;transition:border-color .15s}
 .modal-input:focus{border-color:rgba(200,240,96,.4)}
 .modal-input::placeholder{color:var(--text3)}
+/* ═══ MOBILE LISTY GOŚCI ═══ */
+#mobile-listy{
+  display:none;position:fixed;inset:0;z-index:201;
+  flex-direction:column;background:var(--bg);
+  padding-top:52px;padding-bottom:62px;
+}
+#m-detail-overlay{
+  display:none;position:fixed;inset:0;z-index:202;
+  flex-direction:column;background:var(--bg);
+  padding-bottom:62px;
+}
+#m-detail-overlay.open{display:flex}
+.m-tab-bar{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.m-tab{flex:1;padding:10px 4px;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);text-align:center;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+.m-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+#m-show-list{flex:1;overflow-y:auto}
+.m-show-card{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.m-show-card:active{background:var(--bg3)}
+.m-show-artist{font-size:14px;font-weight:500;color:var(--text);margin-bottom:2px}
+.m-show-info{font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:6px}
+.m-show-counters{display:flex;gap:12px}
+.m-cnt-pill{font-family:var(--mono);font-size:10px;color:var(--text2)}
+.m-det-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;background:var(--bg2);flex-shrink:0}
+.m-back-btn{background:none;border:none;color:var(--text2);cursor:pointer;padding:4px 2px;display:flex;align-items:center;line-height:0;flex-shrink:0;margin-top:1px}
+.m-det-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:2px;word-break:break-word}
+.m-det-sub{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.m-det-tabs-row{display:flex;align-items:stretch;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.m-det-tabs{display:flex;flex:1}
+.m-det-tab{flex:1;padding:7px 3px;font-family:var(--mono);font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);text-align:center;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none;line-height:1.4}
+.m-det-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.m-det-tab-count{display:block;font-size:12px;font-weight:600;color:inherit;font-family:var(--sans)}
+.m-section-scroll{flex:1;overflow-y:auto}
+.m-guest-row{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:8px}
+.m-guest-info{flex:1;min-width:0}
+.m-guest-name{font-size:13px;font-weight:500;color:var(--text)}
+.m-guest-from{font-size:11px;color:var(--text3);margin-top:1px}
+.m-guest-tix{font-family:var(--mono);font-size:12px;font-weight:600;padding:0 6px;flex-shrink:0}
+.m-guest-del{background:none;border:none;color:var(--text3);cursor:pointer;padding:6px 4px;line-height:0;flex-shrink:0;transition:color .15s}
+.m-guest-del:hover{color:var(--red)}
+.m-empty-section{padding:24px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:11px}
+.m-add-form{padding:10px 12px;border-top:1px solid var(--border2);background:var(--bg2);flex-shrink:0;display:flex;gap:6px;align-items:center}
+.m-inp{background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 10px;border-radius:8px;outline:none;transition:border-color .15s;min-width:0}
+.m-inp:focus{border-color:rgba(200,240,96,.4)}
+.m-inp::placeholder{color:var(--text3);font-size:12px}
+.m-foto-policy-wrap{margin:12px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:10px}
+.m-foto-policy-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+@media (max-width:768px){
+  #mobile-listy{display:flex!important}
+}
 </style>
 <link rel="stylesheet" href="fourceplex-theme.css">
 <script src="fourceplex-confirm.js"></script>
@@ -289,6 +338,64 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
     <button class="btn btn-accent" id="save-btn">Zapisz</button>
   </div>
 </div>
+
+<!-- ═══ MOBILE LISTY GOŚCI ═══ -->
+<div id="mobile-listy">
+  <div class="m-tab-bar">
+    <div class="m-tab active" id="m-tab-active">Aktywne</div>
+    <div class="m-tab" id="m-tab-past">Przeszłe</div>
+  </div>
+  <div id="m-show-list"><div class="m-empty-section">Ładowanie...</div></div>
+</div>
+
+<!-- MOBILE DETAIL OVERLAY -->
+<div id="m-detail-overlay">
+  <div class="m-det-header">
+    <button class="m-back-btn" id="m-back-btn">
+      <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5"/></svg>
+    </button>
+    <div style="flex:1;min-width:0">
+      <div class="m-det-title" id="m-det-title">–</div>
+      <div class="m-det-sub" id="m-det-sub"></div>
+    </div>
+    <button class="btn btn-sm" id="m-copy-btn">Kopiuj</button>
+  </div>
+  <div class="m-det-tabs-row">
+    <div class="m-det-tabs">
+      <div class="m-det-tab active" data-mtype="guests">Goście<span class="m-det-tab-count" id="m-cnt-guests">–</span></div>
+      <div class="m-det-tab" data-mtype="foto">Foto<span class="m-det-tab-count" id="m-cnt-foto">–</span></div>
+      <div class="m-det-tab" data-mtype="media">Media<span class="m-det-tab-count" id="m-cnt-media">–</span></div>
+      <div class="m-det-tab" data-mtype="comps">Rozdane<span class="m-det-tab-count" id="m-cnt-comps">–</span></div>
+    </div>
+  </div>
+  <div class="m-section-scroll" id="m-section-scroll"></div>
+  <div class="m-add-form">
+    <input class="m-inp" id="m-inp-name" placeholder="Imię i nazwisko" style="flex:2">
+    <input class="m-inp" id="m-inp-from" placeholder="Od kogo?" style="flex:1.5">
+    <input class="m-inp" id="m-inp-tix" type="number" min="1" placeholder="Bil." style="width:54px;flex:0 0 54px;text-align:center">
+    <button class="btn btn-accent" id="m-add-btn" style="flex-shrink:0;padding:8px 14px;font-size:16px">+</button>
+  </div>
+</div>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-bottom-nav">
+  <a href="index.html">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="1" width="14" height="14" rx="2"/><path d="M1 6h14M5 6v8"/></svg>
+    <span class="mbn-label">Terrarium</span>
+  </a>
+  <a href="ticketing.html">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="4" width="14" height="10" rx="1.5"/><path d="M5 4V2M11 4V2"/><path d="M1 8h14"/></svg>
+    <span class="mbn-label">Ticketing</span>
+  </a>
+  <a href="watchlist.html" id="watchlist-nav-mobile" style="display:none">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="5" r="2.5"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+    <span class="mbn-label">Watchlist</span>
+  </a>
+  <a href="listy-gosci.html" class="active">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 4h8M4 7h8M4 10h5"/><rect x="1" y="1" width="14" height="14" rx="1.5"/></svg>
+    <span class="mbn-label">Listy Gości</span>
+  </a>
+</nav>
 
 <!-- SINGLE MODULE SCRIPT — all logic in one place, no cross-script timing issues -->
 <script type="module">
@@ -483,6 +590,7 @@ onSnapshot(showsCol,snap=>{
     const s=allShows.find(x=>x.id===selectedShowId);
     if(s&&!_guestDirty)renderDetail(s);
   }
+  mobileRefresh();
 },err=>{
   console.error('Firestore:',err);
   document.getElementById('show-list').innerHTML=`<div class="empty-list">Błąd: ${err.code}</div>`;
@@ -856,6 +964,199 @@ window.addEventListener('beforeunload',e=>{
     e.preventDefault();e.returnValue='';
   }
 });
+
+/* ═══ MOBILE LISTY GOŚCI ═══ */
+let _mTab='active';
+let _mDetailShowId=null;
+let _mDetType='guests';
+
+function mRenderShows(){
+  const el=document.getElementById('m-show-list');
+  if(!el)return;
+  const filtered=allShows
+    .filter(s=>_mTab==='active'?isActive(s):!isActive(s))
+    .sort((a,b)=>_mTab==='active'?(a.date||'').localeCompare(b.date||''):(b.date||'').localeCompare(a.date||''));
+  if(!filtered.length){
+    el.innerHTML=`<div class="m-empty-section">${_mTab==='active'?'Brak aktywnych koncertów':'Brak przeszłych koncertów'}</div>`;
+    return;
+  }
+  el.innerHTML=filtered.map(show=>{
+    const gT=sumTix(show.guests),fT=sumTix(show.foto),mT=sumTix(show.media),cT=sumTix(show.comps||show.rozdane);
+    const di=daysInfo(show.date);
+    return `<div class="m-show-card" data-id="${show.id}">
+      <div class="m-show-artist">${esc(show.artistName||'–')}</div>
+      <div class="m-show-info">${fmtDate(show.date)}${di.text?' · '+di.text:''}${show.venue?' · '+esc(show.venue):''}</div>
+      <div class="m-show-counters">
+        <span class="m-cnt-pill">G&thinsp;<strong>${gT}</strong></span>
+        <span class="m-cnt-pill">F&thinsp;<strong>${fT}</strong></span>
+        <span class="m-cnt-pill">M&thinsp;<strong>${mT}</strong></span>
+        <span class="m-cnt-pill">R&thinsp;<strong>${cT}</strong></span>
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.m-show-card').forEach(card=>{
+    card.addEventListener('click',()=>mOpenDetail(card.dataset.id));
+  });
+}
+
+function mUpdateCounts(){
+  ['guests','foto','media','comps'].forEach(type=>{
+    const el=document.getElementById('m-cnt-'+type);
+    if(!el)return;
+    const rows=(_guestLocal[type]||[]).filter(r=>!_isEmptyRow(r));
+    const tix=rows.reduce((a,r)=>a+(parseInt(r.tickets)||0),0);
+    el.textContent=rows.length?(tix?rows.length+' / '+tix+' bil.':String(rows.length)):'-';
+  });
+}
+
+function mRenderTab(){
+  const scroll=document.getElementById('m-section-scroll');
+  if(!scroll)return;
+  const rows=(_guestLocal[_mDetType]||[]).filter(r=>!_isEmptyRow(r));
+  const typeColor=TYPE_CFG[_mDetType]?.color||'var(--teal)';
+  let html='';
+  if(rows.length){
+    html=rows.map(r=>`<div class="m-guest-row">
+      <div class="m-guest-info">
+        <div class="m-guest-name">${esc(r.name||'–')}</div>
+        ${r.from?`<div class="m-guest-from">${esc(r.from)}</div>`:''}
+      </div>
+      <span class="m-guest-tix" style="color:${typeColor}">${parseInt(r.tickets)||1}&thinsp;bil.</span>
+      <button class="m-guest-del" data-row-id="${r.rowId}" data-type="${_mDetType}" title="Usuń">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h10M5 5V3h6v2M6 8v4M10 8v4"/><rect x="3" y="5" width="10" height="9" rx="1"/></svg>
+      </button>
+    </div>`).join('');
+  } else {
+    html='<div class="m-empty-section">Brak wpisów — dodaj pierwszego gościa poniżej</div>';
+  }
+  // fotoPolicy section visible in all tabs
+  const show=allShows.find(s=>s.id===_mDetailShowId);
+  if(_mDetType==='guests'){
+    const pol=show?.fotoPolicy||'';
+    html+=`<div class="m-foto-policy-wrap">
+      <div class="m-foto-policy-lbl">Polityka Foto / Uwagi</div>
+      <textarea class="notes-textarea" id="m-foto-policy" rows="3" placeholder="Zasady fotografowania, uwagi dla mediów...">${esc(pol)}</textarea>
+    </div>`;
+  }
+  scroll.innerHTML=html;
+  // bind delete
+  scroll.querySelectorAll('.m-guest-del').forEach(btn=>{
+    btn.addEventListener('click',async e=>{
+      e.stopPropagation();
+      const rowId=btn.dataset.rowId,type=btn.dataset.type;
+      const rows=_guestLocal[type];if(!rows)return;
+      const idx=rows.findIndex(r=>r.rowId===rowId);if(idx<0)return;
+      const label=rows[idx].name||'tę osobę';
+      if(!await fpConfirm(`Wpis „${label}" zostanie usunięty z listy.`,'Usunąć wpis?'))return;
+      rows.splice(idx,1);
+      _guestDirty=true;
+      clearTimeout(_guestAutoSave);
+      _guestAutoSave=setTimeout(()=>flushGuestToFirestore(_mDetailShowId),30000);
+      mRenderTab();
+      mUpdateCounts();
+    });
+  });
+  // fotoPolicy auto-save
+  const polEl=document.getElementById('m-foto-policy');
+  if(polEl){
+    let _pt;
+    polEl.addEventListener('input',()=>{
+      clearTimeout(_pt);
+      _pt=setTimeout(async()=>{await updShow(_mDetailShowId,{fotoPolicy:polEl.value});},800);
+    });
+  }
+  mUpdateCounts();
+}
+
+function mOpenDetail(showId){
+  const show=allShows.find(s=>s.id===showId);
+  if(!show)return;
+  _mDetailShowId=showId;
+  _mDetType='guests';
+  initGuestLocal(show);
+  document.getElementById('m-det-title').textContent=show.artistName||'–';
+  document.getElementById('m-det-sub').textContent=fmtDate(show.date)+(show.venue?' · '+show.venue:'');
+  document.querySelectorAll('.m-det-tab').forEach(t=>t.classList.toggle('active',t.dataset.mtype==='guests'));
+  mRenderTab();
+  document.getElementById('m-detail-overlay').classList.add('open');
+}
+
+function mCloseDetail(){
+  if(_guestDirty&&_mDetailShowId)flushGuestToFirestore(_mDetailShowId);
+  document.getElementById('m-detail-overlay').classList.remove('open');
+  _mDetailShowId=null;
+  mRenderShows();
+}
+
+function mobileRefresh(){
+  if(window.innerWidth>768)return;
+  mRenderShows();
+  if(_mDetailShowId){
+    const show=allShows.find(s=>s.id===_mDetailShowId);
+    if(show&&!_guestDirty){initGuestLocal(show);mRenderTab();}
+  }
+}
+
+// ── mobile tab switching (show list) ──
+document.getElementById('m-tab-active').addEventListener('click',()=>{
+  _mTab='active';
+  document.getElementById('m-tab-active').classList.add('active');
+  document.getElementById('m-tab-past').classList.remove('active');
+  mRenderShows();
+});
+document.getElementById('m-tab-past').addEventListener('click',()=>{
+  _mTab='past';
+  document.getElementById('m-tab-past').classList.add('active');
+  document.getElementById('m-tab-active').classList.remove('active');
+  mRenderShows();
+});
+
+// ── detail back ──
+document.getElementById('m-back-btn').addEventListener('click',mCloseDetail);
+
+// ── detail tab switching ──
+document.querySelectorAll('.m-det-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    _mDetType=tab.dataset.mtype;
+    document.querySelectorAll('.m-det-tab').forEach(t=>t.classList.toggle('active',t.dataset.mtype===_mDetType));
+    mRenderTab();
+  });
+});
+
+// ── copy button ──
+document.getElementById('m-copy-btn').addEventListener('click',()=>{
+  const show=allShows.find(s=>s.id===_mDetailShowId);
+  if(show)copyList(show,_mDetType);
+});
+
+// ── add guest ──
+document.getElementById('m-add-btn').addEventListener('click',()=>{
+  if(!_mDetailShowId)return;
+  const nameEl=document.getElementById('m-inp-name');
+  const name=nameEl.value.trim();
+  if(!name){nameEl.focus();return;}
+  const from=document.getElementById('m-inp-from').value.trim();
+  const tix=parseInt(document.getElementById('m-inp-tix').value)||1;
+  const newRow={rowId:_gRowId(),name,email:'',from,tickets:String(tix),isMedia:false};
+  if(!_guestLocal[_mDetType])_guestLocal[_mDetType]=[];
+  const rows=_guestLocal[_mDetType];
+  let insertAt=rows.length;
+  while(insertAt>0&&_isEmptyRow(rows[insertAt-1]))insertAt--;
+  rows.splice(insertAt,0,newRow);
+  _guestDirty=true;
+  nameEl.value='';
+  document.getElementById('m-inp-from').value='';
+  document.getElementById('m-inp-tix').value='';
+  clearTimeout(_guestAutoSave);
+  _guestAutoSave=setTimeout(()=>flushGuestToFirestore(_mDetailShowId),30000);
+  mRenderTab();
+  const scroll=document.getElementById('m-section-scroll');
+  if(scroll)scroll.scrollTop=0;
+  nameEl.focus();
+});
+document.getElementById('m-inp-name').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('m-inp-from').focus();}});
+document.getElementById('m-inp-from').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('m-inp-tix').focus();}});
+document.getElementById('m-inp-tix').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('m-add-btn').click();}});
 
 /* ══ INIT ══ */
 initAuth(function(name, email){
