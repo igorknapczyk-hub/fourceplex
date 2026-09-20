@@ -404,6 +404,13 @@ onSnapshot(annCol,snap=>{
   }
 },err=>console.error('onSnapshot',err));
 
+initAuth(function(name, email){
+  const dot=document.getElementById('badge-dot');
+  if(dot)dot.style.background=getUserColor(email);
+  const nm=document.getElementById('badge-name');
+  if(nm)nm.textContent=name;
+});
+
 function renderList(){
   const list=document.getElementById('ann-list');
   const filtered=allAnns.filter(a=>currentTab==='active'?a.status!=='converted':a.status==='converted');
