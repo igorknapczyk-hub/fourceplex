@@ -196,6 +196,27 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .form-input{background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--sans);font-size:11px;padding:5px 8px;border-radius:5px;outline:none;width:100%;transition:border-color .15s}
 .form-input:focus{border-color:rgba(200,240,96,.4)}
 .form-input::placeholder{color:var(--text3)}
+.form-input.ai-filled{border-color:rgba(167,139,250,.4)}
+.sinput.ai-filled{border-color:rgba(167,139,250,.4)}
+/* presale rows */
+.presale-row{display:grid;grid-template-columns:1fr 110px 22px;gap:5px;align-items:center;margin-bottom:5px}
+/* notif toasts */
+.notif{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;font-family:var(--mono);font-size:11px;color:var(--text2);z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.12);animation:notifIn .2s ease}
+.notif.err{border-color:rgba(220,38,38,.35);color:var(--red)}
+@keyframes notifIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* timeline vis */
+.tl-wrap{display:flex;align-items:flex-start;overflow-x:auto;padding:4px 2px 4px;position:relative}
+.tl-segment{display:flex;flex-direction:column;align-items:center;flex:1;min-width:56px;max-width:100px}
+.tl-row{display:flex;align-items:center;width:100%}
+.tl-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;z-index:1}
+.tl-dot.near{background:var(--amber)}
+.tl-dot.past{background:var(--bg4);opacity:.5}
+.tl-dot.upcoming{background:var(--accent)}
+.tl-hline{flex:1;height:2px;background:var(--border)}
+.tl-text{text-align:center;padding-top:4px}
+.tl-label{font-family:var(--mono);font-size:8px;color:var(--text3);word-break:break-word;line-height:1.3;display:block}
+.tl-label.near{color:var(--amber)}
+.tl-date{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:1px;display:block}
 /* user modal */
 #user-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 #user-modal-overlay.open{display:flex}
@@ -304,6 +325,12 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
     <div class="slide-field"><div class="sfl">Artysta *</div><input class="sinput" type="text" id="f-artist" placeholder="np. Tame Impala"></div>
     <div class="slide-field"><div class="sfl">Data ogłoszenia *</div><input class="sinput" type="date" id="f-announce"></div>
     <div class="slide-field">
+      <div class="sfl">Presale(s)</div>
+      <div id="presales-list"></div>
+      <button class="btn btn-sm" onclick="addPresaleRow()" style="margin-top:4px">＋ Dodaj presale</button>
+    </div>
+    <div class="slide-field"><div class="sfl">Data on-sale</div><input class="sinput" type="date" id="f-onsale"></div>
+    <div class="slide-field">
       <div class="sfl">Typ</div>
       <div class="dtype-row">
         <button class="dtype-btn active" id="dtype-single" onclick="setEntryType('single')">Jeden koncert</button>
@@ -311,6 +338,7 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
       </div>
     </div>
     <div id="f-single-wrap">
+      <div class="slide-field"><div class="sfl">Data koncertu</div><input class="sinput" type="date" id="f-event-date"></div>
       <div class="slide-field"><div class="sfl">Venue</div><input class="sinput" type="text" id="f-venue" placeholder="np. Progresja Warszawa"></div>
       <div class="slide-field"><div class="sfl">Capacity</div><input class="sinput" type="text" id="f-capacity" placeholder="np. 900"></div>
       <div class="slide-field"><div class="sfl">Ceny biletów</div><input class="sinput" type="text" id="f-prices" placeholder="np. 80/100/120 zł"></div>
@@ -320,8 +348,8 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
       <div id="shows-list"></div>
       <button class="btn btn-sm" onclick="addShowRow()" style="margin-top:4px">＋ Dodaj koncert</button>
     </div>
-    <div class="slide-field"><div class="sfl">Treść od agencji</div><textarea class="starea" id="f-agency" rows="8" placeholder="Wklej tu treść maila od agencji…"></textarea></div>
-    <div class="slide-field"><input class="sinput" type="url" id="f-drive" placeholder="🗂 Link do Google Drive (opcjonalnie)"></div>
+    <div class="slide-field"><div class="sfl">Treść od agencji</div><textarea class="starea" id="f-agency" rows="6" placeholder="Wklej tu CAŁĄ treść korespondencji od agencji - Beata to przeczyta i wypełni sama resztę pól..."></textarea></div>
+    <button class="btn" id="btn-ai-fill" style="width:100%;margin-top:-6px">🤖 Wypełnij automatycznie</button>
   </div>
   <div class="slide-actions">
     <button class="btn" id="slide-cancel-btn">Anuluj</button>
@@ -414,7 +442,7 @@ initAuth(function(name, email){
 function renderList(){
   const list=document.getElementById('ann-list');
   const filtered=allAnns.filter(a=>currentTab==='active'?a.status!=='converted':a.status==='converted');
-  filtered.sort((a,b)=>(a.announceDate||'').localeCompare(b.announceDate||''));
+  filtered.sort((a,b)=>(a.timeline?.announceDate||'').localeCompare(b.timeline?.announceDate||''));
   if(!filtered.length){list.innerHTML='<div class="empty-list">Brak ogłoszeń</div>';return;}
   list.innerHTML=filtered.map(ann=>{
     const{done,total}=calcProgress(ann);
@@ -431,7 +459,7 @@ function renderList(){
           <button class="trash-btn" data-id="${esc(ann.id)}" title="Usuń"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M6 4V2h4v2M5 4v9h6V4"/></svg></button>
         </div>
       </div>
-      <div class="show-sub">${ann.announceDate?fmtDate(ann.announceDate)+' · ':''} ${esc(subLine)}</div>
+      <div class="show-sub">${ann.timeline?.announceDate?fmtDate(ann.timeline.announceDate)+' · ':''} ${esc(subLine)}</div>
       <div style="display:flex;align-items:center;gap:7px">
         <div class="cp-bar-wrap"><div class="cp-bar" style="width:${pct}%"></div></div>
         <span class="cp-text">${done}/${total}</span>
@@ -494,8 +522,7 @@ function renderDetail(ann){
         ${converted?'<span style="font-family:var(--mono);font-size:10px;color:var(--teal)">✓ DONE</span>':''}
       </div>
     </div>
-    ${ann.announceDate?`<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:6px">Ogłoszenie: ${fmtDate(ann.announceDate)}</div>`:''}
-    ${ann.driveLink?`<div style="margin-bottom:6px"><a href="${esc(ann.driveLink)}" target="_blank" rel="noopener" style="font-family:var(--mono);font-size:11px;color:var(--teal);text-decoration:none;display:inline-flex;align-items:center;gap:4px">🗂 Google Drive<svg style="width:9px;height:9px;opacity:.6" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3h7v7M13 3L7 9"/></svg></a></div>`:''}
+    ${ann.timeline?.announceDate?`<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:6px">Ogłoszenie: ${fmtDate(ann.timeline.announceDate)}</div>`:''}
     ${isMulti?`<div class="detail-meta" style="flex-direction:column;gap:3px">
       ${(ann.shows||[]).map(s=>`<div style="font-size:11px;color:var(--text2)"><span style="font-family:var(--mono);color:var(--text3);margin-right:6px">${fmtDate(s.date)}</span>${esc(s.venue||'')}${s.price?` · ${esc(s.price)}`:''}${s.capacity?` · ${esc(s.capacity)}`:'szt.'}</div>`).join('')}
     </div>`:`<div class="detail-meta">
@@ -519,9 +546,11 @@ function renderDetail(ann){
     <div class="sec-card">
       <div class="sec-head"><span class="sec-title">Treść od agencji</span></div>
       <div class="sec-body">
-        <textarea class="agency-pre" data-field="agencyText" placeholder="Wklej tu treść maila od agencji…" rows="10"${converted?' readonly':''}>${esc(ann.agencyText||'')}</textarea>
+        <textarea class="agency-pre" data-field="agencyText" placeholder="Wklej tu CAŁĄ treść korespondencji od agencji - Beata to przeczyta i wypełni sama resztę pól..." rows="10"${converted?' readonly':''}>${esc(ann.agencyText||'')}</textarea>
       </div>
     </div>
+
+    ${renderTimeline(ann)}
 
     <div class="sec-card">
       <div class="sec-head"><span class="sec-title">Checklista</span></div>
@@ -664,7 +693,7 @@ function buildConvertRows(ann){
       </div>
       <div class="cm-field">
         <div class="cm-field-label">Data *</div>
-        <input class="cminput" type="date" data-rf="date">
+        <input class="cminput" type="date" data-rf="date" value="${esc(ann.eventDate||'')}">
       </div>
       <div class="cm-field">
         <div class="cm-field-label">Cena</div>
@@ -728,6 +757,118 @@ async function doConvert(ann,rows){
   alert('Przeniesiono '+rows.length+' koncert'+(rows.length===1?'':'ów')+' do Ticketing i Marketing.');
 }
 
+/* ── PRESALE ROWS ── */
+window.addPresaleRow=function(data){
+  const wrap=document.getElementById('presales-list');
+  const row=document.createElement('div');
+  row.className='presale-row';
+  row.innerHTML=`<input type="text" class="form-input pr-label" placeholder="Nazwa presale" value="${esc(data?.label||'')}">
+    <input type="date" class="form-input pr-date" value="${esc(data?.date||'')}">
+    <button class="td-remove-btn" onclick="removePresaleRow(this)">×</button>`;
+  wrap.appendChild(row);
+};
+window.removePresaleRow=function(btn){btn.closest('.presale-row').remove();};
+
+/* ── HELPERS ── */
+function parseJson(txt){
+  try{return JSON.parse(txt.replace(/```json|```/g,'').trim());}
+  catch(e){const m=txt.match(/\{[\s\S]*\}/);if(m)return JSON.parse(m[0]);throw e;}
+}
+function extractText(data){
+  return(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+}
+function notify(msg,type=''){const n=document.createElement('div');n.className='notif'+(type?` ${type}`:'');n.textContent=msg;document.body.appendChild(n);setTimeout(()=>n.remove(),3200);}
+
+/* ── TIMELINE VIS ── */
+function renderTimeline(ann){
+  const tl=ann.timeline||{};
+  const points=[];
+  if(tl.announceDate)points.push({label:'Ogłoszenie',date:tl.announceDate});
+  (tl.presales||[]).forEach(p=>{if(p.date)points.push({label:p.label||'Presale',date:p.date});});
+  if(tl.onsaleDate)points.push({label:'On-sale',date:tl.onsaleDate});
+  if((ann.shows||[]).length>0){
+    ann.shows.forEach(s=>{if(s.date)points.push({label:s.venue||'Koncert',date:s.date});});
+  } else if(ann.eventDate){
+    points.push({label:ann.venue||'Koncert',date:ann.eventDate});
+  }
+  if(points.length<2)return'';
+  points.sort((a,b)=>a.date.localeCompare(b.date));
+  const today=new Date().toISOString().slice(0,10);
+  const segs=points.map((pt,i)=>{
+    const isPast=pt.date<today;
+    const daysUntil=Math.round((new Date(pt.date)-new Date(today))/(86400000));
+    const isNear=!isPast&&daysUntil<=2;
+    const dotCls=isPast?'past':isNear?'near':'upcoming';
+    const lblCls=isNear?' near':'';
+    const line=i<points.length-1?`<div class="tl-hline"></div>`:'';
+    return`<div class="tl-segment">
+      <div class="tl-row"><div class="tl-dot ${dotCls}"></div>${line}</div>
+      <div class="tl-text"><span class="tl-label${lblCls}">${esc(pt.label)}</span><span class="tl-date">${fmtDate(pt.date)}</span></div>
+    </div>`;
+  }).join('');
+  return`<div class="sec-card">
+    <div class="sec-head"><span class="sec-title">Timeline</span></div>
+    <div class="sec-body" style="padding:10px 14px 6px"><div class="tl-wrap">${segs}</div></div>
+  </div>`;
+}
+
+/* ── AI PARSE ── */
+async function aiParseAgencyText(){
+  const agencyText=document.getElementById('f-agency').value.trim();
+  if(!agencyText){notify('Wklej najpierw treść korespondencji od agencji','err');return;}
+  const btn=document.getElementById('btn-ai-fill');
+  btn.disabled=true;
+  btn.textContent='⏳ Analiza...';
+  const prompt=`Przeanalizuj poniższą korespondencję od agencji muzycznej i wyciągnij z niej dane do ogłoszenia koncertu.
+Zwróć TYLKO JSON, bez dodatkowego tekstu:
+{
+  "artistName": "nazwa artysty",
+  "announceDate": "YYYY-MM-DD lub null",
+  "onsaleDate": "YYYY-MM-DD lub null",
+  "presales": [{"label": "nazwa presale", "date": "YYYY-MM-DD"}],
+  "eventDate": "YYYY-MM-DD lub null",
+  "venue": "venue i miasto (dla jednego koncertu) lub null",
+  "capacity": "liczba jako string lub null",
+  "ticketPrices": "ceny jako string lub null"
+}
+Daty w formacie YYYY-MM-DD. Jeśli data jest w roku bez roku podanego, przyjmij najbliższy przyszły rok.
+Presale to każde wcześniejsze uruchomienie sprzedaży (np. fan presale, artist presale, VIP presale).
+Jeśli nie możesz wyciągnąć danej informacji, wstaw null.
+
+Korespondencja:
+${agencyText}`;
+  try{
+    const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
+    const d=await r.json();
+    const p=parseJson(extractText(d));
+    if(!p||p.error){notify('Nie udało się przetworzyć — spróbuj ponownie','err');return;}
+    const setField=(id,val)=>{if(!val)return;const el=document.getElementById(id);if(!el)return;el.value=val;el.classList.add('ai-filled');};
+    setField('f-artist',p.artistName);
+    setField('f-announce',p.announceDate);
+    setField('f-onsale',p.onsaleDate);
+    setField('f-event-date',p.eventDate);
+    setField('f-venue',p.venue);
+    setField('f-capacity',p.capacity);
+    setField('f-prices',p.ticketPrices);
+    if((p.presales||[]).length>0){
+      document.getElementById('presales-list').innerHTML='';
+      p.presales.forEach(ps=>addPresaleRow(ps));
+    }
+    if(p.artistName&&(document.getElementById('shows-list').children.length===0)&&!p.eventDate){
+      // multi - do nothing, user can add shows manually
+    }
+    notify('Dane wypełnione przez AI ✓');
+  }catch(e){
+    notify('Błąd AI — spróbuj ponownie','err');
+    console.error('ai parse error',e);
+  }finally{
+    btn.disabled=false;
+    btn.textContent='🤖 Wypełnij automatycznie';
+  }
+}
+
+document.getElementById('btn-ai-fill').addEventListener('click',aiParseAgencyText);
+
 /* ── TABS ── */
 document.getElementById('tab-active').addEventListener('click',()=>{
   currentTab='active';
@@ -778,19 +919,24 @@ function openSlide(ann){
   /* reset */
   setEntryType('single');
   document.getElementById('shows-list').innerHTML='';
-  ['f-artist','f-venue','f-capacity','f-prices','f-announce','f-drive'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('presales-list').innerHTML='';
+  ['f-artist','f-venue','f-capacity','f-prices','f-announce','f-onsale','f-event-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('f-agency').value='';
+  document.querySelectorAll('#slide-panel .sinput.ai-filled,.form-input.ai-filled').forEach(el=>el.classList.remove('ai-filled'));
   /* prefill if editing */
   if(ann){
     document.getElementById('f-artist').value=ann.artistName||'';
-    document.getElementById('f-announce').value=ann.announceDate||'';
+    const tl=ann.timeline||{};
+    document.getElementById('f-announce').value=tl.announceDate||'';
+    document.getElementById('f-onsale').value=tl.onsaleDate||'';
+    (tl.presales||[]).forEach(p=>addPresaleRow(p));
     document.getElementById('f-agency').value=ann.agencyText||'';
-    document.getElementById('f-drive').value=ann.driveLink||'';
     if((ann.shows||[]).length>0){
       setEntryType('multi');
       ann.shows.forEach(s=>addShowRow(s));
     } else {
       setEntryType('single');
+      document.getElementById('f-event-date').value=ann.eventDate||'';
       document.getElementById('f-venue').value=ann.venue||'';
       document.getElementById('f-capacity').value=ann.capacity||'';
       document.getElementById('f-prices').value=ann.ticketPrices||'';
@@ -816,8 +962,19 @@ document.getElementById('slide-save-btn').addEventListener('click',async()=>{
   const announceDate=document.getElementById('f-announce').value;
   if(!artist||!announceDate){alert('Artysta i data ogłoszenia są wymagane.');return;}
 
+  const presales=[...document.getElementById('presales-list').querySelectorAll('.presale-row')].map(r=>({
+    label:r.querySelector('.pr-label').value.trim(),
+    date:r.querySelector('.pr-date').value,
+  })).filter(p=>p.date||p.label);
+
+  const timeline={
+    announceDate,
+    presales,
+    onsaleDate:document.getElementById('f-onsale').value,
+  };
+
   let shows=[];
-  let venue='',capacity='',ticketPrices='';
+  let venue='',capacity='',ticketPrices='',eventDate='';
   if(_entryType==='multi'){
     shows=[...document.getElementById('shows-list').querySelectorAll('.tour-date-row')].map(r=>({
       date:r.querySelector('.sd-date').value,
@@ -827,6 +984,7 @@ document.getElementById('slide-save-btn').addEventListener('click',async()=>{
     })).filter(s=>s.date);
     if(!shows.length){alert('Dodaj przynajmniej jeden koncert z datą.');return;}
   } else {
+    eventDate=document.getElementById('f-event-date').value;
     venue=document.getElementById('f-venue').value.trim();
     capacity=document.getElementById('f-capacity').value.trim();
     ticketPrices=document.getElementById('f-prices').value.trim();
@@ -834,11 +992,11 @@ document.getElementById('slide-save-btn').addEventListener('click',async()=>{
 
   const data={
     artistName:artist,
-    announceDate,
+    timeline,
+    eventDate,
     venue,capacity,ticketPrices,
     shows,
     agencyText:document.getElementById('f-agency').value,
-    driveLink:document.getElementById('f-drive').value.trim(),
   };
 
   if(_editId){
