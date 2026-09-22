@@ -204,7 +204,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .form-input.ai-filled{border-color:rgba(167,139,250,.4)}
 .sinput.ai-filled{border-color:rgba(167,139,250,.4)}
 /* presale rows */
-.presale-row{display:grid;grid-template-columns:1fr 110px 22px;gap:5px;align-items:center;margin-bottom:5px}
+.presale-row{display:grid;grid-template-columns:1fr 110px 80px 22px;gap:5px;align-items:center;margin-bottom:5px}
 /* notif toasts */
 .notif{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;font-family:var(--mono);font-size:11px;color:var(--text2);z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.12);animation:notifIn .2s ease}
 .notif.err{border-color:rgba(220,38,38,.35);color:var(--red)}
@@ -216,13 +216,16 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .tl-daylabel{position:absolute;top:10px;transform:translateX(-50%);font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap}
 .tl-point{position:absolute;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;z-index:2}
 .tl-point-dot{width:16px;height:16px;border-radius:50%;border:3px solid var(--bg3);box-shadow:0 0 0 1.5px var(--border2);position:relative;top:-7px}
-.tl-point.show .tl-point-dot{width:11px;height:11px;top:-4.5px}
 .tl-point.announce .tl-point-dot{background:var(--accent)}
 .tl-point.presale .tl-point-dot{background:var(--purple)}
 .tl-point.onsale .tl-point-dot{background:var(--teal)}
-.tl-point.show .tl-point-dot{background:var(--blue)}
 .tl-point-label{white-space:nowrap;font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
-.tl-point.show .tl-point-label{font-size:12px;font-weight:500;color:var(--text2)}
+/* textlist */
+.tl-textlist{display:flex;flex-direction:column;gap:4px;min-width:200px;padding-top:4px}
+.tl-textrow{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:4px 0;border-bottom:1px solid var(--border)}
+.tl-textrow:last-child{border-bottom:none}
+.tl-textlabel{color:var(--text2);font-weight:500}
+.tl-textval{font-family:var(--mono);color:var(--text);white-space:nowrap}
 .tl-point-date{white-space:nowrap;font-family:var(--mono);font-size:11px;color:var(--text2)}
 .tl-point-rel{white-space:nowrap;font-family:var(--mono);font-size:10px;color:var(--text3)}
 .tl-point-rel.near{color:var(--amber);font-weight:600}
@@ -341,13 +344,13 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
     <div style="height:1px;background:var(--border);margin:16px 0"></div>
     <div class="collapse-toggle" id="extra-toggle" onclick="toggleExtra()"><span class="ct-chevron">▸</span> Pozostałe dane (opcjonalnie — Beata wypełni sama)</div>
     <div id="extra-fields" style="display:none">
-      <div class="slide-field" style="margin-top:8px"><div class="sfl">Data ogłoszenia *</div><input class="sinput" type="date" id="f-announce"></div>
+      <div class="slide-field" style="margin-top:8px"><div class="sfl">Data ogłoszenia *</div><div style="display:flex;gap:6px"><input class="sinput" type="date" id="f-announce" style="flex:1"><input class="sinput" type="time" id="f-announce-time" style="width:auto"></div></div>
       <div class="slide-field">
         <div class="sfl">Presale(s)</div>
         <div id="presales-list"></div>
         <button class="btn btn-sm" onclick="addPresaleRow()" style="margin-top:4px">＋ Dodaj presale</button>
       </div>
-      <div class="slide-field"><div class="sfl">Data on-sale</div><input class="sinput" type="date" id="f-onsale"></div>
+      <div class="slide-field"><div class="sfl">Data on-sale</div><div style="display:flex;gap:6px"><input class="sinput" type="date" id="f-onsale" style="flex:1"><input class="sinput" type="time" id="f-onsale-time" style="width:auto"></div></div>
       <div class="slide-field">
         <div class="sfl">Typ</div>
         <div class="dtype-row">
@@ -790,6 +793,7 @@ window.addPresaleRow=function(data){
   row.className='presale-row';
   row.innerHTML=`<input type="text" class="form-input pr-label" placeholder="Nazwa presale" value="${esc(data?.label||'')}">
     <input type="date" class="form-input pr-date" value="${esc(data?.date||'')}">
+    <input type="time" class="form-input pr-time" value="${esc(data?.time||'')}">
     <button class="td-remove-btn" onclick="removePresaleRow(this)">×</button>`;
   wrap.appendChild(row);
 };
@@ -813,14 +817,9 @@ function dateDiffDays(a,b){return Math.round((new Date(a)-new Date(b))/86400000)
 function renderTimeline(ann){
   const tl=ann.timeline||{};
   const points=[];
-  if(tl.announceDate)points.push({label:'Ogłoszenie',date:tl.announceDate,kind:'announce'});
-  (tl.presales||[]).forEach(p=>{if(p.date)points.push({label:p.label||'Presale',date:p.date,kind:'presale'});});
-  if(tl.onsaleDate)points.push({label:'On-sale',date:tl.onsaleDate,kind:'onsale'});
-  if((ann.shows||[]).length>0){
-    ann.shows.forEach(s=>{if(s.date)points.push({label:s.venue||'Koncert',date:s.date,kind:'show'});});
-  } else if(ann.eventDate){
-    points.push({label:ann.venue||'Koncert',date:ann.eventDate,kind:'show'});
-  }
+  if(tl.announceDate)points.push({label:'Ogłoszenie',date:tl.announceDate,time:tl.announceTime,kind:'announce'});
+  (tl.presales||[]).forEach(p=>{if(p.date)points.push({label:p.label||'Presale',date:p.date,time:p.time,kind:'presale'});});
+  if(tl.onsaleDate)points.push({label:'On-sale',date:tl.onsaleDate,time:tl.onsaleTime,kind:'onsale'});
   if(!points.length)return'';
 
   const today=new Date().toISOString().slice(0,10);
@@ -868,7 +867,7 @@ function renderTimeline(ann){
     return`<div class="tl-point ${pt.kind}${below?' below':''}" style="left:${pct(pt.date)}">
       <div class="tl-point-dot"></div>
       <div class="tl-point-label">${esc(pt.label)}</div>
-      <div class="tl-point-date">${fmtDate(pt.date)}</div>
+      <div class="tl-point-date">${fmtDate(pt.date)}${pt.time?' · '+esc(pt.time):''}</div>
       <div class="tl-point-rel${relCls}">${esc(relStr)}</div>
     </div>`;
   }).join('');
@@ -878,18 +877,27 @@ function renderTimeline(ann){
     <span><span style="color:var(--accent)">■</span> Ogłoszenie</span>
     <span><span style="color:var(--purple)">■</span> Presale</span>
     <span><span style="color:var(--teal)">■</span> On-sale</span>
-    <span><span style="color:var(--blue)">■</span> Koncert</span>
   </div>`;
+
+  /* textlist */
+  const sortedPts=[...points].sort((a,b)=>a.date.localeCompare(b.date));
+  const textlist=`<div class="tl-textlist">${sortedPts.map(pt=>`<div class="tl-textrow">
+    <span class="tl-textlabel">${esc(pt.label)}</span>
+    <span class="tl-textval">${fmtDate(pt.date)}${pt.time?' · '+esc(pt.time):''}</span>
+  </div>`).join('')}</div>`;
 
   return`<div class="sec-card">
     <div class="sec-head"><span class="sec-title">Timeline</span></div>
     <div class="sec-body" style="padding:10px 14px 10px">
-      <div class="tl-wrap">
-        <div class="tl-track" style="width:${trackWidth}px;background:var(--border)">
-          ${ticks}
-          ${todayEl}
-          ${ptHtml}
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+        <div class="tl-wrap" style="flex:1;min-width:280px">
+          <div class="tl-track" style="width:${trackWidth}px;background:var(--border)">
+            ${ticks}
+            ${todayEl}
+            ${ptHtml}
+          </div>
         </div>
+        ${textlist}
       </div>
       ${legend}
     </div>
@@ -908,14 +916,17 @@ Zwróć TYLKO JSON, bez dodatkowego tekstu:
 {
   "artistName": "nazwa artysty",
   "announceDate": "YYYY-MM-DD lub null",
+  "announceTime": "HH:MM (czas lokalny, 24h) lub null",
   "onsaleDate": "YYYY-MM-DD lub null",
-  "presales": [{"label": "nazwa presale", "date": "YYYY-MM-DD"}],
+  "onsaleTime": "HH:MM lub null",
+  "presales": [{"label": "nazwa presale", "date": "YYYY-MM-DD", "time": "HH:MM lub null"}],
   "eventDate": "YYYY-MM-DD lub null",
   "venue": "venue i miasto (dla jednego koncertu) lub null",
   "capacity": "liczba jako string lub null",
   "ticketPrices": "ceny jako string lub null"
 }
 Daty w formacie YYYY-MM-DD. Jeśli data jest w roku bez roku podanego, przyjmij najbliższy przyszły rok.
+Godziny podawaj w formacie 24h HH:MM. Jeśli mail podaje kilka stref czasowych (np. UK i CET), użyj godziny lokalnej dla Polski (CET/CEST).
 Presale to każde wcześniejsze uruchomienie sprzedaży (np. fan presale, artist presale, VIP presale).
 Jeśli nie możesz wyciągnąć danej informacji, wstaw null.
 
@@ -929,7 +940,9 @@ ${agencyText}`;
     const setField=(id,val)=>{if(!val)return;const el=document.getElementById(id);if(!el)return;el.value=val;el.classList.add('ai-filled');};
     setField('f-artist',p.artistName);
     setField('f-announce',p.announceDate);
+    setField('f-announce-time',p.announceTime);
     setField('f-onsale',p.onsaleDate);
+    setField('f-onsale-time',p.onsaleTime);
     setField('f-event-date',p.eventDate);
     setField('f-venue',p.venue);
     setField('f-capacity',p.capacity);
@@ -1004,7 +1017,7 @@ function openSlide(ann){
   setEntryType('single');
   document.getElementById('shows-list').innerHTML='';
   document.getElementById('presales-list').innerHTML='';
-  ['f-artist','f-venue','f-capacity','f-prices','f-announce','f-onsale','f-event-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-artist','f-venue','f-capacity','f-prices','f-announce','f-announce-time','f-onsale','f-onsale-time','f-event-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('f-agency').value='';
   document.querySelectorAll('#slide-panel .sinput.ai-filled,.form-input.ai-filled').forEach(el=>el.classList.remove('ai-filled'));
   /* extra-fields: zwinięte przy nowym, rozwinięte przy edycji */
@@ -1017,7 +1030,9 @@ function openSlide(ann){
     document.getElementById('f-artist').value=ann.artistName||'';
     const tl=ann.timeline||{};
     document.getElementById('f-announce').value=tl.announceDate||'';
+    document.getElementById('f-announce-time').value=tl.announceTime||'';
     document.getElementById('f-onsale').value=tl.onsaleDate||'';
+    document.getElementById('f-onsale-time').value=tl.onsaleTime||'';
     (tl.presales||[]).forEach(p=>addPresaleRow(p));
     document.getElementById('f-agency').value=ann.agencyText||'';
     if((ann.shows||[]).length>0){
@@ -1061,12 +1076,15 @@ document.getElementById('slide-save-btn').addEventListener('click',async()=>{
   const presales=[...document.getElementById('presales-list').querySelectorAll('.presale-row')].map(r=>({
     label:r.querySelector('.pr-label').value.trim(),
     date:r.querySelector('.pr-date').value,
+    time:r.querySelector('.pr-time').value,
   })).filter(p=>p.date||p.label);
 
   const timeline={
     announceDate,
+    announceTime:document.getElementById('f-announce-time').value,
     presales,
     onsaleDate:document.getElementById('f-onsale').value,
+    onsaleTime:document.getElementById('f-onsale-time').value,
   };
 
   let shows=[];
