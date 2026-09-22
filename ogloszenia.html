@@ -142,7 +142,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 /* done banner */
 .done-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(10,122,74,.09);border:1px solid rgba(10,122,74,.3);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--teal)}
 /* slide panel (add ann) */
-.slide-panel{position:fixed;top:0;right:-480px;width:420px;height:100vh;background:var(--bg2);border-left:1px solid var(--border2);z-index:400;transition:right .25s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;overflow:hidden}
+.slide-panel{position:fixed;top:0;right:-760px;width:720px;max-width:92vw;height:100vh;background:var(--bg2);border-left:1px solid var(--border2);z-index:400;transition:right .25s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;overflow:hidden}
 .slide-panel.open{right:0}
 .slide-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:399;display:none;backdrop-filter:blur(2px)}
 .slide-overlay.open{display:block}
@@ -160,6 +160,11 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .starea{background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:11px;line-height:1.6;padding:8px 10px;border-radius:6px;outline:none;resize:vertical;width:100%;transition:border-color .15s}
 .starea:focus{border-color:rgba(200,240,96,.35)}
 .starea::placeholder{color:var(--text3)}
+/* collapse toggle */
+.collapse-toggle{display:flex;align-items:center;gap:6px;padding:8px 0;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);cursor:pointer;user-select:none}
+.collapse-toggle:hover{color:var(--text)}
+.ct-chevron{transition:transform .15s;display:inline-block}
+.collapse-toggle.open .ct-chevron{transform:rotate(90deg)}
 /* convert modal */
 #convert-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 #convert-overlay.open{display:flex}
@@ -205,18 +210,26 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .notif.err{border-color:rgba(220,38,38,.35);color:var(--red)}
 @keyframes notifIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 /* timeline vis */
-.tl-wrap{display:flex;align-items:flex-start;overflow-x:auto;padding:4px 2px 4px;position:relative}
-.tl-segment{display:flex;flex-direction:column;align-items:center;flex:1;min-width:56px;max-width:100px}
-.tl-row{display:flex;align-items:center;width:100%}
-.tl-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;z-index:1}
-.tl-dot.near{background:var(--amber)}
-.tl-dot.past{background:var(--bg4);opacity:.5}
-.tl-dot.upcoming{background:var(--accent)}
-.tl-hline{flex:1;height:2px;background:var(--border)}
-.tl-text{text-align:center;padding-top:4px}
-.tl-label{font-family:var(--mono);font-size:8px;color:var(--text3);word-break:break-word;line-height:1.3;display:block}
-.tl-label.near{color:var(--amber)}
-.tl-date{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:1px;display:block}
+.tl-wrap{position:relative;overflow-x:auto;padding:34px 16px 40px;background:var(--bg3);border-radius:10px}
+.tl-track{position:relative;height:2px;margin-top:10px}
+.tl-daytick{position:absolute;top:-4px;width:1px;height:8px;background:var(--border2)}
+.tl-daylabel{position:absolute;top:10px;transform:translateX(-50%);font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap}
+.tl-point{position:absolute;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;z-index:2}
+.tl-point-dot{width:16px;height:16px;border-radius:50%;border:3px solid var(--bg3);box-shadow:0 0 0 1.5px var(--border2);position:relative;top:-7px}
+.tl-point.show .tl-point-dot{width:11px;height:11px;top:-4.5px}
+.tl-point.announce .tl-point-dot{background:var(--accent)}
+.tl-point.presale .tl-point-dot{background:var(--purple)}
+.tl-point.onsale .tl-point-dot{background:var(--teal)}
+.tl-point.show .tl-point-dot{background:var(--blue)}
+.tl-point-label{white-space:nowrap;font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.tl-point.show .tl-point-label{font-size:12px;font-weight:500;color:var(--text2)}
+.tl-point-date{white-space:nowrap;font-family:var(--mono);font-size:11px;color:var(--text2)}
+.tl-point-rel{white-space:nowrap;font-family:var(--mono);font-size:10px;color:var(--text3)}
+.tl-point-rel.near{color:var(--amber);font-weight:600}
+.tl-point:not(.below){flex-direction:column-reverse;position:absolute;bottom:14px;top:auto}
+.tl-point.below{top:14px}
+.tl-today-line{position:absolute;top:-24px;bottom:-30px;width:2px;background:var(--red);z-index:3}
+.tl-today-label{position:absolute;top:-38px;transform:translateX(-50%);background:var(--red);color:#fff;font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;z-index:3}
 /* user modal */
 #user-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 #user-modal-overlay.open{display:flex}
@@ -322,34 +335,38 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
     <button class="slide-close" id="slide-close-btn">×</button>
   </div>
   <div class="slide-body">
-    <div class="slide-field"><div class="sfl">Artysta *</div><input class="sinput" type="text" id="f-artist" placeholder="np. Tame Impala"></div>
-    <div class="slide-field"><div class="sfl">Data ogłoszenia *</div><input class="sinput" type="date" id="f-announce"></div>
-    <div class="slide-field">
-      <div class="sfl">Presale(s)</div>
-      <div id="presales-list"></div>
-      <button class="btn btn-sm" onclick="addPresaleRow()" style="margin-top:4px">＋ Dodaj presale</button>
-    </div>
-    <div class="slide-field"><div class="sfl">Data on-sale</div><input class="sinput" type="date" id="f-onsale"></div>
-    <div class="slide-field">
-      <div class="sfl">Typ</div>
-      <div class="dtype-row">
-        <button class="dtype-btn active" id="dtype-single" onclick="setEntryType('single')">Jeden koncert</button>
-        <button class="dtype-btn" id="dtype-multi" onclick="setEntryType('multi')">Kilka koncertów</button>
+    <div class="slide-field"><div class="sfl">Artysta *</div><input class="sinput" type="text" id="f-artist" placeholder="np. Tame Impala" style="font-size:18px;padding:12px 14px"></div>
+    <div class="slide-field"><div class="sfl">Treść od agencji</div><textarea class="starea" id="f-agency" rows="14" placeholder="Wklej tu CAŁĄ treść korespondencji od agencji - Beata to przeczyta i wypełni sama resztę pól..." style="font-size:14px;min-height:260px"></textarea></div>
+    <button class="btn" id="btn-ai-fill" style="width:100%;margin-top:-6px">🦎 Beata, wypełnij resztę</button>
+    <div style="height:1px;background:var(--border);margin:16px 0"></div>
+    <div class="collapse-toggle" id="extra-toggle" onclick="toggleExtra()"><span class="ct-chevron">▸</span> Pozostałe dane (opcjonalnie — Beata wypełni sama)</div>
+    <div id="extra-fields" style="display:none">
+      <div class="slide-field" style="margin-top:8px"><div class="sfl">Data ogłoszenia *</div><input class="sinput" type="date" id="f-announce"></div>
+      <div class="slide-field">
+        <div class="sfl">Presale(s)</div>
+        <div id="presales-list"></div>
+        <button class="btn btn-sm" onclick="addPresaleRow()" style="margin-top:4px">＋ Dodaj presale</button>
+      </div>
+      <div class="slide-field"><div class="sfl">Data on-sale</div><input class="sinput" type="date" id="f-onsale"></div>
+      <div class="slide-field">
+        <div class="sfl">Typ</div>
+        <div class="dtype-row">
+          <button class="dtype-btn active" id="dtype-single" onclick="setEntryType('single')">Jeden koncert</button>
+          <button class="dtype-btn" id="dtype-multi" onclick="setEntryType('multi')">Kilka koncertów</button>
+        </div>
+      </div>
+      <div id="f-single-wrap">
+        <div class="slide-field"><div class="sfl">Data koncertu</div><input class="sinput" type="date" id="f-event-date"></div>
+        <div class="slide-field"><div class="sfl">Venue</div><input class="sinput" type="text" id="f-venue" placeholder="np. Progresja Warszawa"></div>
+        <div class="slide-field"><div class="sfl">Capacity</div><input class="sinput" type="text" id="f-capacity" placeholder="np. 900"></div>
+        <div class="slide-field"><div class="sfl">Ceny biletów</div><input class="sinput" type="text" id="f-prices" placeholder="np. 80/100/120 zł"></div>
+      </div>
+      <div id="f-multi-wrap" style="display:none">
+        <div class="sfl" style="margin-bottom:6px">Koncerty</div>
+        <div id="shows-list"></div>
+        <button class="btn btn-sm" onclick="addShowRow()" style="margin-top:4px">＋ Dodaj koncert</button>
       </div>
     </div>
-    <div id="f-single-wrap">
-      <div class="slide-field"><div class="sfl">Data koncertu</div><input class="sinput" type="date" id="f-event-date"></div>
-      <div class="slide-field"><div class="sfl">Venue</div><input class="sinput" type="text" id="f-venue" placeholder="np. Progresja Warszawa"></div>
-      <div class="slide-field"><div class="sfl">Capacity</div><input class="sinput" type="text" id="f-capacity" placeholder="np. 900"></div>
-      <div class="slide-field"><div class="sfl">Ceny biletów</div><input class="sinput" type="text" id="f-prices" placeholder="np. 80/100/120 zł"></div>
-    </div>
-    <div id="f-multi-wrap" style="display:none">
-      <div class="sfl" style="margin-bottom:6px">Koncerty</div>
-      <div id="shows-list"></div>
-      <button class="btn btn-sm" onclick="addShowRow()" style="margin-top:4px">＋ Dodaj koncert</button>
-    </div>
-    <div class="slide-field"><div class="sfl">Treść od agencji</div><textarea class="starea" id="f-agency" rows="6" placeholder="Wklej tu CAŁĄ treść korespondencji od agencji - Beata to przeczyta i wypełni sama resztę pól..."></textarea></div>
-    <button class="btn" id="btn-ai-fill" style="width:100%;margin-top:-6px">🤖 Wypełnij automatycznie</button>
   </div>
   <div class="slide-actions">
     <button class="btn" id="slide-cancel-btn">Anuluj</button>
@@ -757,6 +774,15 @@ async function doConvert(ann,rows){
   alert('Przeniesiono '+rows.length+' koncert'+(rows.length===1?'':'ów')+' do Ticketing i Marketing.');
 }
 
+/* ── COLLAPSE TOGGLE ── */
+window.toggleExtra=function(){
+  const box=document.getElementById('extra-fields');
+  const tgl=document.getElementById('extra-toggle');
+  const isOpen=box.style.display!=='none';
+  box.style.display=isOpen?'none':'block';
+  tgl.classList.toggle('open',!isOpen);
+};
+
 /* ── PRESALE ROWS ── */
 window.addPresaleRow=function(data){
   const wrap=document.getElementById('presales-list');
@@ -780,35 +806,93 @@ function extractText(data){
 function notify(msg,type=''){const n=document.createElement('div');n.className='notif'+(type?` ${type}`:'');n.textContent=msg;document.body.appendChild(n);setTimeout(()=>n.remove(),3200);}
 
 /* ── TIMELINE VIS ── */
+const PL_MONTHS=['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'];
+function addDays(dateStr,n){const d=new Date(dateStr);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+function dateDiffDays(a,b){return Math.round((new Date(a)-new Date(b))/86400000);}
+
 function renderTimeline(ann){
   const tl=ann.timeline||{};
   const points=[];
-  if(tl.announceDate)points.push({label:'Ogłoszenie',date:tl.announceDate});
-  (tl.presales||[]).forEach(p=>{if(p.date)points.push({label:p.label||'Presale',date:p.date});});
-  if(tl.onsaleDate)points.push({label:'On-sale',date:tl.onsaleDate});
+  if(tl.announceDate)points.push({label:'Ogłoszenie',date:tl.announceDate,kind:'announce'});
+  (tl.presales||[]).forEach(p=>{if(p.date)points.push({label:p.label||'Presale',date:p.date,kind:'presale'});});
+  if(tl.onsaleDate)points.push({label:'On-sale',date:tl.onsaleDate,kind:'onsale'});
   if((ann.shows||[]).length>0){
-    ann.shows.forEach(s=>{if(s.date)points.push({label:s.venue||'Koncert',date:s.date});});
+    ann.shows.forEach(s=>{if(s.date)points.push({label:s.venue||'Koncert',date:s.date,kind:'show'});});
   } else if(ann.eventDate){
-    points.push({label:ann.venue||'Koncert',date:ann.eventDate});
+    points.push({label:ann.venue||'Koncert',date:ann.eventDate,kind:'show'});
   }
-  if(points.length<2)return'';
-  points.sort((a,b)=>a.date.localeCompare(b.date));
+  if(!points.length)return'';
+
   const today=new Date().toISOString().slice(0,10);
-  const segs=points.map((pt,i)=>{
-    const isPast=pt.date<today;
-    const daysUntil=Math.round((new Date(pt.date)-new Date(today))/(86400000));
-    const isNear=!isPast&&daysUntil<=2;
-    const dotCls=isPast?'past':isNear?'near':'upcoming';
-    const lblCls=isNear?' near':'';
-    const line=i<points.length-1?`<div class="tl-hline"></div>`:'';
-    return`<div class="tl-segment">
-      <div class="tl-row"><div class="tl-dot ${dotCls}"></div>${line}</div>
-      <div class="tl-text"><span class="tl-label${lblCls}">${esc(pt.label)}</span><span class="tl-date">${fmtDate(pt.date)}</span></div>
+  const allDates=[...points.map(p=>p.date),today];
+  const rawMin=allDates.reduce((a,b)=>a<b?a:b);
+  const rawMax=allDates.reduce((a,b)=>a>b?a:b);
+  const minDate=addDays(rawMin,-1);
+  const maxDate=addDays(rawMax,1);
+  const totalDays=dateDiffDays(maxDate,minDate);
+  if(totalDays<=0)return'';
+
+  const trackWidth=Math.max(600,totalDays*40);
+  const pct=d=>((dateDiffDays(d,minDate)/totalDays)*100).toFixed(4)+'%';
+
+  /* day ticks */
+  let ticks='';
+  for(let i=0;i<=totalDays;i++){
+    const d=addDays(minDate,i);
+    const dt=new Date(d);
+    const dayNum=dt.getDate();
+    const left=((i/totalDays)*100).toFixed(4)+'%';
+    let lbl='';
+    const showLabel=totalDays<=25||(i%2===0);
+    if(showLabel){
+      const isFirst=(i===0),isLast=(i===totalDays),isFirstOfMonth=(dayNum===1);
+      lbl=`<div class="tl-daylabel" style="left:${left}">${(isFirst||isLast||isFirstOfMonth)?dayNum+' '+PL_MONTHS[dt.getMonth()]:dayNum}</div>`;
+    }
+    ticks+=`<div class="tl-daytick" style="left:${left}"></div>${lbl}`;
+  }
+
+  /* today line */
+  const todayLeft=pct(today);
+  const todayEl=`<div class="tl-today-line" style="left:${todayLeft}"><div class="tl-today-label">DZIŚ</div></div>`;
+
+  /* points */
+  points.sort((a,b)=>a.date.localeCompare(b.date));
+  const ptHtml=points.map((pt,i)=>{
+    const diffDays=dateDiffDays(pt.date,today);
+    const isPast=diffDays<0;
+    const isToday=diffDays===0;
+    const isNear=!isPast&&!isToday&&diffDays<=2;
+    let relStr=isToday?'dziś':isPast?`${Math.abs(diffDays)} dni temu`:`za ${diffDays} ${diffDays===1?'dzień':'dni'}`;
+    const relCls=isNear?' near':'';
+    const below=i%2===1;
+    return`<div class="tl-point ${pt.kind}${below?' below':''}" style="left:${pct(pt.date)}">
+      <div class="tl-point-dot"></div>
+      <div class="tl-point-label">${esc(pt.label)}</div>
+      <div class="tl-point-date">${fmtDate(pt.date)}</div>
+      <div class="tl-point-rel${relCls}">${esc(relStr)}</div>
     </div>`;
   }).join('');
+
+  /* legend */
+  const legend=`<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--text3)">
+    <span><span style="color:var(--accent)">■</span> Ogłoszenie</span>
+    <span><span style="color:var(--purple)">■</span> Presale</span>
+    <span><span style="color:var(--teal)">■</span> On-sale</span>
+    <span><span style="color:var(--blue)">■</span> Koncert</span>
+  </div>`;
+
   return`<div class="sec-card">
     <div class="sec-head"><span class="sec-title">Timeline</span></div>
-    <div class="sec-body" style="padding:10px 14px 6px"><div class="tl-wrap">${segs}</div></div>
+    <div class="sec-body" style="padding:10px 14px 10px">
+      <div class="tl-wrap">
+        <div class="tl-track" style="width:${trackWidth}px;background:var(--border)">
+          ${ticks}
+          ${todayEl}
+          ${ptHtml}
+        </div>
+      </div>
+      ${legend}
+    </div>
   </div>`;
 }
 
@@ -863,7 +947,7 @@ ${agencyText}`;
     console.error('ai parse error',e);
   }finally{
     btn.disabled=false;
-    btn.textContent='🤖 Wypełnij automatycznie';
+    btn.textContent='🦎 Beata, wypełnij resztę';
   }
 }
 
@@ -923,6 +1007,11 @@ function openSlide(ann){
   ['f-artist','f-venue','f-capacity','f-prices','f-announce','f-onsale','f-event-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('f-agency').value='';
   document.querySelectorAll('#slide-panel .sinput.ai-filled,.form-input.ai-filled').forEach(el=>el.classList.remove('ai-filled'));
+  /* extra-fields: zwinięte przy nowym, rozwinięte przy edycji */
+  const extraBox=document.getElementById('extra-fields');
+  const extraTgl=document.getElementById('extra-toggle');
+  extraBox.style.display=ann?'block':'none';
+  extraTgl.classList.toggle('open',!!ann);
   /* prefill if editing */
   if(ann){
     document.getElementById('f-artist').value=ann.artistName||'';
@@ -960,7 +1049,14 @@ document.getElementById('slide-cancel-btn').addEventListener('click',closeSlide)
 document.getElementById('slide-save-btn').addEventListener('click',async()=>{
   const artist=document.getElementById('f-artist').value.trim();
   const announceDate=document.getElementById('f-announce').value;
-  if(!artist||!announceDate){alert('Artysta i data ogłoszenia są wymagane.');return;}
+  if(!artist){alert('Artysta jest wymagany.');document.getElementById('f-artist').focus();return;}
+  if(!announceDate){
+    document.getElementById('extra-fields').style.display='block';
+    document.getElementById('extra-toggle').classList.add('open');
+    document.getElementById('f-announce').focus();
+    notify('Uzupełnij datę ogłoszenia (rozwinięto "Pozostałe dane")','err');
+    return;
+  }
 
   const presales=[...document.getElementById('presales-list').querySelectorAll('.presale-row')].map(r=>({
     label:r.querySelector('.pr-label').value.trim(),
