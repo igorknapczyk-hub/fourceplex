@@ -160,6 +160,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .starea{background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:11px;line-height:1.6;padding:8px 10px;border-radius:6px;outline:none;resize:vertical;width:100%;transition:border-color .15s}
 .starea:focus{border-color:rgba(200,240,96,.35)}
 .starea::placeholder{color:var(--text3)}
+#btn-ai-fill.ai-success{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600}
 /* collapse toggle */
 .collapse-toggle{display:flex;align-items:center;gap:6px;padding:8px 0;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);cursor:pointer;user-select:none}
 .collapse-toggle:hover{color:var(--text)}
@@ -955,12 +956,20 @@ ${agencyText}`;
       // multi - do nothing, user can add shows manually
     }
     notify('Dane wypełnione przez AI ✓');
+    btn.disabled=false;
+    btn.textContent='Wypełniłam, sprawdź sb czy dobrze.';
+    btn.classList.add('ai-success');
+    clearTimeout(window._beataBtnTimeout);
+    window._beataBtnTimeout=setTimeout(()=>{
+      btn.textContent='🦎 Beata, wypełnij resztę';
+      btn.classList.remove('ai-success');
+    },5000);
   }catch(e){
     notify('Błąd AI — spróbuj ponownie','err');
     console.error('ai parse error',e);
-  }finally{
     btn.disabled=false;
     btn.textContent='🦎 Beata, wypełnij resztę';
+    btn.classList.remove('ai-success');
   }
 }
 
