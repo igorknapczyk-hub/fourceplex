@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/count",
       "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/cron/count-retry",
+      "schedule": "50 7 * * *"
     }
   ]
 }
