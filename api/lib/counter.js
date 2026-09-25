@@ -112,6 +112,12 @@ export async function getTmSession() {
   return data.sessionId;
 }
 
+// Wersja nie-rzucająca — zwraca null gdy TM niedostępny (np. wygasłe hasło).
+// Używana żeby awaria TM nie blokowała zapisu danych z eBilet.
+export async function getTmSessionSafe() {
+  try { return await getTmSession(); } catch { return null; }
+}
+
 export async function fetchTm(sessionId, eventName, eventDate, onSaleDate, altName) {
   const pad = n => String(n).padStart(2, '0');
   const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} 00:00:00`;
@@ -127,26 +133,29 @@ export async function fetchTm(sessionId, eventName, eventDate, onSaleDate, altNa
     periods.push({ from: fmt(from), to: fmt(to) });
     cursor.setDate(cursor.getDate() - 31);
   }
-  const allTrx = [];
-  for (const period of periods) {
-    const res = await fetch(
-      `${process.env.TM_URL}/reports/eventSales?apikey=${process.env.TM_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept':       'application/json',
-          'sessionId':    sessionId,
-          'marketCode':   process.env.TM_MARKET,
-        },
-        body: JSON.stringify({ from: period.from, to: period.to }),
-      }
-    );
-    if (!res.ok) continue;
-    const data = await res.json();
-    const rows = Array.isArray(data) ? data : (data.transactions ?? []);
-    allTrx.push(...rows);
-  }
+  const periodResults = await Promise.all(periods.map(async period => {
+    try {
+      const res = await fetch(
+        `${process.env.TM_URL}/reports/eventSales?apikey=${process.env.TM_API_KEY}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept':       'application/json',
+            'sessionId':    sessionId,
+            'marketCode':   process.env.TM_MARKET,
+          },
+          body: JSON.stringify({ from: period.from, to: period.to }),
+        }
+      );
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : (data.transactions ?? []);
+    } catch {
+      return [];
+    }
+  }));
+  const allTrx = periodResults.flat();
   const target = new Date(eventDate);
   const filtered = allTrx.filter(t => {
     const titleNorm = normalize(t.eventTitle);
