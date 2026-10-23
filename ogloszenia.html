@@ -190,10 +190,6 @@ button:disabled{opacity:.35;cursor:not-allowed}
 /* toast */
 .fp-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:#111;color:#fff;font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:8px 16px;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:9999;opacity:0;pointer-events:none;transition:opacity .15s ease,transform .15s ease}
 .fp-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-/* entry type toggle */
-.dtype-row{display:flex;gap:6px;margin-bottom:2px}
-.dtype-btn{flex:1;padding:5px 0;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--border2);border-radius:5px;background:var(--bg3);color:var(--text3);cursor:pointer;transition:all .15s;text-align:center}
-.dtype-btn.active{background:var(--accent);border-color:var(--accent);color:#ffffff}
 /* tour date rows */
 .tour-date-row{display:grid;grid-template-columns:110px 1fr 85px 70px 22px;gap:5px;align-items:center;margin-bottom:5px}
 .td-remove-btn{background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0;line-height:1;transition:color .12s;text-align:center}
@@ -352,21 +348,8 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
         <button class="btn btn-sm" onclick="addPresaleRow()" style="margin-top:4px">＋ Dodaj presale</button>
       </div>
       <div class="slide-field"><div class="sfl">Data on-sale</div><div style="display:flex;gap:6px"><input class="sinput" type="date" id="f-onsale" style="flex:1"><input class="sinput" type="time" id="f-onsale-time" style="width:auto"></div></div>
-      <div class="slide-field">
-        <div class="sfl">Typ</div>
-        <div class="dtype-row">
-          <button class="dtype-btn active" id="dtype-single" onclick="setEntryType('single')">Jeden koncert</button>
-          <button class="dtype-btn" id="dtype-multi" onclick="setEntryType('multi')">Kilka koncertów</button>
-        </div>
-      </div>
-      <div id="f-single-wrap">
-        <div class="slide-field"><div class="sfl">Data koncertu</div><input class="sinput" type="date" id="f-event-date"></div>
-        <div class="slide-field"><div class="sfl">Venue</div><input class="sinput" type="text" id="f-venue" placeholder="np. Progresja Warszawa"></div>
-        <div class="slide-field"><div class="sfl">Capacity</div><input class="sinput" type="text" id="f-capacity" placeholder="np. 900"></div>
-        <div class="slide-field"><div class="sfl">Ceny biletów</div><input class="sinput" type="text" id="f-prices" placeholder="np. 80/100/120 zł"></div>
-      </div>
-      <div id="f-multi-wrap" style="display:none">
-        <div class="sfl" style="margin-bottom:6px">Koncerty</div>
+      <div id="f-multi-wrap">
+        <div class="sfl" style="margin-bottom:6px">Koncert(y)</div>
         <div id="shows-list"></div>
         <button class="btn btn-sm" onclick="addShowRow()" style="margin-top:4px">＋ Dodaj koncert</button>
       </div>
@@ -547,6 +530,10 @@ function renderDetail(ann){
     ${isMulti?`<div class="detail-meta" style="flex-direction:column;gap:3px">
       ${(ann.shows||[]).map(s=>`<div style="font-size:11px;color:var(--text2)"><span style="font-family:var(--mono);color:var(--text3);margin-right:6px">${fmtDate(s.date)}</span>${esc(s.venue||'')}${s.price?` · ${esc(s.price)}`:''}${s.capacity?` · ${esc(s.capacity)}`:'szt.'}</div>`).join('')}
     </div>`:`<div class="detail-meta">
+      <div class="hf-wrap">
+        <div class="hf-label">Data koncertu</div>
+        <div class="hf-val" style="cursor:default">${ann.eventDate?fmtDate(ann.eventDate):'–'}</div>
+      </div>
       <div class="hf-wrap">
         <div class="hf-label">Venue</div>
         <div class="hf-val" contenteditable="${!converted}" data-field="venue" data-ann-id="${esc(ann.id)}">${esc(ann.venue||'')}</div>
@@ -944,16 +931,14 @@ ${agencyText}`;
     setField('f-announce-time',p.announceTime);
     setField('f-onsale',p.onsaleDate);
     setField('f-onsale-time',p.onsaleTime);
-    setField('f-event-date',p.eventDate);
-    setField('f-venue',p.venue);
-    setField('f-capacity',p.capacity);
-    setField('f-prices',p.ticketPrices);
+    if(p.eventDate||p.venue){
+      document.getElementById('shows-list').innerHTML='';
+      const row=addShowRow({date:p.eventDate||'',venue:p.venue||'',price:p.ticketPrices||'',capacity:p.capacity||''});
+      if(row){row.querySelectorAll('input').forEach(el=>el.classList.add('ai-filled'));}
+    }
     if((p.presales||[]).length>0){
       document.getElementById('presales-list').innerHTML='';
       p.presales.forEach(ps=>addPresaleRow(ps));
-    }
-    if(p.artistName&&(document.getElementById('shows-list').children.length===0)&&!p.eventDate){
-      // multi - do nothing, user can add shows manually
     }
     notify('Dane wypełnione przez AI ✓');
     btn.disabled=false;
@@ -993,15 +978,6 @@ document.getElementById('tab-past').addEventListener('click',()=>{
 const slidePanel=document.getElementById('slide-panel');
 const slideOverlay=document.getElementById('slide-overlay');
 let _editId=null;
-let _entryType='single';
-
-window.setEntryType=function(type){
-  _entryType=type;
-  document.getElementById('dtype-single').classList.toggle('active',type==='single');
-  document.getElementById('dtype-multi').classList.toggle('active',type==='multi');
-  document.getElementById('f-single-wrap').style.display=type==='single'?'':'none';
-  document.getElementById('f-multi-wrap').style.display=type==='multi'?'':'none';
-};
 
 window.addShowRow=function(data){
   const wrap=document.getElementById('shows-list');
@@ -1013,6 +989,7 @@ window.addShowRow=function(data){
     <input type="text" class="form-input sd-cap" placeholder="Cap." value="${esc(data?.capacity||'')}">
     <button class="td-remove-btn" onclick="removeShowRow(this)">×</button>`;
   wrap.appendChild(row);
+  return row;
 };
 
 window.removeShowRow=function(btn){
@@ -1023,10 +1000,9 @@ function openSlide(ann){
   _editId=ann?ann.id:null;
   document.getElementById('slide-title-text').textContent=ann?'Edytuj ogłoszenie':'Nowe ogłoszenie';
   /* reset */
-  setEntryType('single');
   document.getElementById('shows-list').innerHTML='';
   document.getElementById('presales-list').innerHTML='';
-  ['f-artist','f-venue','f-capacity','f-prices','f-announce','f-announce-time','f-onsale','f-onsale-time','f-event-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-artist','f-announce','f-announce-time','f-onsale','f-onsale-time'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('f-agency').value='';
   document.querySelectorAll('#slide-panel .sinput.ai-filled,.form-input.ai-filled').forEach(el=>el.classList.remove('ai-filled'));
   /* extra-fields: zwinięte przy nowym, rozwinięte przy edycji */
@@ -1045,14 +1021,9 @@ function openSlide(ann){
     (tl.presales||[]).forEach(p=>addPresaleRow(p));
     document.getElementById('f-agency').value=ann.agencyText||'';
     if((ann.shows||[]).length>0){
-      setEntryType('multi');
       ann.shows.forEach(s=>addShowRow(s));
-    } else {
-      setEntryType('single');
-      document.getElementById('f-event-date').value=ann.eventDate||'';
-      document.getElementById('f-venue').value=ann.venue||'';
-      document.getElementById('f-capacity').value=ann.capacity||'';
-      document.getElementById('f-prices').value=ann.ticketPrices||'';
+    } else if(ann.eventDate||ann.venue){
+      addShowRow({date:ann.eventDate||'',venue:ann.venue||'',price:ann.ticketPrices||'',capacity:ann.capacity||''});
     }
   }
   slidePanel.classList.add('open');
@@ -1096,21 +1067,21 @@ document.getElementById('slide-save-btn').addEventListener('click',async()=>{
     onsaleTime:document.getElementById('f-onsale-time').value,
   };
 
+  const concertRows=[...document.getElementById('shows-list').querySelectorAll('.tour-date-row')].map(r=>({
+    date:r.querySelector('.sd-date').value,
+    venue:r.querySelector('.sd-venue').value.trim(),
+    price:r.querySelector('.sd-price').value.trim(),
+    capacity:r.querySelector('.sd-cap').value.trim(),
+  })).filter(s=>s.date);
   let shows=[];
   let venue='',capacity='',ticketPrices='',eventDate='';
-  if(_entryType==='multi'){
-    shows=[...document.getElementById('shows-list').querySelectorAll('.tour-date-row')].map(r=>({
-      date:r.querySelector('.sd-date').value,
-      venue:r.querySelector('.sd-venue').value.trim(),
-      price:r.querySelector('.sd-price').value.trim(),
-      capacity:r.querySelector('.sd-cap').value.trim(),
-    })).filter(s=>s.date);
-    if(!shows.length){alert('Dodaj przynajmniej jeden koncert z datą.');return;}
-  } else {
-    eventDate=document.getElementById('f-event-date').value;
-    venue=document.getElementById('f-venue').value.trim();
-    capacity=document.getElementById('f-capacity').value.trim();
-    ticketPrices=document.getElementById('f-prices').value.trim();
+  if(concertRows.length>=2){
+    shows=concertRows;
+  } else if(concertRows.length===1){
+    eventDate=concertRows[0].date;
+    venue=concertRows[0].venue;
+    capacity=concertRows[0].capacity;
+    ticketPrices=concertRows[0].price;
   }
 
   const data={
