@@ -491,6 +491,7 @@ if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp({
             <input class="form-input" type="text" id="fAltName" placeholder="np. Eivør">
           </div>
           <div><div class="form-label">Data eventu *</div><input class="form-input" type="date" id="fDate"></div>
+          <div><div class="form-label">Godzina występu <span style="color:var(--text3);font-weight:400">(opcjonalnie)</span></div><input class="form-input" type="time" id="fEventTime"></div>
           <div><div class="form-label">Venue</div><input class="form-input" type="text" id="fVenue" placeholder="np. Hydrozagadka" list="vList">
             <datalist id="vList"><option value="Hydrozagadka"><option value="BARdzo Bardzo"><option value="Drizzly Grizzly"><option value="Schron"><option value="Niebo"><option value="Piekło nad Niebem"><option value="Progresja"><option value="COS Torwar"><option value="Proxima"><option value="Palladium"><option value="Chmury"></datalist>
           </div>
@@ -681,7 +682,7 @@ function notify(msg,t=''){const n=document.createElement('div');n.className='not
 function togglePanel(id){const p=document.getElementById(id),was=p.classList.contains('open');closeAllPanels();if(!was)p.classList.add('open');}
 function closePanel(id){document.getElementById(id).classList.remove('open');}
 function closeAllPanels(){document.querySelectorAll('.overlay-panel').forEach(p=>p.classList.remove('open'));editId=null;document.getElementById('fDeleteBtn').style.display='none';document.getElementById('formTitle').textContent='Dodaj event';clearForm();}
-function clearForm(){['fName','fAltName','fDate','fVenue','fPrice','fCap','fOnSale','fBreakEven','fVip','fTM','fEB','fOther','fComps','fWraps','fNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
+function clearForm(){['fName','fAltName','fDate','fEventTime','fVenue','fPrice','fCap','fOnSale','fBreakEven','fVip','fTM','fEB','fOther','fComps','fWraps','fNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
 function sortBy(col){if(_sCol===col)_sDir*=-1;else{_sCol=col;_sDir=1;}renderTable();}
 
 /* ── TAB STATE ── */
@@ -773,7 +774,7 @@ function renderMobileCards(){
     }
     html+=`<div class="mc-card">
       <div class="mc-name">${ev.name||''}</div>
-      <div class="mc-date">${ev.date||''}${ev.venue?' · '+ev.venue:''}</div>
+      <div class="mc-date">${ev.date||''}${ev.eventTime?' '+ev.eventTime:''}${ev.venue?' · '+ev.venue:''}</div>
       <div class="mc-stats">
         <div><span class="mc-stat-lbl">TOTAL</span><span class="mc-stat-val">${tot2}${arrow}</span></div>
         <div><span class="mc-stat-lbl">WRAPS</span><span class="mc-stat-val" style="color:${wCol}">${wHtml}</span></div>
@@ -928,7 +929,7 @@ function renderTable(){
         </div>
       </td>
       <td class="name-c" style="width:${LW.name}px">${ev.name}</td>
-      <td class="date-c" style="width:${LW.date}px">${fd(ev.date)}</td>
+      <td class="date-c" style="width:${LW.date}px">${fd(ev.date)}${ev.eventTime?` <span style="color:var(--text3);font-family:var(--mono);font-size:10px">${ev.eventTime}</span>`:''}</td>
       <td style="width:${LW.vip}px;text-align:center;padding:0 2px">
         <div style="display:inline-flex;gap:2px;align-items:center">
           ${ev.vip?`<span class="vip-btn" data-tip="${ev.vip.replace(/"/g,'&quot;')}">VIP</span>`:''}
@@ -1229,7 +1230,7 @@ async function saveEvent(){
   if(!name||!date){notify('Wypełnij nazwę i datę','err');return;}
   const g=id=>parseInt(document.getElementById(id).value)||0;
   const gv=id=>document.getElementById(id).value.trim();
-  const data={name,date,altName:gv('fAltName'),venue:gv('fVenue'),price:gv('fPrice'),cap:g('fCap'),onSale:gv('fOnSale'),
+  const data={name,date,eventTime:gv('fEventTime'),altName:gv('fAltName'),venue:gv('fVenue'),price:gv('fPrice'),cap:g('fCap'),onSale:gv('fOnSale'),
     breakEven:g('fBreakEven'),vip:gv('fVip'),
     tm:g('fTM'),eb:g('fEB'),other:g('fOther'),comps:getGuestComps(name,date),wraps:g('fWraps'),notes:gv('fNotes')};
   if(editId){
@@ -1254,7 +1255,7 @@ function openEdit(id){
   document.getElementById('formTitle').textContent='Edytuj event';
   document.getElementById('fDeleteBtn').style.display='';
   const F=(fid,v)=>{const el=document.getElementById(fid);if(el)el.value=v||'';};
-  F('fName',ev.name);F('fAltName',ev.altName);F('fDate',ev.date);F('fVenue',ev.venue);F('fPrice',ev.price);
+  F('fName',ev.name);F('fAltName',ev.altName);F('fDate',ev.date);F('fEventTime',ev.eventTime);F('fVenue',ev.venue);F('fPrice',ev.price);
   F('fCap',ev.cap);F('fOnSale',ev.onSale);F('fBreakEven',ev.breakEven);
   F('fVip',ev.vip);
   F('fTM',ev.tm);F('fEB',ev.eb);F('fOther',ev.other);
