@@ -25,8 +25,8 @@ export default async function handler(req, res) {
     async function processEvent(ev) {
       try {
         const [ebResult, tmResult] = await Promise.all([
-          fetchEbilet(ebToken, ev.name, ev.date, ev.altName || ''),
-          tmSession ? fetchTm(tmSession, ev.name, ev.date, ev.onSale, ev.altName || '') : Promise.resolve({ tm: null }),
+          fetchEbilet(ebToken, ev.name, ev.date, ev.altName || '', ev.eventTime || ''),
+          tmSession ? fetchTm(tmSession, ev.name, ev.date, ev.onSale, ev.altName || '', ev.eventTime || '') : Promise.resolve({ tm: null }),
         ]);
         await saveToFirebase(ev.id, ev, tmResult.tm, ebResult.eb, ebResult.remains, ebResult.cap);
         console.log(`[count-cron] OK: ${ev.name} — TM:${tmResult.tm ?? 'fallback'} EB:${ebResult.eb}`);
