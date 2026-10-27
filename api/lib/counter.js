@@ -43,7 +43,7 @@ export async function getEbiletToken() {
   return data.access_token;
 }
 
-export async function fetchEbilet(token, eventName, eventDate, altName) {
+export async function fetchEbilet(token, eventName, eventDate, altName, eventTime) {
   const target = new Date(eventDate);
   const normMain = normalize(eventName);
   const normAlt  = altName ? normalize(altName) : '';
@@ -75,13 +75,17 @@ export async function fetchEbilet(token, eventName, eventDate, altName) {
     }
   }
 
-  // Filtruj po dacie i nazwie (OR: główna lub alternatywna) — client-side
+  // Filtruj po dacie, godzinie (jeśli podana) i nazwie (OR: główna lub alternatywna) — client-side
   const matches = allItems.filter(item => {
     if (!item.event_time) return false;
     const d = new Date(item.event_time);
     if (d.getFullYear() !== target.getFullYear()
      || d.getMonth()    !== target.getMonth()
      || d.getDate()     !== target.getDate()) return false;
+    if (eventTime) {
+      const [h, m] = eventTime.split(':').map(Number);
+      if (d.getHours() !== h || d.getMinutes() !== m) return false;
+    }
     const itemNorm = normalize(item.event_name);
     return itemNorm.includes(normMain) || (normAlt && itemNorm.includes(normAlt));
   });
@@ -118,7 +122,7 @@ export async function getTmSessionSafe() {
   try { return await getTmSession(); } catch { return null; }
 }
 
-export async function fetchTm(sessionId, eventName, eventDate, onSaleDate, altName) {
+export async function fetchTm(sessionId, eventName, eventDate, onSaleDate, altName, eventTime) {
   const pad = n => String(n).padStart(2, '0');
   const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} 00:00:00`;
   const anchor = new Date(eventDate); anchor.setDate(anchor.getDate() + 7);
@@ -157,6 +161,7 @@ export async function fetchTm(sessionId, eventName, eventDate, onSaleDate, altNa
   }));
   const allTrx = periodResults.flat();
   const target = new Date(eventDate);
+  let tmTimeFieldMissingWarned = false;
   const filtered = allTrx.filter(t => {
     const titleNorm = normalize(t.eventTitle);
     const matchesMain = titleNorm.includes(normalize(eventName));
@@ -166,9 +171,19 @@ export async function fetchTm(sessionId, eventName, eventDate, onSaleDate, altNa
     const p = t.eventDate.split('/');
     if (p.length !== 3) return true;
     const d = new Date(`20${p[2]}-${p[1]}-${p[0]}`);
-    return d.getFullYear() === target.getFullYear()
-        && d.getMonth()    === target.getMonth()
-        && d.getDate()     === target.getDate();
+    if (d.getFullYear() !== target.getFullYear()
+     || d.getMonth()    !== target.getMonth()
+     || d.getDate()     !== target.getDate()) return false;
+    if (eventTime) {
+      const tmTime = t.eventTime || t.sessionTime || t.performanceTime || null;
+      if (tmTime) {
+        if (String(tmTime).trim().slice(0, 5) !== eventTime) return false;
+      } else if (!tmTimeFieldMissingWarned) {
+        tmTimeFieldMissingWarned = true;
+        console.warn(`[fetchTm] TM nie zwraca godziny sesji dla "${eventName}" (${eventDate}) — nie da się rozdzielić dwóch eventów tego samego dnia, liczę razem.`);
+      }
+    }
+    return true;
   });
   let sold = 0;
   filtered.forEach(t => {
