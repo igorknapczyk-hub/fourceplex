@@ -229,7 +229,14 @@ select.form-input{cursor:pointer}
 .notes-meta{font-family:var(--mono);font-size:9px;color:var(--text3)}
 
 /* ── CHART TOOLTIP ── */
-#chart-tooltip{position:fixed;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-size:11px;font-family:var(--mono);color:var(--text2);max-width:260px;line-height:1.65;z-index:999;pointer-events:none;display:none;box-shadow:0 6px 24px rgba(0,0,0,.4);white-space:pre-wrap;word-break:break-word}
+#chart-tooltip{position:fixed;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-size:11px;font-family:var(--mono);color:var(--text);font-weight:500;max-width:260px;line-height:1.65;z-index:999;pointer-events:none;display:none;box-shadow:0 6px 24px rgba(0,0,0,.18);white-space:pre-wrap;word-break:break-word}
+.sales-barometer{padding:8px 11px;border-radius:8px;font-size:11px;line-height:1.5}
+.sales-barometer b{font-size:11.5px}
+.sales-barometer.ok{background:rgba(10,122,74,.1);color:var(--teal)}
+.sales-barometer.warn{background:rgba(146,96,10,.1);color:var(--amber)}
+.sales-barometer.bad{background:rgba(194,43,16,.1);color:var(--red)}
+.sales-barometer.neutral{background:var(--bg2);color:var(--text2)}
+.sales-barometer .sb-sugg{color:var(--text);font-weight:400;margin-top:3px}
 
 /* ── CHART ── */
 .chart-wrap{position:relative;width:100%;height:160px;overflow-x:auto;overflow-y:hidden}
@@ -1257,12 +1264,14 @@ function buildChartShell(uid,title){
       <span id="chart-status-${uid}" style="font-family:var(--mono);font-size:9px;color:var(--text3)">ładowanie…</span>
     </div>
     <div class="sec-body">
+      <div id="sb-${uid}" style="margin-bottom:10px"></div>
       <div class="chart-wrap" id="chart-wrap-${uid}">
         <svg id="chart-svg-${uid}" viewBox="0 0 600 160" width="600" height="160"></svg>
       </div>
       <div class="chart-legend">
-        <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#0a7a4a;height:8px;border-radius:2px"></div>Wydatki tygodniowe (zł, lewa oś)</div>
         <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#111111"></div>Sprzedaż biletów (szt., prawa oś)</div>
+        <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#0a7a4a"></div>Kampania: sprzedaż rosła szybciej niż przeciętnie</div>
+        <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--text2)"></div>Kampania: brak wyraźnego wzrostu</div>
       </div>
     </div>
   </div>`;
@@ -1291,6 +1300,55 @@ async function fetchTicketPoints(artistName,concertDate){
     }catch(e){console.warn('Snapshots error:',e);}
   }
   return{matchedEvt,ticketPoints};
+}
+
+function renderBarometer(uid,matchedEvt,filledTickets,weekTickets,salesStartIdx,salesEndIdx,weeks,showDate,today){
+  const el=document.getElementById(`sb-${uid}`);
+  if(!el)return;
+  const cap=matchedEvt&&matchedEvt.cap?matchedEvt.cap:null;
+  if(!cap||salesStartIdx>salesEndIdx){el.innerHTML='';return;}
+  const currentSold=filledTickets[salesEndIdx]||0;
+  const remaining=cap-currentSold;
+  if(remaining<=0){
+    el.innerHTML=`<div class="sales-barometer ok"><b>Wyprzedane</b> — ${currentSold}/${cap} (100%)</div>`;
+    return;
+  }
+  if(showDate<today){
+    const pct=Math.round(currentSold/cap*100);
+    el.innerHTML=`<div class="sales-barometer neutral"><b>Koncert minął</b> — sprzedano ${currentSold}/${cap} (${pct}%)</div>`;
+    return;
+  }
+  const weeksLeftCalc=Math.max(1,weeks.length-1-salesEndIdx);
+  const requiredPace=remaining/weeksLeftCalc;
+  const deltaAt=i=>(i>0&&weekTickets[i]!==null&&weekTickets[i-1]!==null)?filledTickets[i]-filledTickets[i-1]:null;
+  const idxRange=(from,to)=>{const r=[];for(let i=from;i<=to;i++){if(i>=0)r.push(i);}return r;};
+  const recentIdx=idxRange(Math.max(salesStartIdx+1,salesEndIdx-2),salesEndIdx);
+  const priorIdx=idxRange(Math.max(salesStartIdx+1,salesEndIdx-5),salesEndIdx-3);
+  const avg=arr=>{const v=arr.map(deltaAt).filter(x=>x!==null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
+  const recentPace=avg(recentIdx);
+  const priorPace=avg(priorIdx);
+  let status,label,sugg;
+  if(recentPace===null){
+    status='neutral';label='Za mało danych';
+    sugg='Potrzeba więcej tygodni sprzedaży, by ocenić tempo.';
+  }else if(recentPace>=requiredPace){
+    status='ok';label='Tempo wystarczające';
+    const proj=Math.min(100,Math.round(((currentSold+recentPace*weeksLeftCalc)/cap)*100));
+    sugg=`Przy obecnym tempie (${recentPace.toFixed(0)}/tydz.) sala wypełni się do koncertu (prognoza ok. ${proj}%). Kampanie można utrzymać na obecnym poziomie.`;
+  }else if(recentPace>=requiredPace*0.7){
+    status='warn';label='Tempo poniżej potrzebnego';
+    sugg=`Potrzeba ${requiredPace.toFixed(0)}/tydz., obecnie ${recentPace.toFixed(0)}/tydz. — warto rozważyć dodatkową kampanię w najbliższych tygodniach.`;
+  }else{
+    status='bad';label='Tempo zdecydowanie za niskie';
+    sugg=`Potrzeba ${requiredPace.toFixed(0)}/tydz., obecnie tylko ${recentPace.toFixed(0)}/tydz. — bez szybkiej reakcji (nowa kampania, promocja) sala może nie wypełnić się do koncertu.`;
+  }
+  let momentum='';
+  if(recentPace!==null&&priorPace!==null&&priorPace>0){
+    if(recentPace>priorPace*1.1)momentum='rosnące ↑';
+    else if(recentPace<priorPace*0.9)momentum='malejące ↓';
+    else momentum='stabilne →';
+  }
+  el.innerHTML=`<div class="sales-barometer ${status}"><b>${label}</b>${momentum?` · tendencja: ${momentum}`:''}<div class="sb-sugg">${sugg}</div></div>`;
 }
 
 async function drawChart(uid,costs,concertDate,artistName){
@@ -1390,6 +1448,21 @@ async function drawChart(uid,costs,concertDate,artistName){
     'Buyouts':'#a259ff','Media':'#ff6b35','OOH':'#00c9a7','Inne':'#5a5a5a'
   };
 
+  // Analiza wzrostu sprzedaży w oknie obserwacji (do oceny kampanii)
+  const deltaAt=i=>(i>0&&weekTickets[i]!==null&&weekTickets[i-1]!==null)?filledTickets[i]-filledTickets[i-1]:null;
+  const salesWeekIdx=[];
+  for(let i=salesStartIdx;i<=salesEndIdx;i++){if(i>0)salesWeekIdx.push(i);}
+  const allDeltas=salesWeekIdx.map(deltaAt).filter(v=>v!==null);
+  const overallAvgDelta=allDeltas.length?allDeltas.reduce((a,b)=>a+b,0)/allDeltas.length:0;
+  const weekIndexOf=d=>{
+    const ms=new Date(d).getTime();
+    for(let i=0;i<weeks.length;i++){
+      const wE=new Date(weeks[i]);wE.setDate(wE.getDate()+6);wE.setHours(23,59,59);
+      if(ms>=weeks[i].getTime()&&ms<=wE.getTime())return i;
+    }
+    return ms<weeks[0].getTime()?0:weeks.length-1;
+  };
+
   // Oś Y kosztów — używamy costYMax do mapowania
   // xForDate: mapuje datę na pozycję X (interpolacja między weeks)
   const msStart=weeks[0].getTime();
@@ -1401,14 +1474,21 @@ async function drawChart(uid,costs,concertDate,artistName){
   };
   const yForCost=v=>PT+chartH-(Math.min(v,costYMax)/costYMax)*chartH;
 
-  // Renderuj każdy koszt jako linię (start→end) lub punkt (brak end)
+  // Renderuj każdy koszt jako linię (start→end) lub punkt (brak end) — kolor = czy sprzedaż w tym okresie rosła szybciej niż przeciętnie
   const campaignLines=costs.map((c,ci)=>{
     const startD=c.costDate?new Date(c.costDate):(c.createdAt?new Date(c.createdAt.seconds*1000):null);
     if(!startD)return'';
     const endD=c.costEndDate?new Date(c.costEndDate):null;
-    const color=CAT_COLORS[c.category]||'#888888';
+    const wi1=weekIndexOf(startD);
+    const wi2=endD?weekIndexOf(endD):wi1;
+    const relevantIdx=salesWeekIdx.filter(i=>i>=wi1&&i<=wi2);
+    const costDeltas=relevantIdx.map(deltaAt).filter(v=>v!==null);
+    const costAvgDelta=costDeltas.length?costDeltas.reduce((a,b)=>a+b,0)/costDeltas.length:null;
+    const grew=costAvgDelta===null?null:costAvgDelta>overallAvgDelta*1.05;
+    const color=grew===null?'var(--text3)':(grew?'#0a7a4a':'var(--text2)');
+    const growthLabel=grew===null?'brak danych o sprzedaży w tym okresie':(grew?'✓ sprzedaż rosła szybciej niż przeciętnie':'brak wyraźnego wzrostu sprzedaży');
     const yVal=yForCost(c.amount||0);
-    const tip=`${c.category}: ${c.description||'–'}\n${fmtPLN(c.amount)} zł${endD?`\n${startD.toLocaleDateString('pl')}–${endD.toLocaleDateString('pl')}`:`\n${startD.toLocaleDateString('pl')}`}`;
+    const tip=`${c.category}: ${c.description||'–'}\n${fmtPLN(c.amount)} zł${endD?`\n${startD.toLocaleDateString('pl')}–${endD.toLocaleDateString('pl')}`:`\n${startD.toLocaleDateString('pl')}`}\n${growthLabel}`;
     const tipAttr=tip.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
 
     if(endD&&endD>startD){
@@ -1473,6 +1553,8 @@ ${tickDots}${xLabels}${tickYLabels}
       statusEl.style.color='var(--teal)';
     }
   }
+
+  renderBarometer(uid,matchedEvt,filledTickets,weekTickets,salesStartIdx,salesEndIdx,weeks,showDate,today);
 }
 
 async function renderChart(show){
