@@ -239,7 +239,7 @@ select.form-input{cursor:pointer}
 .sales-barometer .sb-sugg{color:var(--text);font-weight:400;margin-top:3px}
 
 /* ── CHART ── */
-.chart-wrap{position:relative;width:100%;height:191px;overflow-x:auto;overflow-y:hidden}
+.chart-wrap{position:relative;width:100%;height:280px;overflow-x:auto;overflow-y:hidden}
 .chart-wrap svg{height:100%;display:block}
 .chart-legend{display:flex;gap:14px;margin-top:8px}
 .chart-legend-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--text2)}
@@ -1266,7 +1266,7 @@ function buildChartShell(uid,title){
     <div class="sec-body">
       <div id="sb-${uid}" style="margin-bottom:10px"></div>
       <div class="chart-wrap" id="chart-wrap-${uid}">
-        <svg id="chart-svg-${uid}" viewBox="0 0 600 191" width="600" height="191"></svg>
+        <svg id="chart-svg-${uid}" viewBox="0 0 600 280" width="600" height="280"></svg>
       </div>
     </div>
   </div>`;
@@ -1383,7 +1383,7 @@ async function drawChart(uid,costs,concertDate,artistName){
   let lastKnown=0;
   const filledTickets=weekTickets.map(v=>{if(v!==null){lastKnown=v;return v;}return lastKnown;});
 
-  const H=171,PL=46,PR=30,PT=12,PB=24;
+  const H=260,PL=46,PR=30,PT=12,PB=24;
   const n=weeks.length;
   const containerW=document.getElementById(`chart-wrap-${uid}`)?.clientWidth||600;
   const WEEK_PX=Math.min(60,Math.max(28,Math.floor((containerW-PL-PR)/Math.max(n-1,1))));
@@ -1515,7 +1515,7 @@ async function drawChart(uid,costs,concertDate,artistName){
       ?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#111111" stroke="#ffffff" stroke-width="1"/>`:'';
   }).join('');
 
-  svgEl.setAttribute('viewBox',`0 0 ${W} 191`);
+  svgEl.setAttribute('viewBox',`0 0 ${W} 280`);
   svgEl.setAttribute('width',W);
   svgEl.innerHTML=`
 <defs><linearGradient id="gT-${uid}" x1="0" y1="0" x2="0" y2="1">
