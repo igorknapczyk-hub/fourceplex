@@ -1379,11 +1379,10 @@ async function drawChart(uid,costs,concertDate,artistName){
   let lastKnown=0;
   const filledTickets=weekTickets.map(v=>{if(v!==null){lastKnown=v;return v;}return lastKnown;});
 
+  const WEEK_PX=60;
   const H=260,PL=46,PR=30,PT=12,PB=24;
   const n=weeks.length;
-  const containerW=document.getElementById(`chart-wrap-${uid}`)?.clientWidth||600;
-  const WEEK_PX=Math.min(60,Math.max(28,Math.floor((containerW-PL-PR)/Math.max(n-1,1))));
-  const W=Math.max(containerW,PL+PR+(n-1)*WEEK_PX);
+  const W=Math.max(600,PL+PR+(n-1)*WEEK_PX);
   const chartW=W-PL-PR,chartH=H-PT-PB;
   const weeklySpend=cumCosts.map((v,i)=>i===0?v:v-cumCosts[i-1]);
   const costYMax=Math.max(...weeklySpend,1)/0.8;
