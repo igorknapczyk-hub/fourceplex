@@ -229,7 +229,7 @@ select.form-input{cursor:pointer}
 .notes-meta{font-family:var(--mono);font-size:9px;color:var(--text3)}
 
 /* ── CHART TOOLTIP ── */
-#chart-tooltip{position:fixed;background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;font-size:11px;font-family:var(--mono);color:#111111;font-weight:500;max-width:260px;line-height:1.65;z-index:999;pointer-events:none;display:none;box-shadow:0 4px 16px rgba(0,0,0,.15);white-space:pre-wrap;word-break:break-word}
+#chart-tooltip{position:fixed;background:#ffffff!important;border:1px solid #d0d0d0!important;border-radius:8px;padding:9px 12px;font-size:11px;font-family:var(--mono);color:#111111!important;font-weight:500;max-width:260px;line-height:1.65;z-index:9999;pointer-events:none;display:none;box-shadow:0 4px 20px rgba(0,0,0,.22)!important;white-space:pre-wrap;word-break:break-word}
 .sales-barometer{padding:8px 11px;border-radius:8px;font-size:11px;line-height:1.5}
 .sales-barometer b{font-size:11.5px}
 .sales-barometer.ok{background:rgba(10,122,74,.1);color:var(--teal)}
@@ -1266,7 +1266,7 @@ function buildChartShell(uid,title){
     <div class="sec-body">
       <div id="sb-${uid}" style="margin-bottom:10px"></div>
       <div class="chart-wrap" id="chart-wrap-${uid}">
-        <svg id="chart-svg-${uid}" viewBox="0 0 600 160" width="600" height="160"></svg>
+        <svg id="chart-svg-${uid}" viewBox="0 0 600 208" width="600" height="208"></svg>
       </div>
     </div>
   </div>`;
@@ -1384,7 +1384,7 @@ async function drawChart(uid,costs,concertDate,artistName){
   const filledTickets=weekTickets.map(v=>{if(v!==null){lastKnown=v;return v;}return lastKnown;});
 
   const WEEK_PX=60;
-  const H=140,PL=46,PR=30,PT=12,PB=24;
+  const H=182,PL=46,PR=30,PT=12,PB=24;
   const n=weeks.length;
   const W=Math.max(600,PL+PR+(n-1)*WEEK_PX);
   const chartW=W-PL-PR,chartH=H-PT-PB;
@@ -1514,7 +1514,7 @@ async function drawChart(uid,costs,concertDate,artistName){
       ?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#111111" stroke="#ffffff" stroke-width="1"/>`:'';
   }).join('');
 
-  svgEl.setAttribute('viewBox',`0 0 ${W} 160`);
+  svgEl.setAttribute('viewBox',`0 0 ${W} 208`);
   svgEl.setAttribute('width',W);
   svgEl.innerHTML=`
 <defs><linearGradient id="gT-${uid}" x1="0" y1="0" x2="0" y2="1">
