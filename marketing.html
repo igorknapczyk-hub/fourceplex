@@ -232,10 +232,10 @@ select.form-input{cursor:pointer}
 #chart-tooltip{position:fixed;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-size:11px;font-family:var(--mono);color:var(--text2);max-width:260px;line-height:1.65;z-index:999;pointer-events:none;display:none;box-shadow:0 6px 24px rgba(0,0,0,.4);white-space:pre-wrap;word-break:break-word}
 
 /* ── CHART ── */
-.chart-wrap{position:relative;width:100%;height:160px}
-.chart-wrap svg{width:100%;height:100%;overflow:visible}
+.chart-wrap{position:relative;width:100%;height:160px;overflow-x:auto;overflow-y:hidden}
+.chart-wrap svg{height:100%;display:block}
 .chart-legend{display:flex;gap:14px;margin-top:8px}
-.chart-legend-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--text3)}
+.chart-legend-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--text2)}
 .chart-legend-dot{width:8px;height:2px;border-radius:1px;flex-shrink:0}
 
 /* ── META ADS ── */
@@ -813,7 +813,7 @@ function renderDetail(id){
               <td><select class="cost-edit-input" id="ce-cat-${c.id}">${optsList.map(o=>`<option value="${esc(o)}" ${o===curCat?'selected':''}>${esc(o)}</option>`).join('')}</select></td>
               ${show.isTour?`<td><select class="cost-edit-input" id="ce-tour-${c.id}"><option value="all" ${(!c.tourDate||c.tourDate==='all')?'selected':''}>Cała trasa</option>${(show.tourDates||[]).map(d=>`<option value="${esc(d.date)}" ${c.tourDate===d.date?'selected':''}>${esc(d.venue||d.date||'–')}</option>`).join('')}</select></td>`:''}
               <td><input class="cost-edit-input" type="text" id="ce-desc-${c.id}" value="${esc(c.description||'')}"></td>
-              <td><input class="cost-edit-input" type="date" id="ce-date-${c.id}" value="${esc(dateVal)}"></td>
+              <td><div style="display:flex;flex-direction:column;gap:3px"><input class="cost-edit-input" type="date" id="ce-date-${c.id}" value="${esc(dateVal)}" title="Data rozpoczęcia"><input class="cost-edit-input" type="date" id="ce-end-date-${c.id}" value="${esc(c.costEndDate||'')}" title="Data zakończenia (opcjonalnie)"></div></td>
               <td><input class="cost-edit-input" type="number" id="ce-amt-${c.id}" value="${c.amount||0}" min="0" style="text-align:right"></td>
               <td>${esc(c.addedBy||'–')}</td>
               <td style="white-space:nowrap"><span class="cost-edit" onclick="saveCostEdit('${c.id}')" title="Zapisz" style="color:var(--teal)">✓</span><span class="cost-edit" onclick="cancelCostEdit()" title="Anuluj">✕</span></td>
@@ -823,7 +823,7 @@ function renderDetail(id){
               <td><span class="cost-cat">${esc(c.category||'–')}</span></td>
               ${show.isTour?`<td style="font-family:var(--mono);font-size:9px;color:var(--text3);white-space:nowrap">${c.tourDate&&c.tourDate!=='all'?esc(show.tourDates?.find(d=>d.date===c.tourDate)?.venue||'–'):'Trasa'}</td>`:''}
               <td style="color:var(--text)">${esc(c.description||'–')}</td>
-              <td style="font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap">${c.costDate||fmtCostDate(c.createdAt)}</td>
+              <td style="font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap">${c.costDate||fmtCostDate(c.createdAt)}${c.costEndDate?' → '+esc(c.costEndDate):''}</td>
               <td class="cost-amount">${fmtPLN(c.amount)} zł</td>
               <td>${esc(c.addedBy||'–')}</td>
               <td style="white-space:nowrap"><span class="cost-edit" onclick="startEditCost('${c.id}')" title="Edytuj">✎</span><span class="cost-delete" onclick="deleteCost('${c.id}')" title="Usuń">×</span></td>
@@ -1092,10 +1092,11 @@ async function saveCostEdit(costId){
   const cat=document.getElementById(`ce-cat-${costId}`)?.value?.trim();
   const desc=document.getElementById(`ce-desc-${costId}`)?.value?.trim();
   const costDate=document.getElementById(`ce-date-${costId}`)?.value||'';
+  const costEndDate=document.getElementById(`ce-end-date-${costId}`)?.value||null;
   const amt=parseFloat(document.getElementById(`ce-amt-${costId}`)?.value)||0;
   if(!cat||!desc||!amt||!costDate){alert('Uzupełnij wszystkie pola.');return;}
   const tourEl=document.getElementById(`ce-tour-${costId}`);
-  const upd={category:cat,description:desc,costDate,amount:amt};
+  const upd={category:cat,description:desc,costDate,costEndDate,amount:amt};
   if(tourEl)upd.tourDate=tourEl.value||'all';
   const {doc,updateDoc}=window._fs;
   try{
@@ -1257,7 +1258,7 @@ function buildChartShell(uid,title){
     </div>
     <div class="sec-body">
       <div class="chart-wrap" id="chart-wrap-${uid}">
-        <svg id="chart-svg-${uid}" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
+        <svg id="chart-svg-${uid}" viewBox="0 0 600 160" width="600" height="160"></svg>
       </div>
       <div class="chart-legend">
         <div class="chart-legend-item"><div class="chart-legend-dot" style="background:#0a7a4a;height:8px;border-radius:2px"></div>Wydatki tygodniowe (zł, lewa oś)</div>
@@ -1331,8 +1332,11 @@ async function drawChart(uid,costs,concertDate,artistName){
   let lastKnown=0;
   const filledTickets=weekTickets.map(v=>{if(v!==null){lastKnown=v;return v;}return lastKnown;});
 
-  const W=600,H=140,PL=46,PR=30,PT=12,PB=24;
-  const chartW=W-PL-PR,chartH=H-PT-PB,n=weeks.length;
+  const WEEK_PX=60;
+  const H=140,PL=46,PR=30,PT=12,PB=24;
+  const n=weeks.length;
+  const W=Math.max(600,PL+PR+(n-1)*WEEK_PX);
+  const chartW=W-PL-PR,chartH=H-PT-PB;
   const weeklySpend=cumCosts.map((v,i)=>i===0?v:v-cumCosts[i-1]);
   const costYMax=Math.max(...weeklySpend,1)/0.8;
   /* Y-max for sales = capacity from Ticketing (full chart height), fallback to actual max */
@@ -1355,8 +1359,8 @@ async function drawChart(uid,costs,concertDate,artistName){
     const y=(PT+chartH-(p*0.8*chartH)).toFixed(1);
     const val=costYMax*p*0.8;
     const label=val>=1000?`${(val/1000).toFixed(val>=10000?0:1)}k`:Math.round(val);
-    return`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
-<text x="${(PL-4)}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="end" font-size="7" fill="#5c5b6e" font-family="monospace">${label}</text>`;
+    return`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>
+<text x="${(PL-4)}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="end" font-size="9" fill="var(--text2)" font-family="monospace">${label}</text>`;
   }).join('');
 
   /* Capacity guidelines at 25/50/75% — subtle, unlabeled */
@@ -1367,25 +1371,23 @@ async function drawChart(uid,costs,concertDate,artistName){
 
   const tickYLabels=[0.5,1].map(p=>{
     const y=(PT+chartH-(p*chartH)).toFixed(1);
-    return`<text x="${(W-PR+4)}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="start" font-size="7" fill="#555555" font-family="monospace" opacity="0.9">${Math.round(maxTickets*p)}</text>`;
+    return`<text x="${(W-PR+4)}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="start" font-size="9" fill="var(--text2)" font-family="monospace">${Math.round(maxTickets*p)}</text>`;
   }).join('');
 
-  const labelStep=Math.max(1,Math.ceil(n/6));
   const xLabels=weeks.map((w,i)=>{
-    if(i%labelStep!==0&&i!==n-1)return'';
     /* Last label = concert date (from Ticketing) */
     const isLast=i===n-1;
     const lbl=isLast
       ?`${showDate.getDate().toString().padStart(2,'0')}.${(showDate.getMonth()+1).toString().padStart(2,'0')}`
       :`${w.getDate().toString().padStart(2,'0')}.${(w.getMonth()+1).toString().padStart(2,'0')}`;
-    const weight=isLast?'font-weight="700" fill="#111111"':'fill="#5c5b6e"';
-    return`<text x="${xPos(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="7.5" ${weight} font-family="monospace">${lbl}</text>`;
+    const weight=isLast?'font-weight="700" fill="var(--text)"':'fill="var(--text2)"';
+    return`<text x="${xPos(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="9.5" ${weight} font-family="monospace">${lbl}</text>`;
   }).join('');
 
   // Kolory per kategoria
   const CAT_COLORS={
     'Meta':'#1877f2','TikTok':'#ff0050','Google':'#fbbc04',
-    'Buyouts':'#a259ff','Media':'#ff6b35','OOH':'#00c9a7','Inne':'#888888'
+    'Buyouts':'#a259ff','Media':'#ff6b35','OOH':'#00c9a7','Inne':'#5a5a5a'
   };
 
   // Oś Y kosztów — używamy costYMax do mapowania
@@ -1415,15 +1417,15 @@ async function drawChart(uid,costs,concertDate,artistName){
       const x2=xForDate(endD).toFixed(1);
       const y=yVal.toFixed(1);
       return[
-        `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${color}" stroke-width="3" stroke-linecap="round" opacity="0.85" data-tip="${tipAttr}" style="cursor:default"/>`,
-        `<circle cx="${x1}" cy="${y}" r="4" fill="${color}" opacity="0.9" data-tip="${tipAttr}" style="cursor:default"/>`,
-        `<circle cx="${x2}" cy="${y}" r="4" fill="${color}" opacity="0.9" data-tip="${tipAttr}" style="cursor:default"/>`,
+        `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${color}" stroke-width="2" stroke-linecap="round" opacity="0.9" data-tip="${tipAttr}" style="cursor:default"/>`,
+        `<circle cx="${x1}" cy="${y}" r="3" fill="${color}" opacity="0.95" data-tip="${tipAttr}" style="cursor:default"/>`,
+        `<circle cx="${x2}" cy="${y}" r="3" fill="${color}" opacity="0.95" data-tip="${tipAttr}" style="cursor:default"/>`,
       ].join('');
     }else{
       // Pojedynczy punkt (kółko)
       const cx=xForDate(startD).toFixed(1);
       const cy=yVal.toFixed(1);
-      return`<circle cx="${cx}" cy="${cy}" r="5" fill="${color}" opacity="0.9" data-tip="${tipAttr}" style="cursor:default"/>`;
+      return`<circle cx="${cx}" cy="${cy}" r="3.5" fill="${color}" opacity="0.95" data-tip="${tipAttr}" style="cursor:default"/>`;
     }
   }).join('');
 
@@ -1439,6 +1441,8 @@ async function drawChart(uid,costs,concertDate,artistName){
       ?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#111111" stroke="#ffffff" stroke-width="1"/>`:'';
   }).join('');
 
+  svgEl.setAttribute('viewBox',`0 0 ${W} 160`);
+  svgEl.setAttribute('width',W);
   svgEl.innerHTML=`
 <defs><linearGradient id="gT-${uid}" x1="0" y1="0" x2="0" y2="1">
   <stop offset="0%" stop-color="#555555" stop-opacity="0.18"/>
@@ -1448,9 +1452,9 @@ ${gridLines}${capLines}${campaignLines}
 ${tickPts.length?`<path d="${tickArea}" fill="url(#gT-${uid})" pointer-events="none"/>
 <path d="${pathLine(tickPts)}" fill="none" stroke="#111111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`:''}
 ${tickDots}${xLabels}${tickYLabels}
-<line x1="${PL}" y1="${PT+chartH}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-<line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-<line x1="${W-PR}" y1="${PT}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+<line x1="${PL}" y1="${PT+chartH}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(0,0,0,0.14)" stroke-width="1"/>
+<line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+chartH}" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+<line x1="${W-PR}" y1="${PT}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>`;
 
   svgEl.querySelectorAll('[data-tip]').forEach(r=>{
     r.addEventListener('mouseenter',e=>showChartTip(e,r.dataset.tip));
@@ -1459,7 +1463,7 @@ ${tickDots}${xLabels}${tickYLabels}
   });
 
   if(statusEl){
-    if(!matchedEvt){statusEl.textContent='brak koncertu w Ticketingu';statusEl.style.color='var(--text3)';}
+    if(!matchedEvt){statusEl.textContent='brak koncertu w Ticketingu';statusEl.style.color='var(--text2)';}
     else if(!ticketPoints.length){statusEl.textContent='brak snapshotów w Ticketingu';statusEl.style.color='var(--amber)';}
     else{
       const lastSold=filledTickets[filledTickets.length-1]||0;
