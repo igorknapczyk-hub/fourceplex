@@ -1266,7 +1266,7 @@ function buildChartShell(uid,title){
     <div class="sec-body">
       <div id="sb-${uid}" style="margin-bottom:10px"></div>
       <div class="chart-wrap" id="chart-wrap-${uid}">
-        <svg id="chart-svg-${uid}" viewBox="0 0 600 208" width="600" height="208"></svg>
+        <svg id="chart-svg-${uid}" viewBox="0 0 600 191" width="600" height="191"></svg>
       </div>
     </div>
   </div>`;
@@ -1384,7 +1384,7 @@ async function drawChart(uid,costs,concertDate,artistName){
   const filledTickets=weekTickets.map(v=>{if(v!==null){lastKnown=v;return v;}return lastKnown;});
 
   const WEEK_PX=60;
-  const H=182,PL=46,PR=30,PT=12,PB=24;
+  const H=171,PL=46,PR=30,PT=12,PB=24;
   const n=weeks.length;
   const W=Math.max(600,PL+PR+(n-1)*WEEK_PX);
   const chartW=W-PL-PR,chartH=H-PT-PB;
@@ -1514,7 +1514,7 @@ async function drawChart(uid,costs,concertDate,artistName){
       ?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#111111" stroke="#ffffff" stroke-width="1"/>`:'';
   }).join('');
 
-  svgEl.setAttribute('viewBox',`0 0 ${W} 208`);
+  svgEl.setAttribute('viewBox',`0 0 ${W} 191`);
   svgEl.setAttribute('width',W);
   svgEl.innerHTML=`
 <defs><linearGradient id="gT-${uid}" x1="0" y1="0" x2="0" y2="1">
