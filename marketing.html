@@ -954,8 +954,7 @@ function renderCheckpoints(show){
           <div class="cp-icon${done?' done':''}"></div>
           <input class="cp-name-input" data-key="${key}" value="${esc(name)}" placeholder="Nazwa checkpointu…">
           <button class="cp-remove-btn" title="Usuń checkpoint" style="pointer-events:all" onclick="removeCp('${show.id}','${key}')">×</button>
-        </div>
-        <input class="cp-note-input" data-nk="${key}" placeholder="notatka…" value="${esc(note)}">`;
+        </div>`;
       const nameInp=item.querySelector('.cp-name-input');
       nameInp.style.pointerEvents='all';
       nameInp.addEventListener('blur',()=>saveCpName(show.id,key,nameInp.value));
@@ -965,12 +964,9 @@ function renderCheckpoints(show){
           <div class="cp-icon${done?' done':''}"></div>
           <span class="cp-name">${esc(name)}</span>
           <span class="cp-meta">${done&&checkedAt?checkedAt+(checkedBy?' · '+checkedBy:''):'—'}</span>
-        </div>
-        <input class="cp-note-input" data-nk="${key}" placeholder="notatka…" value="${esc(note)}">`;
+        </div>`;
       item.querySelector('.cp-row').addEventListener('click',()=>toggleCheckpoint(show.id,key,!done));
     }
-    const noteInp=item.querySelector('.cp-note-input');
-    noteInp.addEventListener('blur',()=>saveCpNote(show.id,key,noteInp.value));
     el.appendChild(item);
   });
   if(isEdit){
