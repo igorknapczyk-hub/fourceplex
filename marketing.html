@@ -1309,46 +1309,44 @@ function renderBarometer(uid,matchedEvt,filledTickets,weekTickets,salesStartIdx,
   if(!cap||salesStartIdx>salesEndIdx){el.innerHTML='';return;}
   const currentSold=filledTickets[salesEndIdx]||0;
   const remaining=cap-currentSold;
+  const soldPct=Math.round(currentSold/cap*100);
   if(remaining<=0){
     el.innerHTML=`<div class="sales-barometer ok"><b>Wyprzedane</b> — ${currentSold}/${cap} (100%)</div>`;
     return;
   }
   if(showDate<today){
-    const pct=Math.round(currentSold/cap*100);
-    el.innerHTML=`<div class="sales-barometer neutral"><b>Koncert minął</b> — sprzedano ${currentSold}/${cap} (${pct}%)</div>`;
+    el.innerHTML=`<div class="sales-barometer neutral"><b>Koncert minął</b> — sprzedano ${currentSold}/${cap} (${soldPct}%)</div>`;
     return;
   }
-  const weeksLeftCalc=Math.max(1,weeks.length-1-salesEndIdx);
-  const requiredPace=remaining/weeksLeftCalc;
+  const weeksLeft=Math.max(1,weeks.length-1-salesEndIdx);
+  const weeksElapsed=Math.max(1,salesEndIdx-salesStartIdx);
+  const requiredPace=remaining/weeksLeft;
+  // Ocena: średnie tempo od startu sprzedaży (wlicza on-sale burst) vs. potrzebne do sold-outu
+  const overallPace=currentSold/weeksElapsed;
+  // Trend: ostatnie 3 tygodnie vs. poprzednie 3
   const deltaAt=i=>(i>0&&weekTickets[i]!==null&&weekTickets[i-1]!==null)?filledTickets[i]-filledTickets[i-1]:null;
   const idxRange=(from,to)=>{const r=[];for(let i=from;i<=to;i++){if(i>=0)r.push(i);}return r;};
-  const recentIdx=idxRange(Math.max(salesStartIdx+1,salesEndIdx-2),salesEndIdx);
-  const priorIdx=idxRange(Math.max(salesStartIdx+1,salesEndIdx-5),salesEndIdx-3);
   const avg=arr=>{const v=arr.map(deltaAt).filter(x=>x!==null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
-  const recentPace=avg(recentIdx);
-  const priorPace=avg(priorIdx);
-  let status,label,sugg;
-  if(recentPace===null){
-    status='neutral';label='Za mało danych';
-    sugg='Potrzeba więcej tygodni sprzedaży, by ocenić tempo.';
-  }else if(recentPace>=requiredPace){
-    status='ok';label='Tempo wystarczające';
-    const proj=Math.min(100,Math.round(((currentSold+recentPace*weeksLeftCalc)/cap)*100));
-    sugg=`Przy obecnym tempie (${recentPace.toFixed(0)}/tydz.) sala wypełni się do koncertu (prognoza ok. ${proj}%). Kampanie można utrzymać na obecnym poziomie.`;
-  }else if(recentPace>=requiredPace*0.7){
-    status='warn';label='Tempo poniżej potrzebnego';
-    sugg=`Potrzeba ${requiredPace.toFixed(0)}/tydz., obecnie ${recentPace.toFixed(0)}/tydz. — warto rozważyć dodatkową kampanię w najbliższych tygodniach.`;
-  }else{
-    status='bad';label='Tempo zdecydowanie za niskie';
-    sugg=`Potrzeba ${requiredPace.toFixed(0)}/tydz., obecnie tylko ${recentPace.toFixed(0)}/tydz. — bez szybkiej reakcji (nowa kampania, promocja) sala może nie wypełnić się do koncertu.`;
-  }
+  const recentPace=avg(idxRange(Math.max(salesStartIdx+1,salesEndIdx-2),salesEndIdx));
+  const priorPace=avg(idxRange(Math.max(salesStartIdx+1,salesEndIdx-5),salesEndIdx-3));
   let momentum='';
   if(recentPace!==null&&priorPace!==null&&priorPace>0){
-    if(recentPace>priorPace*1.1)momentum='rosnące ↑';
-    else if(recentPace<priorPace*0.9)momentum='malejące ↓';
-    else momentum='stabilne →';
+    if(recentPace>priorPace*1.1)momentum='trend ↑';
+    else if(recentPace<priorPace*0.9)momentum='trend ↓';
+    else momentum='trend →';
   }
-  el.innerHTML=`<div class="sales-barometer ${status}"><b>${label}</b>${momentum?` · tendencja: ${momentum}`:''}<div class="sb-sugg">${sugg}</div></div>`;
+  let status,label;
+  if(weeksElapsed<2){
+    status='neutral';label='Za mało danych';
+  }else if(overallPace>=requiredPace){
+    status='ok';label='Sprzedaż w normie';
+  }else if(overallPace>=requiredPace*0.6){
+    status='warn';label='Sprzedaż nieco wolniejsza';
+  }else{
+    status='bad';label='Sprzedaż wyraźnie za wolna';
+  }
+  const info=`${currentSold}/${cap} (${soldPct}%) · do sold-outu potrzeba ${requiredPace.toFixed(0)}/tydz. (${weeksLeft} tydz.)`;
+  el.innerHTML=`<div class="sales-barometer ${status}"><b>${label}</b>${momentum?` · ${momentum}`:''}<div class="sb-sugg">${info}</div></div>`;
 }
 
 async function drawChart(uid,costs,concertDate,artistName){
