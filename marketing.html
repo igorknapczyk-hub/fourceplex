@@ -1558,16 +1558,15 @@ async function drawChart(uid,costs,concertDate,artistName){
   const weeklySold=weeks.map((w,i)=>i===0?filledTickets[0]:filledTickets[i]-filledTickets[i-1]);
   const perfMax=salesEndIdx>=0?Math.max(...weeklySold.slice(0,salesEndIdx+1),1):1;
   const yP=v=>PT+chartH-(Math.min(v,perfMax)/perfMax)*chartH;
-  const perfBars=salesEndIdx>=0?weeks.map((w,i)=>{
-    if(i>salesEndIdx)return'';
+  const perfPts=salesEndIdx>=0?weeks.map((w,i)=>i<=salesEndIdx?[xPos(i),yP(Math.max(0,weeklySold[i]))]:null).filter(Boolean):[];
+  const perfLine=perfPts.length>1?`<path d="${pathLine(perfPts)}" fill="none" stroke="#111111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`:'';
+  const perfDots=perfPts.map(([x,y],i)=>{
     const v=Math.max(0,weeklySold[i]);
-    const x=(xPos(i)-barW/2).toFixed(1);
-    const y=yP(v).toFixed(1);
-    const h=Math.max(0,(PT+chartH)-yP(v)).toFixed(1);
-    const wLbl=`${w.getDate().toString().padStart(2,'0')}.${(w.getMonth()+1).toString().padStart(2,'0')}`;
+    const wk=weeks[i];
+    const wLbl=`${wk.getDate().toString().padStart(2,'0')}.${(wk.getMonth()+1).toString().padStart(2,'0')}`;
     const tipAttr=`Tydzień ${wLbl}: ${v} sprzedanych`.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-    return`<rect x="${x}" y="${y}" width="${barW.toFixed(1)}" height="${h}" rx="2" fill="#111111" opacity="0.85" data-tip="${tipAttr}" style="cursor:default"/>`;
-  }).join(''):'';
+    return`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#111111" stroke="#ffffff" stroke-width="1" data-tip="${tipAttr}" style="cursor:default"/>`;
+  }).join('');
   const perfYLabels=[0.5,1].map(p=>{
     const y=(PT+chartH-(p*chartH)).toFixed(1);
     return`<text x="${(W-PR+4)}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="start" font-size="9" fill="var(--text2)" font-family="monospace">${Math.round(perfMax*p)}</text>`;
@@ -1576,7 +1575,7 @@ async function drawChart(uid,costs,concertDate,artistName){
   const salesMarkup=`${tickPts.length?`<path d="${tickArea}" fill="url(#gT-${uid})" pointer-events="none"/>
 <path d="${pathLine(tickPts)}" fill="none" stroke="#111111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`:''}
 ${tickDots}${tickYLabels}`;
-  const perfMarkup=`${perfBars}${perfYLabels}`;
+  const perfMarkup=`${perfLine}${perfDots}${perfYLabels}`;
 
   window._chartBundles=window._chartBundles||{};
   window._chartBundles[uid]={W,H:280,PL,PR,PT,chartH,gridLines,capLines,campaignLines,xLabels,salesMarkup,perfMarkup};
