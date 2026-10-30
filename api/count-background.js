@@ -17,6 +17,7 @@ export default async function handler(req, res) {
       await saveToFirebase(ev.id, ev, tmResult.tm, ebResult.eb, ebResult.remains, ebResult.cap);
       results.push({ id: ev.id, tm: tmResult.tm, eb: ebResult.eb, tmFallback: !tmSession, ok: true });
     } catch (err) {
+      console.error(`[count-background] Błąd dla ${ev.name || ev.id}:`, err.message, err.stack);
       results.push({ id: ev.id, error: err.message, ok: false });
     }
   }
