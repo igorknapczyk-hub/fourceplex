@@ -204,6 +204,8 @@ export async function saveToFirebase(evId, ev, tm, eb, remains, ebCap) {
   const prev = prevSnap.exists ? prevSnap.data() : {};
   const safeTm = (!tm || tm <= 0) && (prev.tm || 0) > 0 ? prev.tm : tm;
   const safeEb = (!eb || eb <= 0) && (prev.eb || 0) > 0 ? prev.eb : eb;
+  const fallbackUsed = safeTm !== tm || safeEb !== eb;
+  console.log(`[saveToFirebase] ${ev.name || evId} — pobrane: tm=${tm} eb=${eb} | zapisane: tm=${safeTm} eb=${safeEb}${fallbackUsed ? ' ⚠ UŻYTO STAREJ WARTOŚCI (świeże dane puste/zero, poprzednie >0)' : ''}`);
 
   const tot = Math.max(0, safeTm + safeEb + (ev.other || 0) - (ev.comps || 0));
   const pct = ev.cap ? Math.round(tot / ev.cap * 100) : 0;
