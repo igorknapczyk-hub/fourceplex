@@ -244,6 +244,10 @@ select.form-input{cursor:pointer}
 .chart-legend{display:flex;gap:14px;margin-top:8px}
 .chart-legend-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--text2)}
 .chart-legend-dot{width:8px;height:2px;border-radius:1px;flex-shrink:0}
+.chart-view-toggle{display:flex;gap:2px;background:var(--bg3);border-radius:6px;padding:2px}
+.cvt-btn{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);background:transparent;border:none;border-radius:5px;padding:4px 9px;cursor:pointer;transition:all .15s}
+.cvt-btn:hover{color:var(--text)}
+.cvt-btn.active{background:var(--bg);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 
 /* ── META ADS ── */
 .meta-loading{display:flex;align-items:center;gap:8px;color:var(--text3);font-family:var(--mono);font-size:11px;padding:14px 0}
@@ -1256,7 +1260,13 @@ function fmtCostDate(ts){
 function buildChartShell(uid,title){
   return`<div class="sec-card" style="margin-bottom:10px">
     <div class="sec-head">
-      <span class="sec-title">${esc(title)}</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="sec-title">${esc(title)}</span>
+        <div class="chart-view-toggle" id="cvt-${uid}">
+          <button type="button" class="cvt-btn active" data-view="sales" onclick="setChartView('${uid}','sales')">Sprzedaż</button>
+          <button type="button" class="cvt-btn" data-view="perf" onclick="setChartView('${uid}','perf')">Performance</button>
+        </div>
+      </div>
       <span id="chart-status-${uid}" style="font-family:var(--mono);font-size:9px;color:var(--text3)">ładowanie…</span>
     </div>
     <div class="sec-body">
@@ -1338,6 +1348,40 @@ function renderBarometer(uid,matchedEvt,filledTickets,weekTickets,salesStartIdx,
   }
   const info=`${currentSold}/${cap} (${soldPct}%) · do sold-outu potrzeba ${requiredPace.toFixed(0)}/tydz. (${weeksLeft} tydz.)`;
   el.innerHTML=`<div class="sales-barometer ${status}"><b>${label}</b>${momentum?` · ${momentum}`:''}<div class="sb-sugg">${info}</div></div>`;
+}
+
+function renderChartSvg(uid){
+  const b=window._chartBundles&&window._chartBundles[uid];
+  const svgEl=document.getElementById(`chart-svg-${uid}`);
+  if(!b||!svgEl)return;
+  const view=(window._chartViewMode&&window._chartViewMode[uid])||'sales';
+  const seriesMarkup=view==='perf'?b.perfMarkup:b.salesMarkup;
+  svgEl.setAttribute('viewBox',`0 0 ${b.W} ${b.H}`);
+  svgEl.setAttribute('width',b.W);
+  svgEl.innerHTML=`
+<defs><linearGradient id="gT-${uid}" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0%" stop-color="#555555" stop-opacity="0.18"/>
+  <stop offset="100%" stop-color="#555555" stop-opacity="0.01"/>
+</linearGradient></defs>
+${b.gridLines}${b.capLines}${b.campaignLines}
+${seriesMarkup}
+${b.xLabels}
+<line x1="${b.PL}" y1="${b.PT+b.chartH}" x2="${b.W-b.PR}" y2="${b.PT+b.chartH}" stroke="rgba(0,0,0,0.14)" stroke-width="1"/>
+<line x1="${b.PL}" y1="${b.PT}" x2="${b.PL}" y2="${b.PT+b.chartH}" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+<line x1="${b.W-b.PR}" y1="${b.PT}" x2="${b.W-b.PR}" y2="${b.PT+b.chartH}" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>`;
+  svgEl.querySelectorAll('[data-tip]').forEach(r=>{
+    r.addEventListener('mouseenter',e=>showChartTip(e,r.dataset.tip));
+    r.addEventListener('mousemove',moveChartTip);
+    r.addEventListener('mouseleave',hideChartTip);
+  });
+}
+
+function setChartView(uid,view){
+  window._chartViewMode=window._chartViewMode||{};
+  window._chartViewMode[uid]=view;
+  const toggle=document.getElementById(`cvt-${uid}`);
+  if(toggle)toggle.querySelectorAll('.cvt-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view));
+  renderChartSvg(uid);
 }
 
 async function drawChart(uid,costs,concertDate,artistName){
@@ -1510,26 +1554,33 @@ async function drawChart(uid,costs,concertDate,artistName){
       ?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="#111111" stroke="#ffffff" stroke-width="1"/>`:'';
   }).join('');
 
-  svgEl.setAttribute('viewBox',`0 0 ${W} 280`);
-  svgEl.setAttribute('width',W);
-  svgEl.innerHTML=`
-<defs><linearGradient id="gT-${uid}" x1="0" y1="0" x2="0" y2="1">
-  <stop offset="0%" stop-color="#555555" stop-opacity="0.18"/>
-  <stop offset="100%" stop-color="#555555" stop-opacity="0.01"/>
-</linearGradient></defs>
-${gridLines}${capLines}${campaignLines}
-${tickPts.length?`<path d="${tickArea}" fill="url(#gT-${uid})" pointer-events="none"/>
-<path d="${pathLine(tickPts)}" fill="none" stroke="#111111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`:''}
-${tickDots}${xLabels}${tickYLabels}
-<line x1="${PL}" y1="${PT+chartH}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(0,0,0,0.14)" stroke-width="1"/>
-<line x1="${PL}" y1="${PT}" x2="${PL}" y2="${PT+chartH}" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
-<line x1="${W-PR}" y1="${PT}" x2="${W-PR}" y2="${PT+chartH}" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>`;
+  // Performance: realna liczba sprzedanych biletów w KAŻDYM tygodniu (przyrost tydzień-do-tygodnia, nie suma narastająca)
+  const weeklySold=weeks.map((w,i)=>i===0?filledTickets[0]:filledTickets[i]-filledTickets[i-1]);
+  const perfMax=salesEndIdx>=0?Math.max(...weeklySold.slice(0,salesEndIdx+1),1):1;
+  const yP=v=>PT+chartH-(Math.min(v,perfMax)/perfMax)*chartH;
+  const perfBars=salesEndIdx>=0?weeks.map((w,i)=>{
+    if(i>salesEndIdx)return'';
+    const v=Math.max(0,weeklySold[i]);
+    const x=(xPos(i)-barW/2).toFixed(1);
+    const y=yP(v).toFixed(1);
+    const h=Math.max(0,(PT+chartH)-yP(v)).toFixed(1);
+    const wLbl=`${w.getDate().toString().padStart(2,'0')}.${(w.getMonth()+1).toString().padStart(2,'0')}`;
+    const tipAttr=`Tydzień ${wLbl}: ${v} sprzedanych`.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    return`<rect x="${x}" y="${y}" width="${barW.toFixed(1)}" height="${h}" rx="2" fill="#111111" opacity="0.85" data-tip="${tipAttr}" style="cursor:default"/>`;
+  }).join(''):'';
+  const perfYLabels=[0.5,1].map(p=>{
+    const y=(PT+chartH-(p*chartH)).toFixed(1);
+    return`<text x="${(W-PR+4)}" y="${(parseFloat(y)+3).toFixed(0)}" text-anchor="start" font-size="9" fill="var(--text2)" font-family="monospace">${Math.round(perfMax*p)}</text>`;
+  }).join('');
 
-  svgEl.querySelectorAll('[data-tip]').forEach(r=>{
-    r.addEventListener('mouseenter',e=>showChartTip(e,r.dataset.tip));
-    r.addEventListener('mousemove',moveChartTip);
-    r.addEventListener('mouseleave',hideChartTip);
-  });
+  const salesMarkup=`${tickPts.length?`<path d="${tickArea}" fill="url(#gT-${uid})" pointer-events="none"/>
+<path d="${pathLine(tickPts)}" fill="none" stroke="#111111" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`:''}
+${tickDots}${tickYLabels}`;
+  const perfMarkup=`${perfBars}${perfYLabels}`;
+
+  window._chartBundles=window._chartBundles||{};
+  window._chartBundles[uid]={W,H:280,PL,PR,PT,chartH,gridLines,capLines,campaignLines,xLabels,salesMarkup,perfMarkup};
+  renderChartSvg(uid);
 
   if(statusEl){
     if(!matchedEvt){statusEl.textContent='brak koncertu w Ticketingu';statusEl.style.color='var(--text2)';}
