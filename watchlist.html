@@ -763,7 +763,7 @@ function fallbackLoad(){
   try{const d=localStorage.getItem(SK);artists=d?JSON.parse(d):buildSample();}catch(e){artists=buildSample();}
   promoterIds=new Set(artists.filter(a=>a.hot).map(a=>a.id));
   promotorOfficeIds=new Set(artists.filter(a=>a.inPromotor).map(a=>a.id));
-  checkReminders();scheduleWeeklyRefresh();render();
+  checkReminders();render();
   notify('Tryb offline — zmiany nie będą synchronizowane','err');
 }
 
@@ -782,7 +782,7 @@ async function initFirebase(){
     });
     // Ukryj banner łączenia gdy tylko onSnapshot jest podpięty
     setTimeout(()=>{const b=document.getElementById('fbConnecting');if(b)b.style.display='none';},1500);
-    scheduleWeeklyRefresh();
+    setRefreshStatus('idle');
   }catch(e){
     console.error('Firebase error:',e);fallbackLoad();
   }
