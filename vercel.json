@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/api/cron/count",
-      "schedule": "30 7 * * *"
+      "schedule": "30 8 * * *"
     },
     {
       "path": "/api/cron/count-retry",
-      "schedule": "50 7 * * *"
+      "schedule": "50 8 * * *"
     }
   ]
 }
