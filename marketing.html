@@ -584,28 +584,7 @@ window.dispatchEvent(new Event('fb-ready'));
   function getS(t){return t.status||(t.done?'zrobione':'todo');}
   function skip(t){if(getS(t)!=='zrobione')return false;const d=t.doneAt;if(!d)return false;const ms=d.toMillis?d.toMillis():d;return Date.now()-ms>172800000;}
   function seenTs(){const k=`fp_notes_seen_map_${localStorage.getItem(SK)||'anon'}`;const v=localStorage.getItem(k);if(v){try{const m=JSON.parse(v);let max=0;for(const id in m){if(m[id]>max)max=m[id];}return max||Date.now();}catch(e){return Date.now();}}return Date.now();}
-  onSnapshot(query(collection(db,'todos'),where('done','==',false)),snap=>{
-    const cu=localStorage.getItem(SK)||'';
-    const todos=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>!skip(t));
-    const isP=PROMOTOR.includes(cu);
-    const mine=isP?todos:todos.filter(t=>{const a=getA(t);return!a.length||a.includes(cu)||t.addedBy===cu;});
-    const recv=mine.filter(t=>{const a=getA(t);return!a.length||a.includes(cu);});
-    const sent=mine.filter(t=>{const a=getA(t);return t.addedBy===cu&&a.length&&!a.includes(cu);});
-    const tc=recv.filter(t=>['todo','zablokowane'].includes(getS(t))).length;
-    const wc=recv.filter(t=>getS(t)==='wtoku').length;
-    const zc=sent.filter(t=>getS(t)!=='zrobione').length;
-    const ts=seenTs();let nc=0;
-    mine.forEach(t=>{const ns=Array.isArray(t.execNotes)?t.execNotes:[];if(ns.some(n=>n.addedBy!==cu&&n.addedAt&&new Date(n.addedAt).getTime()>ts))nc++;});
-    const nT=document.getElementById('notif-todo'),nTc=document.getElementById('notif-todo-count');
-    const nZ=document.getElementById('notif-zlecone'),nZc=document.getElementById('notif-zlecone-count');
-    const nW=document.getElementById('notif-wtoku'),nWc=document.getElementById('notif-wtoku-count');
-    const nN=document.getElementById('notif-notes'),nNc=document.getElementById('notif-notes-count');
-    if(nTc)nTc.textContent=tc;
-    if(nT){nT.classList.toggle('active',tc>0);if(_prev!==null&&tc>_prev){nT.classList.remove('flash');void nT.offsetWidth;nT.classList.add('flash');setTimeout(()=>nT.classList.remove('flash'),3000);}}
-    _prev=tc;
-    if(nZc)nZc.textContent=zc;if(nZ)nZ.classList.toggle('active',zc>0);
-    if(nWc)nWc.textContent=wc;if(nW)nW.classList.toggle('active',wc>0);
-    if(nN)nN.classList.toggle('active',nc>0);if(nNc)nNc.textContent=nc;
+  // Licznik zadań wyłączony 2026-11-03 — moduł Terrarium/zadania nieużywany, zatrzymane zapytanie do Firestore.
   },()=>{});
 })();
 </script>

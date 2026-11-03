@@ -1118,15 +1118,7 @@ document.getElementById('slide-save-btn').addEventListener('click',async()=>{
     el.classList.toggle('active',n>0);
     if(n>prev&&n>0){el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),3000);}
   }
-  db2.collection('todos').where('done','==',false).onSnapshot(snap=>{
-    let todo=0,wtoku=0,zlecone=0;
-    snap.forEach(d=>{const s=d.data().status||'';if(s==='do zrobienia'||s==='zablokowane')todo++;if(s==='w toku')wtoku++;if(s==='zlecone')zlecone++;});
-    upd('notif-todo',todo);upd('notif-wtoku',wtoku);upd('notif-zlecone',zlecone);
-    const zl=document.getElementById('notif-zlecone');if(zl)zl.style.display=zlecone>0?'flex':'none';
-  },()=>{});
-  db2.collection('todos').where('type','==','note').where('seen','==',false).onSnapshot(snap=>{
-    upd('notif-notes',snap.size);
-  },()=>{});
+  // Licznik zadań wyłączony 2026-11-03 — moduł Terrarium/zadania nieużywany, zatrzymane zapytanie do Firestore.
 })();
 
 /* ── THEME ── */
